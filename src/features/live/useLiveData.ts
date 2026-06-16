@@ -23,7 +23,8 @@ export function useLiveData(
   });
 
   useEffect(() => {
-    if (receiver?.refresh && sourceRef.current?.setRefresh) sourceRef.current.setRefresh(receiver.refresh);
+    if (receiver?.refresh && sourceRef.current?.setRefresh)
+      sourceRef.current.setRefresh(receiver.refresh);
   }, [receiver]);
 
   useEffect(() => {

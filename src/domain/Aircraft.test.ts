@@ -5,7 +5,19 @@ describe('Aircraft', () => {
   it('applies fields from a DTO and trims the callsign', () => {
     const ac = new Aircraft('781860');
     ac.update(
-      { hex: '781860', flight: 'CCA101 ', lat: 30.3, lon: 110.4, altitude: 30100, track: 262, speed: 420, vert_rate: -320, messages: 2147, rssi: -49.5, seen: 7 },
+      {
+        hex: '781860',
+        flight: 'CCA101 ',
+        lat: 30.3,
+        lon: 110.4,
+        altitude: 30100,
+        track: 262,
+        speed: 420,
+        vert_rate: -320,
+        messages: 2147,
+        rssi: -49.5,
+        seen: 7,
+      },
       1781629022,
     );
     expect(ac.flight).toBe('CCA101');

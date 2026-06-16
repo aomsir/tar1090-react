@@ -32,7 +32,7 @@ export class MapController {
       const feature = this.map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike) => f, {
         hitTolerance: 5,
       });
-      const hex = feature ? (feature.getId() as string | undefined) ?? null : null;
+      const hex = feature ? ((feature.getId() as string | undefined) ?? null) : null;
       this.selectCb?.(hex);
     });
 

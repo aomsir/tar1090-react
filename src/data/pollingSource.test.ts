@@ -36,7 +36,8 @@ describe('PollingSource', () => {
 
   it('swallows a fetch error and retries on the next tick', async () => {
     const snap: AircraftSnapshot = { now: 2, messages: 20, aircraft: [] };
-    const fetchFn = vi.fn()
+    const fetchFn = vi
+      .fn()
       .mockRejectedValueOnce(new Error('network'))
       .mockResolvedValue(jsonResponse(snap));
     const src = new PollingSource({ fetchFn, refreshMs: 5 });
@@ -48,7 +49,10 @@ describe('PollingSource', () => {
   it('suppresses handler call if unsubscribed while fetch is in flight', async () => {
     let resolve!: (r: Response) => void;
     const fetchFn = vi.fn(
-      () => new Promise<Response>((res) => { resolve = res; }),
+      () =>
+        new Promise<Response>((res) => {
+          resolve = res;
+        }),
     );
     const src = new PollingSource({ fetchFn, refreshMs: 1 });
     const handler = vi.fn();
@@ -63,7 +67,10 @@ describe('PollingSource', () => {
   it('skips overlapping ticks while a fetch is still in flight', async () => {
     let resolve!: (r: Response) => void;
     const fetchFn = vi.fn(
-      () => new Promise<Response>((res) => { resolve = res; }),
+      () =>
+        new Promise<Response>((res) => {
+          resolve = res;
+        }),
     );
     const src = new PollingSource({ fetchFn, refreshMs: 1 });
     src.subscribe(vi.fn());
