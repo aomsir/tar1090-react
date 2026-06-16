@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "@heroui/styles";
+@import 'tailwindcss';
+@import '@heroui/styles';
 
 /* Glass floating-panel utility for the A+C layout (used in later tasks) */
 @utility glass {
