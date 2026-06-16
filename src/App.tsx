@@ -1,9 +1,7 @@
+import { AppShell } from '@/app/AppShell';
+
 function App() {
-  return (
-    <main className="h-full bg-background text-foreground">
-      <h1 className="p-4 text-lg font-semibold">tar1090</h1>
-    </main>
-  );
+  return <AppShell />;
 }
 
 export default App;
