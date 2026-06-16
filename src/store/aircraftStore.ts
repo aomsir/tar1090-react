@@ -43,6 +43,12 @@ export class AircraftStore {
     return { count: this.map.size, messages: snap.messages, messageRate, now: snap.now };
   }
 
+  reset(): void {
+    this.map.clear();
+    this.prevMessages = null;
+    this.prevNow = null;
+  }
+
   list(): Aircraft[] {
     return [...this.map.values()];
   }

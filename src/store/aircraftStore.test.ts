@@ -39,4 +39,15 @@ describe('AircraftStore', () => {
     const stats = store.applySnapshot({ now: 1, messages: 0 } as AircraftSnapshot);
     expect(stats.count).toBe(0);
   });
+
+  it('reset clears map and prev state so next messageRate is 0', () => {
+    const store = new AircraftStore();
+    store.applySnapshot(snap(1, 100, ['a', 'b']));
+    store.applySnapshot(snap(2, 200, ['a']));
+    expect(store.map.size).toBeGreaterThan(0);
+    store.reset();
+    expect(store.map.size).toBe(0);
+    const stats = store.applySnapshot(snap(3, 300, ['x']));
+    expect(stats.messageRate).toBe(0);
+  });
 });

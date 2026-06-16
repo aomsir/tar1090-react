@@ -24,7 +24,7 @@ function makeSource() {
 
 describe('useLiveData', () => {
   beforeEach(() => {
-    aircraftStore.map.clear();
+    aircraftStore.reset();
     useStatsStore.setState({ count: 0, messages: 0, messageRate: 0, now: 0 });
   });
 

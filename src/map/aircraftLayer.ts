@@ -42,7 +42,7 @@ export function syncFeatures(
     feature.set('aircraft', ac);
     feature.set('selected', ac.hex === selectedHex);
   }
-  for (const feature of source.getFeatures()) {
+  for (const feature of [...source.getFeatures()]) {
     if (!present.has(feature.getId() as string)) {
       source.removeFeature(feature);
     }
