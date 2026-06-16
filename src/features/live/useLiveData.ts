@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PollingSource } from '@/data/pollingSource';
 import type { AircraftDataSource } from '@/data/source';
@@ -14,23 +14,24 @@ export function useLiveData(
 ): void {
   const setStats = useStatsStore((s) => s.setStats);
 
-  const source = useMemo<Source>(() => sourceOverride ?? new PollingSource(), []);
+  const sourceRef = useRef<Source | null>(null);
+  if (sourceRef.current == null) sourceRef.current = sourceOverride ?? new PollingSource();
 
   const { data: receiver } = useQuery({
     queryKey: ['receiver'],
-    queryFn: () => source.getReceiver(),
+    queryFn: () => sourceRef.current!.getReceiver(),
   });
 
   useEffect(() => {
-    if (receiver?.refresh && source.setRefresh) source.setRefresh(receiver.refresh);
-  }, [receiver, source]);
+    if (receiver?.refresh && sourceRef.current?.setRefresh) sourceRef.current.setRefresh(receiver.refresh);
+  }, [receiver]);
 
   useEffect(() => {
-    const unsub = source.subscribe((snap) => {
+    const unsub = sourceRef.current!.subscribe((snap) => {
       const stats = aircraftStore.applySnapshot(snap);
       setStats(stats);
       controllerRef.current?.syncAircraft(aircraftStore.list());
     });
     return unsub;
-  }, [source, setStats, controllerRef]);
+  }, [setStats, controllerRef]);
 }
