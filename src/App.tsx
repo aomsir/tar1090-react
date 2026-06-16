@@ -1,11 +1,9 @@
-import { Button } from '@heroui/react';
-
 function App() {
   return (
-    <main className="flex h-full items-center justify-center">
-      <Button>Hello tar1090-react</Button>
+    <main className="h-full bg-background text-foreground">
+      <h1 className="p-4 text-lg font-semibold">tar1090</h1>
     </main>
-  );
+  )
 }
 
-export default App;
+export default App
