@@ -36,4 +36,11 @@ describe('MapView', () => {
     unmount();
     expect(dispose).toHaveBeenCalledTimes(1);
   });
+
+  it('mounts the map only once even when onReady identity changes', () => {
+    const { rerender } = render(<MapView onReady={vi.fn()} />);
+    rerender(<MapView onReady={vi.fn()} />);
+    expect(ctor).toHaveBeenCalledTimes(1);
+    expect(dispose).not.toHaveBeenCalled();
+  });
 });

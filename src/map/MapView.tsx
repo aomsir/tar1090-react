@@ -7,13 +7,17 @@ interface MapViewProps {
 
 export function MapView({ onReady }: MapViewProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  });
 
   useEffect(() => {
     if (!ref.current) return;
     const controller = new MapController(ref.current);
-    onReady?.(controller);
+    onReadyRef.current?.(controller);
     return () => controller.dispose();
-  }, [onReady]);
+  }, []);
 
   return <div ref={ref} data-testid="map-root" className="absolute inset-0" />;
 }
