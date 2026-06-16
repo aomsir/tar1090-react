@@ -17,6 +17,7 @@ export class PollingSource implements AircraftDataSource {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight = false;
   private stopped = true;
+  private generation = 0;
 
   constructor(opts: PollingOptions = {}) {
     this.fetchFn = opts.fetchFn ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
@@ -34,27 +35,29 @@ export class PollingSource implements AircraftDataSource {
 
   subscribe(handler: SnapshotHandler): () => void {
     this.stopped = false;
-    void this.tick(handler);
+    const gen = ++this.generation;
+    void this.tick(handler, gen);
     return () => {
+      this.generation++;
       this.stopped = true;
       if (this.timer) clearTimeout(this.timer);
       this.timer = null;
     };
   }
 
-  private async tick(handler: SnapshotHandler): Promise<void> {
+  private async tick(handler: SnapshotHandler, gen: number): Promise<void> {
     if (this.stopped || this.inFlight) return;
     this.inFlight = true;
     try {
       const res = await this.fetchFn(apiUrl(withCacheBust(AIRCRAFT_PATH)));
       const snap = (await res.json()) as AircraftSnapshot;
-      if (!this.stopped) handler(snap);
+      if (!this.stopped && gen === this.generation) handler(snap);
     } catch {
       // swallow single-fetch error, retry next tick
     } finally {
       this.inFlight = false;
-      if (!this.stopped) {
-        this.timer = setTimeout(() => void this.tick(handler), this.refreshMs);
+      if (!this.stopped && gen === this.generation) {
+        this.timer = setTimeout(() => void this.tick(handler, gen), this.refreshMs);
       }
     }
   }

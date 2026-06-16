@@ -15,7 +15,7 @@ describe('PollingSource', () => {
     const fetchFn = vi.fn(async () => jsonResponse(receiver));
     const src = new PollingSource({ fetchFn });
     await expect(src.getReceiver()).resolves.toEqual(receiver);
-    const url = fetchFn.mock.calls[0][0] as string;
+    const url = (fetchFn.mock.calls[0] as unknown[])[0] as string;
     expect(url).toContain('/data/receiver.json');
     expect(url).toContain('_=');
   });
@@ -32,6 +32,32 @@ describe('PollingSource', () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(handler.mock.calls.length).toBe(afterStop);
     expect(handler).toHaveBeenCalledWith(snap);
+  });
+
+  it('swallows a fetch error and retries on the next tick', async () => {
+    const snap: AircraftSnapshot = { now: 2, messages: 20, aircraft: [] };
+    const fetchFn = vi.fn()
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValue(jsonResponse(snap));
+    const src = new PollingSource({ fetchFn, refreshMs: 5 });
+    const handler = vi.fn();
+    src.subscribe(handler);
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledWith(snap));
+  });
+
+  it('suppresses handler call if unsubscribed while fetch is in flight', async () => {
+    let resolve!: (r: Response) => void;
+    const fetchFn = vi.fn(
+      () => new Promise<Response>((res) => { resolve = res; }),
+    );
+    const src = new PollingSource({ fetchFn, refreshMs: 1 });
+    const handler = vi.fn();
+    const unsub = src.subscribe(handler);
+    await new Promise((r) => setTimeout(r, 20));
+    unsub();
+    resolve(jsonResponse({ now: 1, messages: 0, aircraft: [] }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('skips overlapping ticks while a fetch is still in flight', async () => {
