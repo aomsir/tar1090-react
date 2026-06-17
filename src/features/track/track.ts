@@ -1,4 +1,5 @@
 import type { AircraftSnapshot, RawAltitude } from '@/data/types';
+import { altitudeColor, hslString } from '@/domain/altitude';
 
 export interface TrackPoint {
   lon: number;
@@ -36,4 +37,45 @@ export function extractTrackPoints(frames: AircraftSnapshot[], hex: string): Tra
     });
   }
   return pts;
+}
+
+const colorOf = (p: TrackPoint): string => hslString(altitudeColor(p.alt));
+
+export function buildTrackSegments(
+  points: TrackPoint[],
+  opts: { gapThresholdSec?: number } = {},
+): TrackSegment[] {
+  const gap = opts.gapThresholdSec ?? 90;
+  const segs: TrackSegment[] = [];
+  let cur: TrackSegment | null = null;
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const coord: [number, number] = [p.lon, p.lat];
+    if (i > 0) {
+      const prev = points[i - 1];
+      if (p.ts - prev.ts > gap) {
+        segs.push({
+          coords: [[prev.lon, prev.lat], coord],
+          colorKey: colorOf(prev),
+          ground: false,
+          estimated: true,
+        });
+        cur = null;
+      }
+    }
+    const key = colorOf(p);
+    if (cur && cur.colorKey === key && cur.ground === p.ground) {
+      cur.coords.push(coord);
+    } else {
+      const startCoord = cur && cur.coords.length ? cur.coords[cur.coords.length - 1] : null;
+      cur = {
+        coords: startCoord ? [startCoord, coord] : [coord],
+        colorKey: key,
+        ground: p.ground,
+        estimated: false,
+      };
+      segs.push(cur);
+    }
+  }
+  return segs;
 }
