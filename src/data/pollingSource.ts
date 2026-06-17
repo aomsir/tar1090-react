@@ -14,9 +14,6 @@ export interface PollingOptions {
 export class PollingSource implements AircraftDataSource {
   private readonly fetchFn: typeof fetch;
   private refreshMs: number;
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private inFlight = false;
-  private stopped = true;
   private generation = 0;
 
   constructor(opts: PollingOptions = {}) {
@@ -39,31 +36,35 @@ export class PollingSource implements AircraftDataSource {
   }
 
   subscribe(handler: SnapshotHandler): () => void {
-    this.stopped = false;
     const gen = ++this.generation;
-    void this.tick(handler, gen);
-    return () => {
-      this.generation++;
-      this.stopped = true;
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = null;
-    };
-  }
+    let stopped = false;
+    let inFlight = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-  private async tick(handler: SnapshotHandler, gen: number): Promise<void> {
-    if (this.stopped || this.inFlight) return;
-    this.inFlight = true;
-    try {
-      const res = await this.fetchFn(apiUrl(withCacheBust(AIRCRAFT_PATH)));
-      const snap = (await res.json()) as AircraftSnapshot;
-      if (!this.stopped && gen === this.generation) handler(snap);
-    } catch {
-      // swallow single-fetch error, retry next tick
-    } finally {
-      this.inFlight = false;
-      if (!this.stopped && gen === this.generation) {
-        this.timer = setTimeout(() => void this.tick(handler, gen), this.refreshMs);
+    const tick = async (): Promise<void> => {
+      if (stopped || inFlight) return;
+      inFlight = true;
+      try {
+        const res = await this.fetchFn(apiUrl(withCacheBust(AIRCRAFT_PATH)));
+        const snap = (await res.json()) as AircraftSnapshot;
+        if (!stopped && gen === this.generation) handler(snap);
+      } catch {
+        // swallow single-fetch error, retry next tick
+      } finally {
+        inFlight = false;
+        if (!stopped && gen === this.generation) {
+          timer = setTimeout(() => void tick(), this.refreshMs);
+        }
       }
-    }
+    };
+
+    void tick();
+
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      this.generation++;
+    };
   }
 }
