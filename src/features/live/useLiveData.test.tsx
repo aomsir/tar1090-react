@@ -7,6 +7,7 @@ import type { AircraftDataSource, SnapshotHandler } from '@/data/source';
 import type { MapController } from '@/map/MapController';
 import type { AircraftEnricher } from './AircraftEnricher';
 import { useStatsStore } from '@/store/statsStore';
+import { useLiveTick } from '@/store/liveTick';
 import { aircraftStore } from '@/store/aircraftStore';
 
 function makeSource() {
@@ -27,6 +28,7 @@ describe('useLiveData', () => {
   beforeEach(() => {
     aircraftStore.reset();
     useStatsStore.setState({ count: 0, messages: 0, messageRate: 0, now: 0 });
+    useLiveTick.setState({ version: 0 });
   });
 
   it('feeds snapshots into the store, stats and the map controller', async () => {
@@ -63,6 +65,7 @@ describe('useLiveData', () => {
     expect(aircraftStore.map.has('a')).toBe(true);
     expect(useStatsStore.getState().count).toBe(1);
     expect(controller.syncAircraft).toHaveBeenCalled();
+    expect(useLiveTick.getState().version).toBe(1);
   });
 
   it('enriches aircraft from each snapshot', async () => {

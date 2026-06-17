@@ -4,6 +4,7 @@ import { PollingSource } from '@/data/pollingSource';
 import type { AircraftDataSource } from '@/data/source';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useStatsStore } from '@/store/statsStore';
+import { useLiveTick } from '@/store/liveTick';
 import type { MapController } from '@/map/MapController';
 import { AircraftEnricher } from './AircraftEnricher';
 import { enrichAircraft } from '@/domain/enrich';
@@ -45,6 +46,7 @@ export function useLiveData(
       setStats(stats);
       controllerRef.current?.syncAircraft(aircraftStore.list());
       enricherRef.current!.enrichPending(aircraftStore.list());
+      useLiveTick.getState().bump();
     });
     return unsub;
   }, [setStats, controllerRef]);
