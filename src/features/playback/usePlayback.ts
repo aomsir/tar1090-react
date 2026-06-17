@@ -1,0 +1,38 @@
+import { useEffect } from 'react';
+import type { RefObject } from 'react';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { historyStore } from '@/store/historyStore';
+import type { MapController } from '@/map/MapController';
+
+export function usePlayback(controllerRef: RefObject<MapController | null>): void {
+  const mode = usePlaybackStore((s) => s.mode);
+  const cursorTime = usePlaybackStore((s) => s.cursorTime);
+  const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const speed = usePlaybackStore((s) => s.speed);
+
+  useEffect(() => {
+    if (mode !== 'history') return;
+    controllerRef.current?.syncAircraft(historyStore.extractFrameAircraft(cursorTime));
+  }, [mode, cursorTime, controllerRef]);
+
+  useEffect(() => {
+    if (mode !== 'history' || !isPlaying) return;
+    let raf = 0;
+    let prev = performance.now();
+    const step = (now: number): void => {
+      const dt = (now - prev) / 1000;
+      prev = now;
+      const st = usePlaybackStore.getState();
+      const next = st.cursorTime + dt * st.speed;
+      if (st.bounds && next >= st.bounds.max) {
+        st.setCursor(st.bounds.max);
+        st.pause();
+        return;
+      }
+      st.setCursor(next);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [mode, isPlaying, speed]);
+}
