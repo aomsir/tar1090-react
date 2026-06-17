@@ -31,4 +31,21 @@ describe('AircraftEnricher', () => {
     enricher.enrichPending([a]);
     expect(enrichFn).not.toHaveBeenCalled();
   });
+
+  it('settles to done without onEnriched and does not retry when enrichFn rejects', async () => {
+    const enrichFn = vi.fn(async () => {
+      throw new Error('lookup failed');
+    });
+    const onEnriched = vi.fn();
+    const enricher = new AircraftEnricher(enrichFn, onEnriched);
+
+    const a = new Aircraft('A00003');
+    enricher.enrichPending([a]);
+    await vi.waitFor(() => expect(a.enrichmentState).toBe('done'));
+    expect(onEnriched).not.toHaveBeenCalled();
+
+    enricher.enrichPending([a]); // already done -> no retry
+    await Promise.resolve();
+    expect(enrichFn).toHaveBeenCalledTimes(1);
+  });
 });
