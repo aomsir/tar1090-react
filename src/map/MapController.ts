@@ -7,23 +7,28 @@ import { getBottomLeft, getTopRight } from 'ol/extent';
 import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
 import { createAircraftLayer, syncFeatures, type AircraftLayerHandle } from './aircraftLayer';
+import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
 import type { Aircraft } from '@/domain/Aircraft';
+import type { TrackSegment } from '@/features/track/track';
 
 const DARK_BASEMAP = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 
 export class MapController {
   private readonly map: Map;
   private readonly handle: AircraftLayerHandle;
+  private readonly trackHandle: TrackLayerHandle;
   private selectedHex: string | null = null;
   private selectCb: ((hex: string | null) => void) | null = null;
 
   constructor(target: HTMLElement) {
     this.handle = createAircraftLayer();
+    this.trackHandle = createTrackLayer();
     this.map = new Map({
       target,
       controls: defaultControls({ rotate: false, attribution: false }),
       layers: [
         new TileLayer({ source: new XYZ({ url: DARK_BASEMAP, crossOrigin: 'anonymous' }) }),
+        this.trackHandle.layer,
         this.handle.layer,
       ],
       view: new View({ center: fromLonLat([110, 30]), zoom: 6 }),
@@ -47,6 +52,14 @@ export class MapController {
 
   syncAircraft(list: Aircraft[]): void {
     syncFeatures(this.handle.source, list, this.selectedHex);
+  }
+
+  showTrack(segments: TrackSegment[]): void {
+    syncTrack(this.trackHandle.source, segments);
+  }
+
+  clearTrack(): void {
+    this.trackHandle.source.clear();
   }
 
   centerOn(lon: number, lat: number, zoom?: number): void {
