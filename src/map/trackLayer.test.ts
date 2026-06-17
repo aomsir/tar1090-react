@@ -28,6 +28,7 @@ describe('trackLayer', () => {
     expect(features).toHaveLength(1);
     expect(features[0].getGeometry()).toBeInstanceOf(LineString);
     expect(features[0].get('estimated')).toBe(false);
+    expect(features[0].get('colorKey')).toBe(seg({}).colorKey);
   });
 
   it('syncTrack clears previous features on each call', () => {
@@ -35,5 +36,14 @@ describe('trackLayer', () => {
     syncTrack(source, [seg({})]);
     syncTrack(source, [seg({}), seg({ coords: [[2, 2], [3, 3]] })]);
     expect(source.getFeatures()).toHaveLength(2);
+  });
+
+  it('projects coordinates from lon/lat to EPSG:3857', () => {
+    const source = new VectorSource();
+    syncTrack(source, [seg({ coords: [[180, 0], [179, 0]] })]);
+    const geom = source.getFeatures()[0].getGeometry() as LineString;
+    const coords = geom.getCoordinates();
+    expect(coords[0][0]).not.toBe(180);
+    expect(coords[0][0]).toBeGreaterThan(2e7);
   });
 });
