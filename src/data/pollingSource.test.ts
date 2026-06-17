@@ -79,3 +79,16 @@ describe('PollingSource', () => {
     resolve(new Response('{}', { status: 200 }));
   });
 });
+
+describe('PollingSource.getHistoryFrame', () => {
+  it('fetches /data/history_N.json with cache-bust and parses the snapshot', async () => {
+    const snap: AircraftSnapshot = { now: 5, messages: 1, aircraft: [] };
+    const fetchFn = vi.fn(async () => jsonResponse(snap));
+    const src = new PollingSource({ fetchFn });
+    const frame = await src.getHistoryFrame(42);
+    expect(frame.now).toBe(5);
+    const url = (fetchFn.mock.calls[0] as unknown[])[0] as string;
+    expect(url).toContain('/data/history_42.json');
+    expect(url).toContain('_=');
+  });
+});

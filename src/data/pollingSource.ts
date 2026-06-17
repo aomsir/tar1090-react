@@ -33,6 +33,11 @@ export class PollingSource implements AircraftDataSource {
     return (await res.json()) as Receiver;
   }
 
+  async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+    const res = await this.fetchFn(apiUrl(withCacheBust(`/data/history_${n}.json`)));
+    return (await res.json()) as AircraftSnapshot;
+  }
+
   subscribe(handler: SnapshotHandler): () => void {
     this.stopped = false;
     const gen = ++this.generation;
