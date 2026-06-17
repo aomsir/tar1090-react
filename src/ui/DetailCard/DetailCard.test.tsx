@@ -45,11 +45,25 @@ describe('DetailCard', () => {
     aircraftStore.applySnapshot({
       now: 200,
       messages: 0,
-      aircraft: [{ hex: 'abc', flight: 'TEST', lat: 1, lon: 2, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc', flight: 'TEST', lat: 1, lon: 2, altitude: 1000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
     historyStore.setFrames([
-      { now: 100, messages: 0, aircraft: [{ hex: 'abc', lat: 0, lon: 0, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'] },
-      { now: 130, messages: 0, aircraft: [{ hex: 'abc', lat: 0, lon: 1, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'] },
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 130,
+        messages: 0,
+        aircraft: [
+          { hex: 'abc', lat: 0, lon: 1, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
     ]);
     useLiveTick.getState().bump();
     useSelectionStore.setState({ selectedHex: 'abc' });

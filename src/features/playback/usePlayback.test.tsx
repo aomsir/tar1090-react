@@ -24,7 +24,9 @@ describe('usePlayback', () => {
       {
         now: 100,
         messages: 0,
-        aircraft: [{ hex: 'abc', lat: 0, lon: 0, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+        aircraft: [
+          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
     const controller = { syncAircraft: vi.fn() } as unknown as MapController;
@@ -64,7 +66,9 @@ describe('usePlayback', () => {
   });
 
   it('cancels the rAF loop on unmount', () => {
-    historyStore.setFrames([{ now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] }]);
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
+    ]);
     const controller = { syncAircraft: vi.fn() } as unknown as MapController;
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setMode('history');

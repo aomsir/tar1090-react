@@ -38,12 +38,16 @@ vi.mock('@/data/historyLoader', () => ({
         {
           now: 100,
           messages: 0,
-          aircraft: [{ hex: '781860', lat: 0, lon: 0, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+          aircraft: [
+            { hex: '781860', lat: 0, lon: 0, altitude: 1000 },
+          ] as unknown as AircraftSnapshot['aircraft'],
         },
         {
           now: 130,
           messages: 0,
-          aircraft: [{ hex: '781860', lat: 0, lon: 1, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+          aircraft: [
+            { hex: '781860', lat: 0, lon: 1, altitude: 1000 },
+          ] as unknown as AircraftSnapshot['aircraft'],
         },
       ]);
     }),

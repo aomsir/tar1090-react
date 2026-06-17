@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
+import { useEffect } from 'react';
 import { useSelectedTrack } from './useSelectedTrack';
 import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
@@ -15,7 +16,10 @@ vi.mock('@/data/historyLoader', () => ({
 
 let captured: TrackSegment[] = [];
 function Harness() {
-  captured = useSelectedTrack();
+  const segs = useSelectedTrack();
+  useEffect(() => {
+    captured = segs;
+  }, [segs]);
   return null;
 }
 
@@ -60,13 +64,21 @@ describe('useSelectedTrack', () => {
 
   it('appends a live tail point from aircraftStore and merges with history', () => {
     historyStore.setFrames([
-      { now: 100, messages: 0, aircraft: [{ hex: 'abc', lat: 0, lon: 0, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'] },
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
     ]);
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
     aircraftStore.applySnapshot({
       now: 200,
       messages: 0,
-      aircraft: [{ hex: 'abc', lat: 0, lon: 5, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc', lat: 0, lon: 5, altitude: 1000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
     act(() => useSelectionStore.setState({ selectedHex: 'abc' }));
     render(<Harness />);
@@ -85,7 +97,9 @@ describe('useSelectedTrack', () => {
     aircraftStore.applySnapshot({
       now: 200,
       messages: 0,
-      aircraft: [{ hex: 'abc', lat: 1, lon: 2, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc', lat: 1, lon: 2, altitude: 1000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
     act(() => useSelectionStore.setState({ selectedHex: 'abc' }));
     render(<Harness />);
@@ -95,7 +109,9 @@ describe('useSelectedTrack', () => {
     act(() => {
       useLiveTick.setState({ version: 2 });
     });
-    const tailCoords = captured.flatMap((s) => s.coords).filter(([lon, lat]) => lon === 2 && lat === 1);
+    const tailCoords = captured
+      .flatMap((s) => s.coords)
+      .filter(([lon, lat]) => lon === 2 && lat === 1);
     expect(tailCoords).toHaveLength(1);
   });
 });

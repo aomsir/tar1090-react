@@ -7,15 +7,13 @@ import type { AircraftSnapshot } from '@/data/types';
 
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: {
-    ensureLoaded: vi.fn(
-      async (onProgress?: (p: { done: number; total: number }) => void) => {
-        historyStore.setFrames([
-          { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
-          { now: 200, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
-        ]);
-        onProgress?.({ done: 2, total: 2 });
-      },
-    ),
+    ensureLoaded: vi.fn(async (onProgress?: (p: { done: number; total: number }) => void) => {
+      historyStore.setFrames([
+        { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
+        { now: 200, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
+      ]);
+      onProgress?.({ done: 2, total: 2 });
+    }),
   },
 }));
 

@@ -34,9 +34,7 @@ export function ReplayBar() {
             type="button"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             onClick={() =>
-              isPlaying
-                ? usePlaybackStore.getState().pause()
-                : usePlaybackStore.getState().play()
+              isPlaying ? usePlaybackStore.getState().pause() : usePlaybackStore.getState().play()
             }
             className="rounded p-1 hover:bg-white/10"
           >
