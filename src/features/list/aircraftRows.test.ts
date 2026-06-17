@@ -65,7 +65,13 @@ describe('buildRows', () => {
       lat: 10,
       lon: 50,
     }),
-    ac('A3', { flight: 'MIL999', registration: '01', altitude: 12000, speed: 300, isMilitary: true }),
+    ac('A3', {
+      flight: 'MIL999',
+      registration: '01',
+      altitude: 12000,
+      speed: 300,
+      isMilitary: true,
+    }),
   ];
 
   it('filters by query against hex/flight/registration (case-insensitive)', () => {
@@ -76,10 +82,11 @@ describe('buildRows', () => {
   it('filters airborne vs ground vs military', () => {
     expect(buildRows(fleet, { ...base, filter: 'ground' }).map((r) => r.hex)).toEqual(['A2']);
     expect(buildRows(fleet, { ...base, filter: 'military' }).map((r) => r.hex)).toEqual(['A3']);
-    expect(buildRows(fleet, { ...base, filter: 'airborne' }).map((r) => r.hex).sort()).toEqual([
-      'A1',
-      'A3',
-    ]);
+    expect(
+      buildRows(fleet, { ...base, filter: 'airborne' })
+        .map((r) => r.hex)
+        .sort(),
+    ).toEqual(['A1', 'A3']);
   });
 
   it('sorts by altitude descending then ascending', () => {
