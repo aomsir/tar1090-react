@@ -16,6 +16,8 @@ export function useAircraftRows(): AircraftRow[] {
 
   return useMemo(
     () => buildRows(aircraftStore.list(), { query, filter, sortKey, sortDir, inViewOnly, extent }),
+    // version drives recompute because aircraftStore mutates in place (non-reactive)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [version, query, filter, sortKey, sortDir, inViewOnly, extent],
   );
 }
