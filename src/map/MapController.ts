@@ -2,7 +2,8 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
+import { getBottomLeft, getTopRight } from 'ol/extent';
 import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
 import { createAircraftLayer, syncFeatures, type AircraftLayerHandle } from './aircraftLayer';
@@ -46,6 +47,28 @@ export class MapController {
 
   syncAircraft(list: Aircraft[]): void {
     syncFeatures(this.handle.source, list, this.selectedHex);
+  }
+
+  centerOn(lon: number, lat: number, zoom?: number): void {
+    const view = this.map.getView();
+    view.animate({
+      center: fromLonLat([lon, lat]),
+      zoom: zoom ?? Math.max(view.getZoom() ?? 6, 9),
+      duration: 350,
+    });
+  }
+
+  getViewExtentLonLat(): [number, number, number, number] | null {
+    const size = this.map.getSize();
+    if (!size) return null;
+    const extent = this.map.getView().calculateExtent(size);
+    const [minLon, minLat] = toLonLat(getBottomLeft(extent));
+    const [maxLon, maxLat] = toLonLat(getTopRight(extent));
+    return [minLon, minLat, maxLon, maxLat];
+  }
+
+  onViewChange(cb: () => void): void {
+    this.map.on('moveend', cb);
   }
 
   setSelected(hex: string | null): void {

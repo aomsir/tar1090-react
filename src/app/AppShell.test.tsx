@@ -10,6 +10,9 @@ const fakeController = {
   }),
   setSelected: vi.fn(),
   syncAircraft: vi.fn(),
+  centerOn: vi.fn(),
+  onViewChange: vi.fn(),
+  getViewExtentLonLat: vi.fn(() => [0, 0, 10, 10] as [number, number, number, number]),
   dispose: vi.fn(),
 };
 
@@ -32,6 +35,9 @@ describe('AppShell', () => {
     capturedSelectCb = null;
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
+    fakeController.centerOn.mockClear();
+    fakeController.onViewChange.mockClear();
+    fakeController.getViewExtentLonLat.mockClear();
   });
 
   it('renders command bar, list panel, replay bar and map regions', () => {
@@ -59,5 +65,13 @@ describe('AppShell', () => {
 
     expect(useSelectionStore.getState().selectedHex).toBe('781860');
     expect(fakeController.setSelected).toHaveBeenCalledWith('781860');
+  });
+
+  it('registers a viewport-change listener on ready', () => {
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    expect(fakeController.onViewChange).toHaveBeenCalled();
   });
 });
