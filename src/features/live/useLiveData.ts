@@ -5,6 +5,7 @@ import type { AircraftDataSource } from '@/data/source';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useLiveTick } from '@/store/liveTick';
+import { usePlaybackStore } from '@/store/playbackStore';
 import type { MapController } from '@/map/MapController';
 import { AircraftEnricher } from './AircraftEnricher';
 import { enrichAircraft } from '@/domain/enrich';
@@ -17,6 +18,7 @@ export function useLiveData(
   enricherOverride?: AircraftEnricher,
 ): void {
   const setStats = useStatsStore((s) => s.setStats);
+  const mode = usePlaybackStore((s) => s.mode);
 
   const sourceRef = useRef<Source | null>(null);
   if (sourceRef.current == null) sourceRef.current = sourceOverride ?? new PollingSource();
@@ -44,6 +46,7 @@ export function useLiveData(
   }, [receiver]);
 
   useEffect(() => {
+    if (mode === 'history') return;
     const unsub = sourceRef.current!.subscribe((snap) => {
       const stats = aircraftStore.applySnapshot(snap);
       setStats(stats);
@@ -52,5 +55,5 @@ export function useLiveData(
       useLiveTick.getState().bump();
     });
     return unsub;
-  }, [setStats, controllerRef]);
+  }, [setStats, controllerRef, mode]);
 }

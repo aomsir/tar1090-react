@@ -7,6 +7,7 @@ import type { AircraftDataSource, SnapshotHandler } from '@/data/source';
 import type { MapController } from '@/map/MapController';
 import type { AircraftEnricher } from './AircraftEnricher';
 import { useStatsStore } from '@/store/statsStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 
 const { enrichAircraftMock } = vi.hoisted(() => ({ enrichAircraftMock: vi.fn() }));
 enrichAircraftMock.mockResolvedValue(undefined);
@@ -33,6 +34,7 @@ describe('useLiveData', () => {
     aircraftStore.reset();
     useStatsStore.setState({ count: 0, messages: 0, messageRate: 0, now: 0 });
     useLiveTick.setState({ version: 0 });
+    usePlaybackStore.getState().reset();
     enrichAircraftMock.mockReset();
     enrichAircraftMock.mockResolvedValue(undefined);
   });
@@ -155,5 +157,32 @@ describe('useLiveData', () => {
     // After enrichment settles, version must bump again so list/detail refresh.
     await waitFor(() => expect(useLiveTick.getState().version).toBe(2));
     expect(aircraftStore.map.get('a00001')?.registration).toBe('N12345');
+  });
+
+  it('unsubscribes from the source while in history mode and resubscribes on return to live', async () => {
+    const unsub = vi.fn();
+    const source = {
+      getReceiver: vi.fn(async () => ({ version: '1', refresh: 1000, history: 0 })),
+      subscribe: vi.fn(() => unsub),
+    } as unknown as AircraftDataSource;
+
+    function Harness() {
+      const ref = useRef<MapController | null>(null);
+      useLiveData(ref, source);
+      return null;
+    }
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Harness />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalledTimes(1));
+    act(() => usePlaybackStore.getState().setMode('history'));
+    expect(unsub).toHaveBeenCalledTimes(1);
+    act(() => usePlaybackStore.getState().setMode('live'));
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalledTimes(2));
   });
 });
