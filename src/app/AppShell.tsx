@@ -7,8 +7,11 @@ import { AltitudeLegend } from '@/ui/AltitudeLegend/AltitudeLegend';
 import { MapView } from '@/map/MapView';
 import { useLiveData } from '@/features/live/useLiveData';
 import { useUrlSync } from '@/app/useUrlSync';
+import { usePlayback } from '@/features/playback/usePlayback';
+import { useSelectedTrack } from '@/features/track/useSelectedTrack';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 import { aircraftStore } from '@/store/aircraftStore';
 import type { MapController } from '@/map/MapController';
 
@@ -18,6 +21,20 @@ export function AppShell() {
 
   useLiveData(controllerRef);
   useUrlSync();
+  usePlayback(controllerRef);
+  const trackSegments = useSelectedTrack();
+  const mode = usePlaybackStore((s) => s.mode);
+
+  useEffect(() => {
+    const c = controllerRef.current;
+    if (!c) return;
+    if (trackSegments.length) c.showTrack(trackSegments);
+    else c.clearTrack();
+  }, [trackSegments]);
+
+  useEffect(() => {
+    if (mode === 'live') controllerRef.current?.syncAircraft(aircraftStore.list());
+  }, [mode]);
 
   useEffect(() => {
     controllerRef.current?.setSelected(selectedHex);
