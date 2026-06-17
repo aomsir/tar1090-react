@@ -67,7 +67,8 @@ export function buildTrackSegments(
     if (cur && cur.colorKey === key && cur.ground === p.ground) {
       cur.coords.push(coord);
     } else {
-      const startCoord = cur && cur.coords.length ? cur.coords[cur.coords.length - 1] : null;
+      const startCoord: [number, number] | null =
+        cur && cur.coords.length ? cur.coords[cur.coords.length - 1] : null;
       cur = {
         coords: startCoord ? [startCoord, coord] : [coord],
         colorKey: key,
