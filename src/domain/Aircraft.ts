@@ -17,6 +17,16 @@ export class Aircraft {
   isMlat = false;
   lastUpdated = 0;
 
+  // --- enrichment (M2) ---
+  registration?: string;
+  typeCode?: string;
+  typeLong?: string;
+  dbFlags?: string;
+  isMilitary = false;
+  country?: string;
+  flagPath?: string | null;
+  enrichmentState: 'pending' | 'inflight' | 'done' = 'pending';
+
   constructor(hex: string) {
     this.hex = hex;
   }
