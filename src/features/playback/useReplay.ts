@@ -10,14 +10,17 @@ export function useReplay(): {
   const enterHistory = useCallback(async () => {
     const store = usePlaybackStore.getState();
     store.setLoading(true);
-    await historyLoader.ensureLoaded((p) =>
-      usePlaybackStore.getState().setProgress(p.done, p.total),
-    );
-    const bounds = historyStore.timeBounds();
-    usePlaybackStore.getState().setBounds(bounds);
-    if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
-    usePlaybackStore.getState().setMode('history');
-    usePlaybackStore.getState().setLoading(false);
+    try {
+      await historyLoader.ensureLoaded((p) =>
+        usePlaybackStore.getState().setProgress(p.done, p.total),
+      );
+      const bounds = historyStore.timeBounds();
+      usePlaybackStore.getState().setBounds(bounds);
+      if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
+      usePlaybackStore.getState().setMode('history');
+    } finally {
+      usePlaybackStore.getState().setLoading(false);
+    }
   }, []);
 
   const exitToLive = useCallback(() => {

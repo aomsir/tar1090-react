@@ -62,4 +62,19 @@ describe('usePlayback', () => {
     expect(usePlaybackStore.getState().isPlaying).toBe(false);
     expect(usePlaybackStore.getState().cursorTime).toBe(100);
   });
+
+  it('cancels the rAF loop on unmount', () => {
+    historyStore.setFrames([{ now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] }]);
+    const controller = { syncAircraft: vi.fn() } as unknown as MapController;
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setCursor(100);
+    const cancelSpy = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', () => 1);
+    vi.stubGlobal('cancelAnimationFrame', cancelSpy);
+    const { unmount } = render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().play());
+    unmount();
+    expect(cancelSpy).toHaveBeenCalledWith(1);
+  });
 });
