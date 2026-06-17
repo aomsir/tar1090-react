@@ -3,6 +3,9 @@ import { X } from 'lucide-react';
 import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
 import { useSelectionStore } from '@/store/selectionStore';
 import { formatAltitude } from '@/domain/format';
+import { extractTrackPoints } from '@/features/track/track';
+import { buildTrackKml } from '@/features/track/kml';
+import { historyStore } from '@/store/historyStore';
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -17,6 +20,19 @@ export function DetailCard() {
   const d = useSelectedAircraft();
   const select = useSelectionStore((s) => s.select);
   if (!d) return null;
+
+  const handleExportKml = () => {
+    if (!d) return;
+    const points = extractTrackPoints(historyStore.frames, d.hex);
+    const xml = buildTrackKml({ hex: d.hex, registration: d.registration }, points);
+    const blob = new Blob([xml], { type: 'application/vnd.google-earth.kml+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${d.registration || d.hex}-track.kml`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const flagSrc = d.flagPath ? `/${d.flagPath}` : null;
 
@@ -73,6 +89,14 @@ export function DetailCard() {
         <Field label="Export track KML" value={d.messages.toLocaleString('en-US')} />
         <Field label="Export track KML" value={`${d.seen.toFixed(1)} s`} />
       </div>
+
+      <button
+        type="button"
+        onClick={handleExportKml}
+        className="mt-2 rounded bg-white/10 py-1 text-xs hover:bg-white/20"
+      >
+        Export KML
+      </button>
     </section>
   );
 }
