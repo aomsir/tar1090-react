@@ -60,7 +60,10 @@ export function DetailCard() {
         />
         <Field label="Export track KML" value={d.country || '—'} />
         <Field label="Export track KML" value={formatAltitude(d.altitude)} />
-        <Field label="Export track KML" value={typeof d.speed === 'number' ? `${Math.round(d.speed)} kt` : '—'} />
+        <Field
+          label="Export track KML"
+          value={typeof d.speed === 'number' ? `${Math.round(d.speed)} kt` : '—'}
+        />
         <Field label="Export track KML" value={typeof d.track === 'number' ? `${Math.round(d.track)}°` : '—'} />
         <Field
           label="Export track KML"
