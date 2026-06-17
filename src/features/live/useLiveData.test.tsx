@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { useLiveData } from './useLiveData';
 import type { AircraftDataSource, SnapshotHandler } from '@/data/source';
 import type { MapController } from '@/map/MapController';
+import type { AircraftEnricher } from './AircraftEnricher';
 import { useStatsStore } from '@/store/statsStore';
 import { aircraftStore } from '@/store/aircraftStore';
 
@@ -62,5 +63,42 @@ describe('useLiveData', () => {
     expect(aircraftStore.map.has('a')).toBe(true);
     expect(useStatsStore.getState().count).toBe(1);
     expect(controller.syncAircraft).toHaveBeenCalled();
+  });
+
+  it('enriches aircraft from each snapshot', async () => {
+    const source = makeSource();
+    const controller = {
+      syncAircraft: vi.fn(),
+      setSelected: vi.fn(),
+      onSelect: vi.fn(),
+      dispose: vi.fn(),
+    } as unknown as MapController;
+
+    const enrichPending = vi.fn();
+    const enricher = { enrichPending } as unknown as AircraftEnricher;
+
+    function Harness() {
+      const ref = useRef<MapController | null>(controller);
+      useLiveData(ref, source, enricher);
+      return null;
+    }
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Harness />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalled());
+    act(() => {
+      source.emit({
+        now: 1,
+        messages: 10,
+        aircraft: [{ hex: 'a00001', lat: 1, lon: 2, altitude: 1000 }],
+      });
+    });
+
+    await waitFor(() => expect(enrichPending).toHaveBeenCalled());
   });
 });
