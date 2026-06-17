@@ -7,6 +7,10 @@ import type { AircraftDataSource, SnapshotHandler } from '@/data/source';
 import type { MapController } from '@/map/MapController';
 import type { AircraftEnricher } from './AircraftEnricher';
 import { useStatsStore } from '@/store/statsStore';
+
+const { enrichAircraftMock } = vi.hoisted(() => ({ enrichAircraftMock: vi.fn() }));
+enrichAircraftMock.mockResolvedValue(undefined);
+vi.mock('@/domain/enrich', () => ({ enrichAircraft: enrichAircraftMock }));
 import { useLiveTick } from '@/store/liveTick';
 import { aircraftStore } from '@/store/aircraftStore';
 
@@ -29,6 +33,8 @@ describe('useLiveData', () => {
     aircraftStore.reset();
     useStatsStore.setState({ count: 0, messages: 0, messageRate: 0, now: 0 });
     useLiveTick.setState({ version: 0 });
+    enrichAircraftMock.mockReset();
+    enrichAircraftMock.mockResolvedValue(undefined);
   });
 
   it('feeds snapshots into the store, stats and the map controller', async () => {
@@ -103,5 +109,51 @@ describe('useLiveData', () => {
     });
 
     await waitFor(() => expect(enrichPending).toHaveBeenCalled());
+  });
+
+  it('bumps liveTick again after enrichment settles so list/detail see enriched fields', async () => {
+    const source = makeSource();
+    const controller = {
+      syncAircraft: vi.fn(),
+      setSelected: vi.fn(),
+      onSelect: vi.fn(),
+      dispose: vi.fn(),
+    } as unknown as MapController;
+
+    // Don't pass an enricherOverride: let useLiveData wire its own enricher,
+    // which uses the (mocked) enrichAircraft and an onEnriched that bumps liveTick.
+    enrichAircraftMock.mockImplementation(async (ac) => {
+      ac.registration = 'N12345';
+    });
+
+    function Harness() {
+      const ref = useRef<MapController | null>(controller);
+      useLiveData(ref, source);
+      return null;
+    }
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Harness />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalled());
+
+    act(() => {
+      source.emit({
+        now: 1,
+        messages: 10,
+        aircraft: [{ hex: 'a00001', lat: 1, lon: 2, altitude: 1000 }],
+      });
+    });
+
+    // After the snapshot, version is 1.
+    await waitFor(() => expect(useLiveTick.getState().version).toBe(1));
+
+    // After enrichment settles, version must bump again so list/detail refresh.
+    await waitFor(() => expect(useLiveTick.getState().version).toBe(2));
+    expect(aircraftStore.map.get('a00001')?.registration).toBe('N12345');
   });
 });

@@ -26,7 +26,10 @@ export function useLiveData(
   useEffect(() => {
     enricherRef.current ??= new AircraftEnricher(
       (ac) => enrichAircraft(ac),
-      () => controllerRef.current?.syncAircraft(aircraftStore.list()),
+      () => {
+        controllerRef.current?.syncAircraft(aircraftStore.list());
+        useLiveTick.getState().bump();
+      },
     );
   }, [controllerRef]);
 
@@ -45,7 +48,7 @@ export function useLiveData(
       const stats = aircraftStore.applySnapshot(snap);
       setStats(stats);
       controllerRef.current?.syncAircraft(aircraftStore.list());
-      enricherRef.current!.enrichPending(aircraftStore.list());
+      enricherRef.current?.enrichPending(aircraftStore.list());
       useLiveTick.getState().bump();
     });
     return unsub;
