@@ -1,5 +1,17 @@
 import type { AircraftDTO, RawAltitude } from '@/data/types';
 
+export interface PositionRecord {
+  lon: number;
+  lat: number;
+  alt: RawAltitude | undefined;
+  ts: number;
+  track?: number;
+  speed?: number;
+  ground: boolean;
+}
+
+const MAX_POSITION_HISTORY = 120;
+
 export class Aircraft {
   readonly hex: string;
   flight?: string;
@@ -37,6 +49,9 @@ export class Aircraft {
   rawDbFlags?: number;
   isMlat = false;
   lastUpdated = 0;
+
+  // --- position history (for instant track on select) ---
+  positionHistory: PositionRecord[] = [];
 
   // --- enrichment (M2) ---
   registration?: string;
@@ -94,6 +109,26 @@ export class Aircraft {
     if (dto.dbFlags !== undefined) this.rawDbFlags = dto.dbFlags;
     this.isMlat = Array.isArray(dto.mlat) && dto.mlat.length > 0;
     this.lastUpdated = now;
+    this.appendPosition(now);
+  }
+
+  private appendPosition(ts: number): void {
+    if (typeof this.lat !== 'number' || typeof this.lon !== 'number') return;
+    const h = this.positionHistory;
+    const last = h[h.length - 1];
+    if (last && last.lon === this.lon && last.lat === this.lat) return;
+    h.push({
+      lon: this.lon,
+      lat: this.lat,
+      alt: this.altitude,
+      ts,
+      track: this.track,
+      speed: this.speed,
+      ground: this.altitude === 'ground',
+    });
+    if (h.length > MAX_POSITION_HISTORY) {
+      h.splice(0, h.length - MAX_POSITION_HISTORY);
+    }
   }
 
   hasPosition(): boolean {

@@ -1,6 +1,7 @@
 import { Chip } from '@heroui/react';
 import { X } from 'lucide-react';
 import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
+import { useAircraftPhoto } from '@/features/detail/useAircraftPhoto';
 import { useSelectionStore } from '@/store/selectionStore';
 import { extractTrackPoints } from '@/features/track/track';
 import { buildTrackKml } from '@/features/track/kml';
@@ -18,6 +19,11 @@ function Field({ label, value }: { label: string; value: string }) {
 export function DetailCard() {
   const d = useSelectedAircraft();
   const select = useSelectionStore((s) => s.select);
+  const { photo, loading: photoLoading } = useAircraftPhoto(
+    d?.hex ?? null,
+    d?.registration,
+    d?.typeCode,
+  );
   if (!d) return null;
 
   const handleExportKml = () => {
@@ -65,6 +71,25 @@ export function DetailCard() {
           </Chip>
         ) : null}
       </div>
+
+      {photoLoading ? (
+        <div className="mt-2 flex h-24 items-center justify-center text-xs text-slate-400">
+          Loading image...
+        </div>
+      ) : photo ? (
+        <a href={photo.link} target="_blank" rel="noopener noreferrer" className="mt-2 block">
+          <img
+            src={photo.thumbnailUrl}
+            alt={d.registration || d.hex}
+            className="w-full rounded object-cover"
+          />
+          {photo.photographer ? (
+            <span className="mt-0.5 block text-right text-[10px] text-slate-500">
+              &copy; {photo.photographer}
+            </span>
+          ) : null}
+        </a>
+      ) : null}
 
       <div className="mt-2 flex-1 overflow-y-auto border-t border-white/10 pt-2">
         {d.groups.map((group) => (

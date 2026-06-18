@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { aircraftStore } from '@/store/aircraftStore';
 import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
@@ -16,6 +16,27 @@ export function useSelectedTrack(): TrackSegment[] {
   const version = useLiveTick((s) => s.version);
   const bounds = usePlaybackStore((s) => s.bounds);
   const [tailByHex, setTailByHex] = useState<Record<string, TrackPoint[]>>({});
+  const prevHexRef = useRef<string | null>(null);
+
+  // When a new aircraft is selected, seed tail from its accumulated positionHistory
+  // so the track renders immediately without waiting for polling ticks.
+  useEffect(() => {
+    if (!hex || hex === prevHexRef.current) return;
+    prevHexRef.current = hex;
+    const ac = aircraftStore.map.get(hex);
+    if (!ac || ac.positionHistory.length === 0) return;
+    const seed: TrackPoint[] = ac.positionHistory.map((r) => ({
+      lon: r.lon,
+      lat: r.lat,
+      alt: r.alt,
+      ts: r.ts,
+      track: r.track,
+      speed: r.speed,
+      ground: r.ground,
+    }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTailByHex((prev) => ({ ...prev, [hex]: seed }));
+  }, [hex]);
 
   useEffect(() => {
     if (!hex) return;
