@@ -1,10 +1,11 @@
 import Style from 'ol/style/Style';
-import RegularShape from 'ol/style/RegularShape';
+import Icon from 'ol/style/Icon';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Text from 'ol/style/Text';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { Aircraft } from '@/domain/Aircraft';
+import { selectMarker, svgShapeToDataUri } from './markerShapes';
 
 export function aircraftFillColor(ac: Aircraft): string {
   return hslString(altitudeColor(ac.altitude ?? null));
@@ -23,16 +24,17 @@ export function markerLabel(ac: Aircraft): string {
 }
 
 export function aircraftStyle(ac: Aircraft, selected: boolean): Style {
+  const { shape, scale } = selectMarker(ac);
+  const fill = aircraftFillColor(ac);
+  const stroke = selected ? '#ffffff' : '#000000';
+  const src = svgShapeToDataUri(shape, fill, stroke, selected ? 1 : 0.75);
+  const rotation = shape.noRotate ? 0 : aircraftRotationRad(ac);
+
   return new Style({
-    image: new RegularShape({
-      points: 3,
-      radius: selected ? 9 : 7,
-      fill: new Fill({ color: aircraftFillColor(ac) }),
-      stroke: new Stroke({
-        color: selected ? '#ffffff' : 'rgba(0,0,0,0.45)',
-        width: selected ? 2 : 1,
-      }),
-      rotation: aircraftRotationRad(ac),
+    image: new Icon({
+      src,
+      scale: (selected ? 0.6 : 0.5) * scale,
+      rotation,
       rotateWithView: true,
     }),
     text: new Text({

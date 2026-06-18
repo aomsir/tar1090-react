@@ -50,4 +50,29 @@ describe('aircraftStyle', () => {
     ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
     expect(aircraftStyle(ac, false).getText()?.getText()).toBe('CCA101');
   });
+
+  it('uses an svg icon image instead of a triangle', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', t: 'A320', track: 90 }, 1);
+    const src = (aircraftStyle(ac, false).getImage() as { getSrc?: () => string }).getSrc?.();
+    expect(src?.startsWith('data:image/svg+xml')).toBe(true);
+  });
+
+  it('rotates the icon by track for normal shapes', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', t: 'A320', track: 180 }, 1);
+    const rot = (
+      aircraftStyle(ac, false).getImage() as { getRotation: () => number }
+    ).getRotation();
+    expect(rot).toBeCloseTo(Math.PI, 6);
+  });
+
+  it('does not rotate no-rotate shapes (e.g. balloon)', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', category: 'B2', track: 180 }, 1);
+    const rot = (
+      aircraftStyle(ac, false).getImage() as { getRotation: () => number }
+    ).getRotation();
+    expect(rot).toBe(0);
+  });
 });
