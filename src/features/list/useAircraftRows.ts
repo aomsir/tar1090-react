@@ -18,7 +18,17 @@ export function useAircraftRows(): AircraftRow[] {
   const siteLon = useReceiverStore((s) => s.lon);
 
   return useMemo(
-    () => buildRows(aircraftStore.list(), { query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon }),
+    () =>
+      buildRows(aircraftStore.list(), {
+        query,
+        filter,
+        sortKey,
+        sortDir,
+        inViewOnly,
+        extent,
+        siteLat,
+        siteLon,
+      }),
     // version drives recompute because aircraftStore mutates in place (non-reactive)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [version, query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon],

@@ -6,7 +6,12 @@ import { fromLonLat, toLonLat } from 'ol/proj';
 import { getBottomLeft, getTopRight } from 'ol/extent';
 import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
-import { createAircraftLayer, setFeatureZoom, syncFeatures, type AircraftLayerHandle } from './aircraftLayer';
+import {
+  createAircraftLayer,
+  setFeatureZoom,
+  syncFeatures,
+  type AircraftLayerHandle,
+} from './aircraftLayer';
 import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';

@@ -4,7 +4,6 @@ import { LIST_COLUMNS } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
 import { useSelectionStore } from '@/store/selectionStore';
 import { altitudeColor, hslString } from '@/domain/altitude';
-import { formatAltitude } from '@/domain/format';
 import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRows';
 
 const FILTERS: { id: FilterKey; label: string }[] = [
@@ -79,10 +78,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
               const checked = !hiddenColumns.has(c.id);
               const label = c.id === 'flag' ? 'Flag' : c.label;
               return (
-                <label
-                  key={c.id}
-                  className="flex items-center gap-1 text-[11px] text-slate-300"
-                >
+                <label key={c.id} className="flex items-center gap-1 text-[11px] text-slate-300">
                   <input
                     type="checkbox"
                     checked={checked}
@@ -100,7 +96,8 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           aria-label="Columns"
           className="sr-only"
           onClick={() => {
-            if (columnOptionsRef.current) columnOptionsRef.current.open = !columnOptionsRef.current.open;
+            if (columnOptionsRef.current)
+              columnOptionsRef.current.open = !columnOptionsRef.current.open;
           }}
         >
           Columns
@@ -118,7 +115,9 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                 <th
                   key={c.id}
                   role="columnheader"
-                  aria-sort={isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                  aria-sort={
+                    isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
+                  }
                   className={`px-1 py-0.5 font-normal ${align === 'right' ? 'text-right' : 'text-left'}`}
                 >
                   {sortable ? (

@@ -35,13 +35,16 @@ describe('toDetail', () => {
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'IAS', value: '250 kt' });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAS', value: '430 kt' });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Mach', value: '0.78' });
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'MCP altitude', value: '32,000 ft' });
+    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({
+      label: 'MCP altitude',
+      value: '32,000 ft',
+    });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAT', value: '—' });
   });
 
   it('renders ground altitude as Ground', () => {
     const ac = new Aircraft('abc123');
-    ac.altitude = 'ground' as any;
+    ac.altitude = 'ground';
     const detail = toDetail(ac);
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Altitude', value: 'Ground' });
   });

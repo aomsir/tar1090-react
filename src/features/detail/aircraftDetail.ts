@@ -42,9 +42,6 @@ const kt = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)} kt` : '\u2014';
 const deg = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)}\u00b0` : '\u2014';
-const num = (v: number | undefined) =>
-  typeof v === 'number' && Number.isFinite(v) ? `${v}` : '\u2014';
-
 export function toDetail(ac: Aircraft): AircraftDetail {
   return {
     hex: ac.hex,
@@ -94,9 +91,18 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
       { label: '\u5730\u901f', value: kt(ac.speed) },
       { label: 'IAS', value: kt(ac.ias) },
       { label: 'TAS', value: kt(ac.tas) },
-      { label: 'Mach', value: typeof ac.mach === 'number' && Number.isFinite(ac.mach) ? `${ac.mach}` : '\u2014' },
+      {
+        label: 'Mach',
+        value: typeof ac.mach === 'number' && Number.isFinite(ac.mach) ? `${ac.mach}` : '\u2014',
+      },
       { label: '\u822a\u5411', value: deg(ac.track) },
-      { label: 'Vertical rate', value: typeof ac.vertRate === 'number' && Number.isFinite(ac.vertRate) ? `${ac.vertRate} ft/min` : '\u2014' },
+      {
+        label: 'Vertical rate',
+        value:
+          typeof ac.vertRate === 'number' && Number.isFinite(ac.vertRate)
+            ? `${ac.vertRate} ft/min`
+            : '\u2014',
+      },
       { label: 'Squawk', value: dash(ac.squawk) },
     ],
   };
@@ -104,8 +110,14 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
   const position: DetailGroup = {
     title: 'Position',
     rows: [
-      { label: 'Latitude', value: typeof ac.lat === 'number' ? `${ac.lat.toFixed(4)}\u00b0` : '\u2014' },
-      { label: 'Longitude', value: typeof ac.lon === 'number' ? `${ac.lon.toFixed(4)}\u00b0` : '\u2014' },
+      {
+        label: 'Latitude',
+        value: typeof ac.lat === 'number' ? `${ac.lat.toFixed(4)}\u00b0` : '\u2014',
+      },
+      {
+        label: 'Longitude',
+        value: typeof ac.lon === 'number' ? `${ac.lon.toFixed(4)}\u00b0` : '\u2014',
+      },
       { label: 'Messages', value: ac.messages.toLocaleString('en-US') },
     ],
   };
@@ -115,7 +127,13 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
     rows: [
       { label: 'MCP altitude', value: feet(ac.navAltitudeMcp) },
       { label: 'FMS altitude', value: feet(ac.navAltitudeFms) },
-      { label: 'QNH', value: typeof ac.navQnh === 'number' && Number.isFinite(ac.navQnh) ? `${ac.navQnh} hPa` : '\u2014' },
+      {
+        label: 'QNH',
+        value:
+          typeof ac.navQnh === 'number' && Number.isFinite(ac.navQnh)
+            ? `${ac.navQnh} hPa`
+            : '\u2014',
+      },
       { label: 'Navigation heading', value: deg(ac.navHeading) },
     ],
   };
@@ -125,16 +143,33 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
     rows: [
       { label: 'Wind direction', value: deg(ac.windDirection) },
       { label: 'Wind speed', value: kt(ac.windSpeed) },
-      { label: 'TAT', value: typeof ac.tat === 'number' && Number.isFinite(ac.tat) ? `${ac.tat}\u00b0C` : '\u2014' },
-      { label: 'OAT', value: typeof ac.oat === 'number' && Number.isFinite(ac.oat) ? `${ac.oat}\u00b0C` : '\u2014' },
+      {
+        label: 'TAT',
+        value:
+          typeof ac.tat === 'number' && Number.isFinite(ac.tat) ? `${ac.tat}\u00b0C` : '\u2014',
+      },
+      {
+        label: 'OAT',
+        value:
+          typeof ac.oat === 'number' && Number.isFinite(ac.oat) ? `${ac.oat}\u00b0C` : '\u2014',
+      },
     ],
   };
 
   const signal: DetailGroup = {
     title: 'Signal quality',
     rows: [
-      { label: 'Signal delay', value: Number.isFinite(ac.seen) ? `${ac.seen.toFixed(1)} s` : '\u2014' },
-      { label: 'RSSI', value: typeof ac.rssi === 'number' && Number.isFinite(ac.rssi) ? `${ac.rssi.toFixed(1)} dBFS` : '\u2014' },
+      {
+        label: 'Signal delay',
+        value: Number.isFinite(ac.seen) ? `${ac.seen.toFixed(1)} s` : '\u2014',
+      },
+      {
+        label: 'RSSI',
+        value:
+          typeof ac.rssi === 'number' && Number.isFinite(ac.rssi)
+            ? `${ac.rssi.toFixed(1)} dBFS`
+            : '\u2014',
+      },
     ],
   };
 

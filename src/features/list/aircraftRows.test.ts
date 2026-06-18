@@ -187,7 +187,13 @@ describe('buildRows', () => {
       ac('D2', { flight: 'B', lat: 40, lon: 117 }),
       ac('D3', { flight: 'C' }),
     ];
-    const q: RowQuery = { ...base, sortKey: 'distance', sortDir: 'asc', siteLat: 39.9, siteLon: 116.4 };
+    const q: RowQuery = {
+      ...base,
+      sortKey: 'distance',
+      sortDir: 'asc',
+      siteLat: 39.9,
+      siteLon: 116.4,
+    };
     const rows = buildRows(dFleet, q);
     expect(rows[rows.length - 1].hex).toBe('D3');
     expect(rows[0].distance).toBeLessThan(rows[1].distance!);

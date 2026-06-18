@@ -88,8 +88,12 @@ describe('aircraftStyle', () => {
   it('uses original tar1090 marker size threshold', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', t: 'A320' }, 1);
-    const small = aircraftStyle(ac, false, 8).getImage() as { getScale: () => number | [number, number] };
-    const big = aircraftStyle(ac, false, 9).getImage() as { getScale: () => number | [number, number] };
+    const small = aircraftStyle(ac, false, 8).getImage() as {
+      getScale: () => number | [number, number];
+    };
+    const big = aircraftStyle(ac, false, 9).getImage() as {
+      getScale: () => number | [number, number];
+    };
     expect(big.getScale() as number).toBeGreaterThan(small.getScale() as number);
   });
 

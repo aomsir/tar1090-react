@@ -39,7 +39,8 @@ export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style 
   const stroke = selected ? '#ffffff' : '#000000';
   const src = svgShapeToDataUri(shape, fill, stroke, selected ? 1 : 0.75);
   const rotation = shape.noRotate ? 0 : aircraftRotationRad(ac);
-  const markerScale = BASE_ICON_SCALE * markerZoomScale(zoom) * scale * (selected ? SELECTED_SCALE : 1);
+  const markerScale =
+    BASE_ICON_SCALE * markerZoomScale(zoom) * scale * (selected ? SELECTED_SCALE : 1);
 
   return new Style({
     image: new Icon({
