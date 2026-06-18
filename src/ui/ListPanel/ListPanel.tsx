@@ -104,82 +104,86 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
         </button>
       </div>
 
-      <table className="mt-2 w-full text-[11px]">
-        <thead>
-          <tr className="border-b border-white/10 text-slate-400">
-            {visibleColumns.map((c) => {
-              const sortable = c.id !== 'flag';
-              const isActive = sortKey === c.id;
-              const align = c.align ?? 'left';
+      <div className="mt-2 flex-1 overflow-y-auto">
+        <table className="w-full text-[13px]">
+          <thead className="sticky top-0 bg-inherit">
+            <tr className="border-b border-white/10 text-[12px] text-slate-400">
+              {visibleColumns.map((c) => {
+                const sortable = c.id !== 'flag';
+                const isActive = sortKey === c.id;
+                const align = c.align ?? 'left';
+                return (
+                  <th
+                    key={c.id}
+                    role="columnheader"
+                    aria-sort={
+                      isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
+                    }
+                    className={`px-1 py-1 font-normal ${align === 'right' ? 'text-right' : 'text-left'}`}
+                  >
+                    {sortable ? (
+                      <button
+                        type="button"
+                        className="hover:text-white"
+                        onClick={() => toggleSort(c.id as SortKey)}
+                      >
+                        {c.label}
+                        {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                      </button>
+                    ) : (
+                      <span>{c.id === 'flag' ? 'Flag' : c.label}</span>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const selected = r.hex === selectedHex;
               return (
-                <th
-                  key={c.id}
-                  role="columnheader"
-                  aria-sort={
-                    isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
-                  }
-                  className={`px-1 py-0.5 font-normal ${align === 'right' ? 'text-right' : 'text-left'}`}
+                <tr
+                  key={r.hex}
+                  data-testid={`row-${r.hex}`}
+                  onClick={() => onSelect(r.hex)}
+                  className={`cursor-pointer hover:bg-white/10 ${rowBackground(r, selected)}`}
                 >
-                  {sortable ? (
-                    <button
-                      type="button"
-                      className="hover:text-white"
-                      onClick={() => toggleSort(c.id as SortKey)}
-                    >
-                      {c.label}
-                      {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
-                    </button>
-                  ) : (
-                    <span>{c.id === 'flag' ? 'Flag' : c.label}</span>
-                  )}
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const selected = r.hex === selectedHex;
-            return (
-              <tr
-                key={r.hex}
-                data-testid={`row-${r.hex}`}
-                onClick={() => onSelect(r.hex)}
-                className={`cursor-pointer hover:bg-white/10 ${rowBackground(r, selected)}`}
-              >
-                {visibleColumns.map((c) => {
-                  const align = c.align ?? 'left';
-                  if (c.id === 'flag') {
+                  {visibleColumns.map((c) => {
+                    const align = c.align ?? 'left';
+                    if (c.id === 'flag') {
+                      return (
+                        <td key={c.id} className="px-1 py-1">
+                          <span className="flex w-4 shrink-0 items-center justify-center">
+                            {r.flagPath ? (
+                              <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
+                            ) : (
+                              <span
+                                className="inline-block h-2 w-2 rounded-full"
+                                style={{ backgroundColor: hslString(altitudeColor(r.altitude)) }}
+                              />
+                            )}
+                          </span>
+                        </td>
+                      );
+                    }
                     return (
-                      <td key={c.id} className="px-1 py-0.5">
-                        <span className="flex w-4 shrink-0 items-center justify-center">
-                          {r.flagPath ? (
-                            <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
-                          ) : (
-                            <span
-                              className="inline-block h-2 w-2 rounded-full"
-                              style={{ backgroundColor: hslString(altitudeColor(r.altitude)) }}
-                            />
-                          )}
-                        </span>
+                      <td
+                        key={c.id}
+                        className={`px-1 py-1 truncate ${align === 'right' ? 'text-right' : 'text-left'}`}
+                      >
+                        {c.format(r) || '—'}
                       </td>
                     );
-                  }
-                  return (
-                    <td
-                      key={c.id}
-                      className={`px-1 py-0.5 truncate ${align === 'right' ? 'text-right' : 'text-left'}`}
-                    >
-                      {c.format(r) || '—'}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {rows.length === 0 ? <div className="text-muted px-1 py-2 text-xs">No matching aircraft</div> : null}
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {rows.length === 0 ? (
+          <div className="text-muted px-1 py-2 text-[13px]">No matching aircraft</div>
+        ) : null}
+      </div>
     </aside>
   );
 }

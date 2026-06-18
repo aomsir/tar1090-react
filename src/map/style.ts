@@ -10,7 +10,7 @@ import { selectMarker, svgShapeToDataUri } from './markerShapes';
 export const MARKER_ZOOM_DIVIDE = 8.5;
 export const MARKER_SMALL = 1;
 export const MARKER_BIG = 1.18;
-const BASE_ICON_SCALE = 0.85;
+const BASE_ICON_SCALE = 1.25;
 const SELECTED_SCALE = 1.1;
 
 export function markerZoomScale(zoom = 0): number {
@@ -51,7 +51,7 @@ export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style 
     }),
     text: new Text({
       text: markerLabel(ac),
-      font: '11px system-ui, sans-serif',
+      font: 'bold 12px/14px Tahoma, Geneva, sans-serif',
       offsetY: -30 * markerScale,
       fill: new Fill({ color: '#ffffff' }),
       stroke: new Stroke({ color: 'rgba(0,0,0,0.75)', width: 3 }),

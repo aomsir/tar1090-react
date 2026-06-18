@@ -6,6 +6,7 @@ import { fromLonLat, toLonLat } from 'ol/proj';
 import { getBottomLeft, getTopRight } from 'ol/extent';
 import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
+import type RenderEvent from 'ol/render/Event';
 import {
   createAircraftLayer,
   setFeatureZoom,
@@ -19,6 +20,19 @@ import type { TrackSegment } from '@/features/track/track';
 export const GAODE_BASEMAP_URL =
   'https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}';
 
+/** Default map dimming strength, matching tar1090's multiply blend behavior. */
+export const MAP_DIM_PERCENTAGE = 0.45;
+
+/** Dims tile renders with a Canvas postrender pass. */
+function dimTiles(evt: RenderEvent): void {
+  const ctx = evt.context as CanvasRenderingContext2D | null;
+  if (!ctx) return;
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = `rgba(0,0,0,${MAP_DIM_PERCENTAGE})`;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
 export class MapController {
   private readonly map: Map;
   private readonly handle: AircraftLayerHandle;
@@ -29,16 +43,14 @@ export class MapController {
   constructor(target: HTMLElement) {
     this.handle = createAircraftLayer();
     this.trackHandle = createTrackLayer();
+    const tileLayer = new TileLayer({
+      source: new XYZ({ url: GAODE_BASEMAP_URL, crossOrigin: 'anonymous', maxZoom: 19 }),
+    });
+    tileLayer.on('postrender', dimTiles);
     this.map = new Map({
       target,
       controls: defaultControls({ rotate: false, attribution: false }),
-      layers: [
-        new TileLayer({
-          source: new XYZ({ url: GAODE_BASEMAP_URL, crossOrigin: 'anonymous', maxZoom: 19 }),
-        }),
-        this.trackHandle.layer,
-        this.handle.layer,
-      ],
+      layers: [tileLayer, this.trackHandle.layer, this.handle.layer],
       view: new View({ center: fromLonLat([110, 30]), zoom: 6 }),
     });
 
