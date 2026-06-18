@@ -33,6 +33,7 @@ describe('tar1090 unit formatting', () => {
   it('formats detail values with optional suffix', () => {
     expect(formatDetail(undefined)).toBe('—');
     expect(formatDetail(null)).toBe('—');
+    expect(formatDetail('')).toBe('—');
     expect(formatDetail('B738')).toBe('B738');
     expect(formatDetail(250, ' kt')).toBe('250 kt');
   });
