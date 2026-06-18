@@ -11,7 +11,8 @@ import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
 
-const DARK_BASEMAP = 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
+export const GAODE_BASEMAP_URL =
+  'https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}';
 
 export class MapController {
   private readonly map: Map;
@@ -27,7 +28,9 @@ export class MapController {
       target,
       controls: defaultControls({ rotate: false, attribution: false }),
       layers: [
-        new TileLayer({ source: new XYZ({ url: DARK_BASEMAP, crossOrigin: 'anonymous' }) }),
+        new TileLayer({
+          source: new XYZ({ url: GAODE_BASEMAP_URL, crossOrigin: 'anonymous', maxZoom: 19 }),
+        }),
         this.trackHandle.layer,
         this.handle.layer,
       ],
