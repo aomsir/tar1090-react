@@ -6,6 +6,7 @@ import { aircraftStore } from '@/store/aircraftStore';
 import { useStatsStore } from '@/store/statsStore';
 import { useLiveTick } from '@/store/liveTick';
 import { usePlaybackStore } from '@/store/playbackStore';
+import { useReceiverStore } from '@/store/receiverStore';
 import type { MapController } from '@/map/MapController';
 import { AircraftEnricher } from './AircraftEnricher';
 import { enrichAircraft } from '@/domain/enrich';
@@ -47,6 +48,7 @@ export function useLiveData(
       sourceRef.current.setRefresh(receiver.refresh);
     // Share the receiver so history replay does not refetch it.
     historyLoader.setReceiver(receiver);
+    useReceiverStore.getState().setReceiverPosition(receiver.lat, receiver.lon);
   }, [receiver]);
 
   useEffect(() => {

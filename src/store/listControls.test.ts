@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { DEFAULT_HIDDEN_COLUMNS } from '@/features/list/columns';
 import { useListControls } from './listControls';
 
 describe('listControls', () => {
@@ -30,5 +31,22 @@ describe('listControls', () => {
     expect(useListControls.getState().sortDir).toBe('asc');
     useListControls.getState().toggleSort('flight');
     expect(useListControls.getState().sortDir).toBe('desc');
+  });
+});
+
+describe('useListControls column visibility', () => {
+  beforeEach(() => {
+    useListControls.getState().resetColumns();
+  });
+
+  it('starts with original tar1090 hidden columns', () => {
+    expect([...useListControls.getState().hiddenColumns]).toEqual(DEFAULT_HIDDEN_COLUMNS);
+  });
+
+  it('toggles one column without changing other controls', () => {
+    useListControls.getState().toggleColumn('icao');
+    expect(useListControls.getState().hiddenColumns.has('icao')).toBe(false);
+    useListControls.getState().toggleColumn('icao');
+    expect(useListControls.getState().hiddenColumns.has('icao')).toBe(true);
   });
 });

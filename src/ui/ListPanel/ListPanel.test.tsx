@@ -24,6 +24,7 @@ describe('ListPanel', () => {
       sortDir: 'desc',
       inViewOnly: false,
     });
+    useListControls.getState().resetColumns();
     useMapViewStore.setState({ extent: null });
   });
 
@@ -66,5 +67,38 @@ describe('ListPanel', () => {
 
     render(<ListPanel onSelect={vi.fn()} />);
     expect(screen.getByTestId('row-A1').className).toContain('bg-red');
+  });
+
+  it('renders original default visible tar1090 columns', () => {
+    seed('A1', {
+      flight: 'CCA101',
+      typeCode: 'B738',
+      squawk: '2000',
+      altitude: 30000,
+      speed: 415,
+      rssi: -8.4,
+    });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+
+    expect(screen.getByRole('columnheader', { name: 'Callsign' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Route' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Type' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Dist. (nmi)' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'RSSI' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Hex ID' })).not.toBeInTheDocument();
+  });
+
+  it('can show a hidden original column through column options', () => {
+    seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 30000 });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Registration' }));
+
+    expect(screen.getByRole('columnheader', { name: 'Registration' })).toBeInTheDocument();
+    expect(screen.getByText('B-2033')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { useReceiverStore } from '@/store/receiverStore';
 import { buildRows, type AircraftRow } from './aircraftRows';
 
 export function useAircraftRows(): AircraftRow[] {
@@ -13,11 +14,13 @@ export function useAircraftRows(): AircraftRow[] {
   const sortDir = useListControls((s) => s.sortDir);
   const inViewOnly = useListControls((s) => s.inViewOnly);
   const extent = useMapViewStore((s) => s.extent);
+  const siteLat = useReceiverStore((s) => s.lat);
+  const siteLon = useReceiverStore((s) => s.lon);
 
   return useMemo(
-    () => buildRows(aircraftStore.list(), { query, filter, sortKey, sortDir, inViewOnly, extent }),
+    () => buildRows(aircraftStore.list(), { query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon }),
     // version drives recompute because aircraftStore mutates in place (non-reactive)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [version, query, filter, sortKey, sortDir, inViewOnly, extent],
+    [version, query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon],
   );
 }
