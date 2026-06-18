@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
 import { toRow, buildRows, isInExtent, type RowQuery } from './aircraftRows';
+import { LIST_COLUMNS } from './columns';
 
 function ac(
   hex: string,
@@ -154,4 +155,43 @@ describe('buildRows', () => {
     });
     expect(rows.map((r) => r.hex)).toEqual(['A1']);
   });
+});
+
+it('formats original tar1090 columns from row data', () => {
+  const row = {
+    hex: 'abc123',
+    flight: 'CCA101',
+    route: '',
+    registration: 'B-2033',
+    typeCode: 'B738',
+    squawk: '2000',
+    altitude: 35000,
+    speed: 415,
+    vertRate: -512,
+    distance: 12.34,
+    track: 270,
+    messages: 42,
+    seen: 3.2,
+    rssi: -8.4,
+    lat: 34.2385,
+    lon: 108.9418,
+    dataSource: '',
+    isMilitary: true,
+    windDirection: 280,
+    windSpeed: 55,
+    country: 'China',
+    flagPath: 'flags/3x2/CN.svg',
+    isMlat: false,
+  };
+  const byId = Object.fromEntries(LIST_COLUMNS.map((c) => [c.id, c]));
+  expect(byId.registration.format(row)).toBe('B-2033');
+  expect(byId.aircraft_type.format(row)).toBe('B738');
+  expect(byId.vert_rate.format(row)).toBe('-512');
+  expect(byId.distance.format(row)).toBe('12.3');
+  expect(byId.rssi.format(row)).toBe('-8.4');
+  expect(byId.lat.format(row)).toBe('34.2385');
+  expect(byId.lon.format(row)).toBe('108.9418');
+  expect(byId.military.format(row)).toBe('yes');
+  expect(byId.wd.format(row)).toBe('280°');
+  expect(byId.ws.format(row)).toBe('55');
 });

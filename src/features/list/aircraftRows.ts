@@ -1,15 +1,10 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
+import { distanceNm } from '@/domain/distance';
+import type { ColumnId } from './columns';
 
 export type FilterKey = 'all' | 'airborne' | 'ground' | 'military';
-export type SortKey =
-  | 'flight'
-  | 'registration'
-  | 'typeCode'
-  | 'squawk'
-  | 'altitude'
-  | 'speed'
-  | 'rssi';
+export type SortKey = ColumnId;
 export type SortDir = 'asc' | 'desc';
 /** [minLon, minLat, maxLon, maxLat] */
 export type Extent = [number, number, number, number];
@@ -17,20 +12,27 @@ export type Extent = [number, number, number, number];
 export interface AircraftRow {
   hex: string;
   flight: string;
+  route: string;
   registration: string;
   typeCode: string;
   squawk: string;
   altitude: RawAltitude | undefined;
   speed: number | undefined;
+  vertRate: number | undefined;
+  distance: number | undefined;
   track: number | undefined;
   messages: number;
+  seen: number;
   rssi: number | undefined;
+  lat: number | undefined;
+  lon: number | undefined;
+  dataSource: string;
   country: string;
   flagPath: string | null;
   isMilitary: boolean;
   isMlat: boolean;
-  lon: number | undefined;
-  lat: number | undefined;
+  windDirection: number | undefined;
+  windSpeed: number | undefined;
 }
 
 export interface RowQuery {
@@ -40,26 +42,35 @@ export interface RowQuery {
   sortDir: SortDir;
   inViewOnly: boolean;
   extent: Extent | null;
+  siteLat?: number;
+  siteLon?: number;
 }
 
-export function toRow(ac: Aircraft): AircraftRow {
+export function toRow(ac: Aircraft, distance?: number): AircraftRow {
   return {
     hex: ac.hex,
     flight: ac.flight ?? '',
+    route: '',
     registration: ac.registration ?? '',
     typeCode: ac.typeCode ?? '',
     squawk: ac.squawk ?? '',
     altitude: ac.altitude,
     speed: ac.speed,
+    vertRate: ac.vertRate ?? ac.baroRate ?? ac.geomRate,
+    distance,
     track: ac.track,
     messages: ac.messages,
+    seen: ac.seen,
     rssi: ac.rssi,
+    lat: ac.lat,
+    lon: ac.lon,
+    dataSource: ac.addrType ?? '',
     country: ac.country ?? '',
     flagPath: ac.flagPath ?? null,
     isMilitary: ac.isMilitary,
     isMlat: ac.isMlat,
-    lon: ac.lon,
-    lat: ac.lat,
+    windDirection: ac.windDirection,
+    windSpeed: ac.windSpeed,
   };
 }
 
@@ -131,7 +142,7 @@ function sortValue(row: AircraftRow, key: SortKey): number | string | null {
 
 export function buildRows(list: Aircraft[], q: RowQuery): AircraftRow[] {
   const rows = list
-    .map(toRow)
+    .map((ac) => toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon)))
     .filter(
       (r) =>
         matchesQuery(r, q.query) &&
