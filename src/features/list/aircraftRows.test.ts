@@ -50,6 +50,40 @@ describe('toRow', () => {
     expect(row.messages).toBe(42);
     expect(row.rssi).toBe(-12.5);
   });
+
+  it('maps route, distance, dataSource, wind fields from toRow', () => {
+    const a = ac('WIND1', { flight: 'TEST1' });
+    a.addrType = 'adsb';
+    a.windDirection = 280;
+    a.windSpeed = 55;
+    const row = toRow(a, 12.34);
+    expect(row.route).toBe('');
+    expect(row.distance).toBe(12.34);
+    expect(row.dataSource).toBe('adsb');
+    expect(row.windDirection).toBe(280);
+    expect(row.windSpeed).toBe(55);
+  });
+
+  it('uses vertRate from ac.vertRate when present', () => {
+    const a = ac('VR1', { flight: 'A' });
+    a.vertRate = 500;
+    a.baroRate = 600;
+    a.geomRate = 700;
+    expect(toRow(a).vertRate).toBe(500);
+  });
+
+  it('falls back to baroRate when vertRate missing', () => {
+    const a = ac('VR2', { flight: 'B' });
+    a.baroRate = -300;
+    a.geomRate = -400;
+    expect(toRow(a).vertRate).toBe(-300);
+  });
+
+  it('falls back to geomRate when vertRate and baroRate missing', () => {
+    const a = ac('VR3', { flight: 'C' });
+    a.geomRate = 128;
+    expect(toRow(a).vertRate).toBe(128);
+  });
 });
 
 describe('isInExtent', () => {
@@ -145,6 +179,32 @@ describe('buildRows', () => {
     expect(
       buildRows(fleet, { ...base, sortKey: 'altitude', sortDir: 'asc' }).map((r) => r.hex),
     ).toEqual(['A2', 'A3', 'A1']);
+  });
+
+  it('sorts by distance with missing values last', () => {
+    const dFleet = [
+      ac('D1', { flight: 'A', lat: 39, lon: 116 }),
+      ac('D2', { flight: 'B', lat: 40, lon: 117 }),
+      ac('D3', { flight: 'C' }),
+    ];
+    const q: RowQuery = { ...base, sortKey: 'distance', sortDir: 'asc', siteLat: 39.9, siteLon: 116.4 };
+    const rows = buildRows(dFleet, q);
+    expect(rows[rows.length - 1].hex).toBe('D3');
+    expect(rows[0].distance).toBeLessThan(rows[1].distance!);
+  });
+
+  it('sorts by seen with missing values last', () => {
+    const sFleet = [
+      ac('S1', { flight: 'A' }),
+      ac('S2', { flight: 'B' }),
+      ac('S3', { flight: 'C' }),
+    ];
+    sFleet[0].seen = 10;
+    sFleet[1].seen = 2;
+    sFleet[2].seen = Infinity;
+    const q: RowQuery = { ...base, sortKey: 'seen', sortDir: 'asc' };
+    const rows = buildRows(sFleet, q);
+    expect(rows.map((r) => r.hex)).toEqual(['S2', 'S1', 'S3']);
   });
 
   it('applies in-view filter using extent', () => {

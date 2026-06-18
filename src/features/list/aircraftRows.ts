@@ -1,6 +1,7 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
 import { distanceNm } from '@/domain/distance';
+import { LIST_COLUMNS } from './columns';
 import type { ColumnId } from './columns';
 
 export type FilterKey = 'all' | 'airborne' | 'ground' | 'military';
@@ -74,12 +75,6 @@ export function toRow(ac: Aircraft, distance?: number): AircraftRow {
   };
 }
 
-export function altitudeSortValue(alt: RawAltitude | undefined): number {
-  if (alt === 'ground') return -1;
-  if (typeof alt === 'number') return alt;
-  return -Infinity;
-}
-
 export function matchesQuery(row: AircraftRow, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -118,26 +113,10 @@ export function isInExtent(
   return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
 }
 
-/** Sort value for a column. Returns null when the value is missing. */
+const SORT_COLUMNS = new Map(LIST_COLUMNS.map((c) => [c.id, c]));
+
 function sortValue(row: AircraftRow, key: SortKey): number | string | null {
-  switch (key) {
-    case 'altitude':
-      if (row.altitude === 'ground') return -1;
-      return typeof row.altitude === 'number' ? row.altitude : null;
-    case 'speed':
-      return typeof row.speed === 'number' ? row.speed : null;
-    case 'rssi':
-      return typeof row.rssi === 'number' ? row.rssi : null;
-    case 'registration':
-      return row.registration || null;
-    case 'typeCode':
-      return row.typeCode || null;
-    case 'squawk':
-      return row.squawk || null;
-    case 'flight':
-    default:
-      return row.flight || null;
-  }
+  return SORT_COLUMNS.get(key)?.sortValue(row) ?? null;
 }
 
 export function buildRows(list: Aircraft[], q: RowQuery): AircraftRow[] {
