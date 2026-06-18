@@ -1,8 +1,18 @@
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
+import type { TrackPoint } from '@/features/track/track';
+import type { PeakStats } from '@/features/playback/pTracks';
+import {
+  buildPTracks,
+  buildPeakStats,
+  buildAllHistoryAircraft,
+} from '@/features/playback/pTracks';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
+  pTracksData: Map<string, TrackPoint[]> | null = null;
+  peakStats: Map<string, PeakStats> | null = null;
+  allAircraft: Aircraft[] = [];
 
   setFrames(frames: AircraftSnapshot[]): void {
     this.frames = [...frames].sort((a, b) => a.now - b.now);
@@ -10,6 +20,19 @@ export class HistoryStore {
 
   reset(): void {
     this.frames = [];
+    this.clearPTracksData();
+  }
+
+  buildPTracksData(siteLat?: number, siteLon?: number): void {
+    this.pTracksData = buildPTracks(this.frames);
+    this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
+    this.allAircraft = buildAllHistoryAircraft(this.frames);
+  }
+
+  clearPTracksData(): void {
+    this.pTracksData = null;
+    this.peakStats = null;
+    this.allAircraft = [];
   }
 
   timeBounds(): { min: number; max: number } | null {

@@ -37,3 +37,39 @@ describe('historyStore', () => {
     expect(historyStore.extractFrameAircraft(0)).toEqual([]);
   });
 });
+
+describe('pTracks data', () => {
+  beforeEach(() => historyStore.reset());
+
+  it('buildPTracksData populates pTracksData, peakStats, allAircraft', () => {
+    const frames: AircraftSnapshot[] = [
+      {
+        now: 1000,
+        messages: 1,
+        aircraft: [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }],
+      },
+    ];
+    historyStore.setFrames(frames);
+    historyStore.buildPTracksData();
+    expect(historyStore.pTracksData).not.toBeNull();
+    expect(historyStore.pTracksData!.size).toBe(1);
+    expect(historyStore.peakStats).not.toBeNull();
+    expect(historyStore.allAircraft.length).toBe(1);
+  });
+
+  it('clearPTracksData resets all pTracks fields', () => {
+    const frames: AircraftSnapshot[] = [
+      {
+        now: 1000,
+        messages: 1,
+        aircraft: [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }],
+      },
+    ];
+    historyStore.setFrames(frames);
+    historyStore.buildPTracksData();
+    historyStore.clearPTracksData();
+    expect(historyStore.pTracksData).toBeNull();
+    expect(historyStore.peakStats).toBeNull();
+    expect(historyStore.allAircraft).toEqual([]);
+  });
+});
