@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
@@ -35,6 +36,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const hiddenColumns = useListControls((s) => s.hiddenColumns);
   const toggleColumn = useListControls((s) => s.toggleColumn);
   const visibleColumns = LIST_COLUMNS.filter((c) => !hiddenColumns.has(c.id));
+  const columnOptionsRef = useRef<HTMLDetailsElement>(null);
 
   return (
     <aside
@@ -68,7 +70,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
       </label>
 
       <div className="mt-2">
-        <details data-col-options>
+        <details ref={columnOptionsRef}>
           <summary className="cursor-pointer text-xs text-slate-400 hover:text-white">
             Column options
           </summary>
@@ -98,8 +100,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           aria-label="Columns"
           className="sr-only"
           onClick={() => {
-            const el = document.querySelector('[data-col-options]') as HTMLDetailsElement | null;
-            if (el) el.open = !el.open;
+            if (columnOptionsRef.current) columnOptionsRef.current.open = !columnOptionsRef.current.open;
           }}
         >
           Columns
@@ -126,7 +127,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                       className="hover:text-white"
                       onClick={() => toggleSort(c.id as SortKey)}
                     >
-                      {c.id === 'flag' ? 'Flag' : c.label}
+                      {c.label}
                       {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
                     </button>
                   ) : (
