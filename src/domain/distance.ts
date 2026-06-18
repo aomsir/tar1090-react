@@ -15,7 +15,11 @@ export function distanceNm(
     typeof fromLat !== 'number' ||
     typeof fromLon !== 'number' ||
     typeof toLat !== 'number' ||
-    typeof toLon !== 'number'
+    typeof toLon !== 'number' ||
+    !Number.isFinite(fromLat) ||
+    !Number.isFinite(fromLon) ||
+    !Number.isFinite(toLat) ||
+    !Number.isFinite(toLon)
   ) {
     return undefined;
   }
