@@ -6,8 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const target = env.VITE_PROXY_TARGET || 'https://example.com'
+  const dbFolder = env.VITE_DB_FOLDER || 'db-0c1185b'
   const proxy = Object.fromEntries(
-    ['/data', '/chunks', '/globe_history'].map((p) => [
+    ['/data', '/chunks', '/globe_history', `/${dbFolder}`].map((p) => [
       p,
       { target, changeOrigin: true, secure: true },
     ]),

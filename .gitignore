@@ -29,5 +29,6 @@ lerna-debug.log*
 # Project-local (not part of the React app)
 tar1090-*/
 docs/
+.playwright-mcp/
 .sisyphus/
 .superpowers/

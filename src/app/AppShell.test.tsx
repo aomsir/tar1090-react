@@ -109,7 +109,25 @@ describe('AppShell', () => {
     expect(fakeController.onViewChange).toHaveBeenCalled();
   });
 
-  it('draws the selected aircraft track via controller.showTrack', async () => {
+  it('draws the selected aircraft track when history is already loaded', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 0, lon: 0, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 130,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 0, lon: 1, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
+
     render(<AppShell />);
     act(() => {
       capturedOnReady!(fakeController);

@@ -1,5 +1,4 @@
 import { apiUrl } from '@/config/api';
-import { decodeGzipJson } from './gunzip';
 
 export type DbEntry = [registration: string, typeCode: string, flags: string, typeLong: string];
 export type ShardData = {
@@ -9,11 +8,16 @@ export type ShardData = {
 
 export type ShardFetcher = (bkey: string) => Promise<ShardData | null>;
 
+const DEFAULT_DATABASE_FOLDER = 'db-0c1185b';
+
+function databaseFolder(): string {
+  return import.meta.env.VITE_DB_FOLDER || DEFAULT_DATABASE_FOLDER;
+}
+
 const defaultFetchShard: ShardFetcher = async (bkey) => {
-  const res = await fetch(apiUrl(`/db/${bkey}.gz`));
+  const res = await fetch(apiUrl(`/${databaseFolder()}/${bkey}.js`));
   if (!res.ok) return null;
-  const buf = await res.arrayBuffer();
-  return (await decodeGzipJson(buf)) as ShardData;
+  return (await res.json()) as ShardData;
 };
 
 export class DbLoader {
@@ -33,7 +37,10 @@ export class DbLoader {
   private getShard(bkey: string): Promise<ShardData | null> {
     let p = this.cache.get(bkey);
     if (!p) {
-      p = this.fetchShard(bkey);
+      p = this.fetchShard(bkey).catch(() => {
+        this.cache.delete(bkey);
+        return null;
+      });
       this.cache.set(bkey, p);
     }
     return p;

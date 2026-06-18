@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { DbLoader, type ShardData } from './dbLoader';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { DbLoader, type ShardData, type ShardFetcher } from './dbLoader';
 
 function makeLoader(shards: Record<string, ShardData | null>) {
   const fetchShard = vi.fn(async (bkey: string) => shards[bkey] ?? null);
@@ -7,6 +7,64 @@ function makeLoader(shards: Record<string, ShardData | null>) {
 }
 
 describe('DbLoader', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('fetches default tar1090 JS database shards from db-0c1185b', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ '802E7': ['B-1234', 'B738', '00', 'BOEING 737-800'] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchFn);
+
+    await expect(new DbLoader().lookup('7802E7')).resolves.toEqual([
+      'B-1234',
+      'B738',
+      '00',
+      'BOEING 737-800',
+    ]);
+
+    expect(fetchFn).toHaveBeenCalledWith('/db-0c1185b/7.js');
+  });
+
+  it('allows overriding the tar1090 database folder via VITE_DB_FOLDER', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ '802E7': ['B-1234', 'B738', '00', 'BOEING 737-800'] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchFn);
+    vi.stubEnv('VITE_DB_FOLDER', 'db-custom');
+
+    await expect(new DbLoader().lookup('7802E7')).resolves.toEqual([
+      'B-1234',
+      'B738',
+      '00',
+      'BOEING 737-800',
+    ]);
+
+    expect(fetchFn).toHaveBeenCalledWith('/db-custom/7.js');
+  });
+
+  it('does not keep a rejected shard request cached forever', async () => {
+    const fetchShard = vi
+      .fn<ShardFetcher>()
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce({ '00001': ['R1', 'T1', '00', 'L1'] });
+    const loader = new DbLoader(fetchShard);
+
+    await expect(loader.lookup('A00001')).resolves.toBeNull();
+    await expect(loader.lookup('A00001')).resolves.toEqual(['R1', 'T1', '00', 'L1']);
+    expect(fetchShard).toHaveBeenCalledTimes(2);
+  });
+
   it('returns the entry when dkey is present at level 1', async () => {
     const { loader } = makeLoader({
       A: { '0F1E2': ['N123', 'C172', '00', 'CESSNA 172'] },

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { aircraftStore } from '@/store/aircraftStore';
 import { historyStore } from '@/store/historyStore';
-import { historyLoader } from '@/data/historyLoader';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
@@ -17,22 +16,6 @@ export function useSelectedTrack(): TrackSegment[] {
   const version = useLiveTick((s) => s.version);
   const bounds = usePlaybackStore((s) => s.bounds);
   const [tailByHex, setTailByHex] = useState<Record<string, TrackPoint[]>>({});
-
-  useEffect(() => {
-    if (!hex) return;
-    let cancelled = false;
-    void historyLoader
-      .ensureLoaded((p) => usePlaybackStore.getState().setProgress(p.done, p.total))
-      .then(() => {
-        if (cancelled) return;
-        const b = historyStore.timeBounds();
-        if (b) usePlaybackStore.getState().setBounds(b);
-        useLiveTick.getState().bump();
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [hex]);
 
   useEffect(() => {
     if (!hex) return;

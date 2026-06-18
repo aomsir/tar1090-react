@@ -9,6 +9,7 @@ import { useLiveTick } from '@/store/liveTick';
 import { aircraftStore } from '@/store/aircraftStore';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackSegment } from './track';
+import { historyLoader } from '@/data/historyLoader';
 
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: { ensureLoaded: vi.fn(async () => undefined) },
@@ -30,6 +31,7 @@ describe('useSelectedTrack', () => {
     usePlaybackStore.getState().reset();
     useSelectionStore.setState({ selectedHex: null });
     useLiveTick.setState({ version: 0 });
+    vi.mocked(historyLoader.ensureLoaded).mockClear();
     captured = [];
   });
 
@@ -60,6 +62,12 @@ describe('useSelectedTrack', () => {
     render(<Harness />);
     expect(captured.length).toBeGreaterThanOrEqual(1);
     expect(captured[0].coords.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not fetch full history merely because an aircraft is selected', () => {
+    act(() => useSelectionStore.setState({ selectedHex: 'abc' }));
+    render(<Harness />);
+    expect(historyLoader.ensureLoaded).not.toHaveBeenCalled();
   });
 
   it('appends a live tail point from aircraftStore and merges with history', () => {
