@@ -128,4 +128,10 @@ describe('Aircraft', () => {
     expect(ac.emergency).toBe('none');
     expect(ac.rawDbFlags).toBe(1);
   });
+
+  it('maps zero dbFlags to rawDbFlags 0, not undefined', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', dbFlags: 0 }, 100);
+    expect(ac.rawDbFlags).toBe(0);
+  });
 });
