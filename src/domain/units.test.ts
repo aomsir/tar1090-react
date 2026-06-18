@@ -37,4 +37,14 @@ describe('tar1090 unit formatting', () => {
     expect(formatDetail('B738')).toBe('B738');
     expect(formatDetail(250, ' kt')).toBe('250 kt');
   });
+
+  it('hides NaN and Infinity from numeric formatters', () => {
+    expect(formatSpeedKt(Number.NaN)).toBe('');
+    expect(formatVerticalRate(Number.POSITIVE_INFINITY)).toBe('');
+    expect(formatDistanceNm(Number.NaN)).toBe('');
+    expect(formatRssi(Number.NEGATIVE_INFINITY)).toBe('');
+    expect(formatAge(Number.POSITIVE_INFINITY)).toBe('');
+    expect(formatCoordinate(Number.NaN)).toBe('');
+    expect(formatDetail(Number.NaN)).toBe('—');
+  });
 });
