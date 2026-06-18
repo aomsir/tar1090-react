@@ -9,6 +9,7 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import type { MapController } from '@/map/MapController';
 import { AircraftEnricher } from './AircraftEnricher';
 import { enrichAircraft } from '@/domain/enrich';
+import { historyLoader } from '@/data/historyLoader';
 
 type Source = AircraftDataSource & { setRefresh?: (ms: number) => void };
 
@@ -41,8 +42,11 @@ export function useLiveData(
   });
 
   useEffect(() => {
-    if (receiver?.refresh && sourceRef.current?.setRefresh)
+    if (!receiver) return;
+    if (receiver.refresh && sourceRef.current?.setRefresh)
       sourceRef.current.setRefresh(receiver.refresh);
+    // Share the receiver so history replay does not refetch it.
+    historyLoader.setReceiver(receiver);
   }, [receiver]);
 
   useEffect(() => {

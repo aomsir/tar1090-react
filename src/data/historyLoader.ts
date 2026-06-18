@@ -16,11 +16,17 @@ export class HistoryLoader {
   private readonly source: HistorySource;
   private readonly concurrency: number;
   private promise: Promise<void> | null = null;
+  private cachedReceiver: Receiver | null = null;
   loaded = false;
 
   constructor(source?: HistorySource, concurrency = 12) {
     this.source = source ?? new PollingSource();
     this.concurrency = concurrency;
+  }
+
+  /** Reuse a receiver already fetched elsewhere (avoids a duplicate request). */
+  setReceiver(receiver: Receiver): void {
+    this.cachedReceiver = receiver;
   }
 
   ensureLoaded(onProgress?: (p: LoadProgress) => void): Promise<void> {
@@ -34,7 +40,7 @@ export class HistoryLoader {
   }
 
   private async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
-    const receiver = await this.source.getReceiver();
+    const receiver = this.cachedReceiver ?? (await this.source.getReceiver());
     const total = receiver.history ?? 0;
     const frames: AircraftSnapshot[] = [];
     let done = 0;

@@ -20,6 +20,18 @@ describe('PollingSource', () => {
     expect(url).toContain('_=');
   });
 
+  it('subscribe requests aircraft.json without a cache-bust param', async () => {
+    const snap: AircraftSnapshot = { now: 1, messages: 0, aircraft: [] };
+    const fetchFn = vi.fn(async () => jsonResponse(snap));
+    const src = new PollingSource({ fetchFn, refreshMs: 1000 });
+    const unsub = src.subscribe(vi.fn());
+    await vi.waitFor(() => expect(fetchFn).toHaveBeenCalled());
+    unsub();
+    const url = (fetchFn.mock.calls[0] as unknown[])[0] as string;
+    expect(url).toContain('/data/aircraft.json');
+    expect(url).not.toContain('_=');
+  });
+
   it('subscribe polls aircraft.json repeatedly and delivers snapshots', async () => {
     const snap: AircraftSnapshot = { now: 1, messages: 10, aircraft: [] };
     const fetchFn = vi.fn(async () => jsonResponse(snap));

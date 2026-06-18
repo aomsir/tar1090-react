@@ -45,7 +45,9 @@ export class PollingSource implements AircraftDataSource {
       if (stopped || inFlight) return;
       inFlight = true;
       try {
-        const res = await this.fetchFn(apiUrl(withCacheBust(AIRCRAFT_PATH)));
+        // Live aircraft.json is not cache-busted (matches tar1090; relies on
+        // server no-cache headers). receiver/history still bust the cache.
+        const res = await this.fetchFn(apiUrl(AIRCRAFT_PATH));
         const snap = (await res.json()) as AircraftSnapshot;
         if (!stopped && gen === this.generation) handler(snap);
       } catch {

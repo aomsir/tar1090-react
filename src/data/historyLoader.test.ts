@@ -46,4 +46,13 @@ describe('HistoryLoader', () => {
     expect(source.receiverCalls).toBe(1);
     expect(source.frameCalls).toBe(3);
   });
+
+  it('reuses a cached receiver and does not fetch the receiver again', async () => {
+    const source = makeSource(4);
+    const loader = new HistoryLoader(source, 2);
+    loader.setReceiver({ version: '1', refresh: 1000, history: 4 });
+    await loader.ensureLoaded();
+    expect(source.receiverCalls).toBe(0);
+    expect(source.frameCalls).toBe(4);
+  });
 });
