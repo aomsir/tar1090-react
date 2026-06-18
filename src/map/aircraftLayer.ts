@@ -16,7 +16,11 @@ export function createAircraftLayer(): AircraftLayerHandle {
   const layer = new VectorLayer({
     source,
     style: (feature) =>
-      aircraftStyle(feature.get('aircraft') as Aircraft, feature.get('selected') === true),
+      aircraftStyle(
+        feature.get('aircraft') as Aircraft,
+        feature.get('selected') === true,
+        Number(feature.get('zoom') ?? 0),
+      ),
   });
   return { layer, source };
 }
@@ -25,6 +29,7 @@ export function syncFeatures(
   source: VectorSource,
   list: Aircraft[],
   selectedHex: string | null,
+  zoom = 0,
 ): void {
   const present = new Set<string>();
   for (const ac of list) {
@@ -41,6 +46,7 @@ export function syncFeatures(
     }
     feature.set('aircraft', ac);
     feature.set('selected', ac.hex === selectedHex);
+    feature.set('zoom', zoom);
   }
   for (const feature of [...source.getFeatures()]) {
     if (!present.has(feature.getId() as string)) {

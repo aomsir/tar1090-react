@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { aircraftFillColor, aircraftRotationRad, aircraftStyle, markerLabel } from './style';
+import {
+  aircraftFillColor,
+  aircraftRotationRad,
+  aircraftStyle,
+  markerLabel,
+  markerZoomScale,
+  MARKER_ZOOM_DIVIDE,
+  MARKER_SMALL,
+  MARKER_BIG,
+} from './style';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('map style helpers', () => {
@@ -74,5 +83,35 @@ describe('aircraftStyle', () => {
       aircraftStyle(ac, false).getImage() as { getRotation: () => number }
     ).getRotation();
     expect(rot).toBe(0);
+  });
+
+  it('uses original tar1090 marker size threshold', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', t: 'A320' }, 1);
+    const small = aircraftStyle(ac, false, 8).getImage() as { getScale: () => number | [number, number] };
+    const big = aircraftStyle(ac, false, 9).getImage() as { getScale: () => number | [number, number] };
+    expect(big.getScale() as number).toBeGreaterThan(small.getScale() as number);
+  });
+
+  it('moves label offset with enlarged marker size', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101', t: 'A320' }, 1);
+    const small = aircraftStyle(ac, false, 8).getText()?.getOffsetY();
+    const big = aircraftStyle(ac, false, 9).getText()?.getOffsetY();
+    expect(Math.abs(big ?? 0)).toBeGreaterThan(Math.abs(small ?? 0));
+  });
+});
+
+describe('markerZoomScale', () => {
+  it('returns MARKER_SMALL when zoom < threshold', () => {
+    expect(markerZoomScale(8)).toBe(MARKER_SMALL);
+  });
+
+  it('returns MARKER_BIG when zoom >= threshold', () => {
+    expect(markerZoomScale(9)).toBe(MARKER_BIG);
+  });
+
+  it('uses 8.5 as the divide threshold', () => {
+    expect(MARKER_ZOOM_DIVIDE).toBe(8.5);
   });
 });

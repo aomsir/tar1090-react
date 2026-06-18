@@ -7,6 +7,16 @@ import { altitudeColor, hslString } from '@/domain/altitude';
 import type { Aircraft } from '@/domain/Aircraft';
 import { selectMarker, svgShapeToDataUri } from './markerShapes';
 
+export const MARKER_ZOOM_DIVIDE = 8.5;
+export const MARKER_SMALL = 1;
+export const MARKER_BIG = 1.18;
+const BASE_ICON_SCALE = 0.85;
+const SELECTED_SCALE = 1.1;
+
+export function markerZoomScale(zoom = 0): number {
+  return zoom < MARKER_ZOOM_DIVIDE ? MARKER_SMALL : MARKER_BIG;
+}
+
 export function aircraftFillColor(ac: Aircraft): string {
   return hslString(altitudeColor(ac.altitude ?? null));
 }
@@ -23,24 +33,25 @@ export function markerLabel(ac: Aircraft): string {
   return `hex: ${ac.hex}`;
 }
 
-export function aircraftStyle(ac: Aircraft, selected: boolean): Style {
+export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style {
   const { shape, scale } = selectMarker(ac);
   const fill = aircraftFillColor(ac);
   const stroke = selected ? '#ffffff' : '#000000';
   const src = svgShapeToDataUri(shape, fill, stroke, selected ? 1 : 0.75);
   const rotation = shape.noRotate ? 0 : aircraftRotationRad(ac);
+  const markerScale = BASE_ICON_SCALE * markerZoomScale(zoom) * scale * (selected ? SELECTED_SCALE : 1);
 
   return new Style({
     image: new Icon({
       src,
-      scale: (selected ? 0.6 : 0.5) * scale,
+      scale: markerScale,
       rotation,
       rotateWithView: true,
     }),
     text: new Text({
       text: markerLabel(ac),
       font: '11px system-ui, sans-serif',
-      offsetY: selected ? -18 : -15,
+      offsetY: -30 * markerScale,
       fill: new Fill({ color: '#ffffff' }),
       stroke: new Stroke({ color: 'rgba(0,0,0,0.75)', width: 3 }),
     }),

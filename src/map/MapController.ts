@@ -54,7 +54,8 @@ export class MapController {
   }
 
   syncAircraft(list: Aircraft[]): void {
-    syncFeatures(this.handle.source, list, this.selectedHex);
+    const zoom = this.map.getView().getZoom() ?? 0;
+    syncFeatures(this.handle.source, list, this.selectedHex, zoom);
   }
 
   showTrack(segments: TrackSegment[]): void {

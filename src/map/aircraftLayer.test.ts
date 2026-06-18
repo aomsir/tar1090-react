@@ -48,4 +48,10 @@ describe('aircraftLayer', () => {
     expect(source.getFeatureById('a')!.get('selected')).toBe(false);
     expect(source.getFeatureById('b')!.get('selected')).toBe(true);
   });
+
+  it('stores zoom on each feature', () => {
+    const { source } = createAircraftLayer();
+    syncFeatures(source, [ac('a', 10, 20)], null, 9);
+    expect(source.getFeatureById('a')!.get('zoom')).toBe(9);
+  });
 });
