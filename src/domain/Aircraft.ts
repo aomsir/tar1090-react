@@ -32,7 +32,13 @@ export class Aircraft {
   }
 
   update(dto: AircraftDTO, now: number): void {
-    if (dto.flight !== undefined) this.flight = dto.flight.trim();
+    const rawFlight = dto.flight ?? dto.callsign;
+    if (rawFlight != null) {
+      const flight = String(rawFlight).trim();
+      this.flight = flight && flight !== '@@@@@@@@' ? flight : undefined;
+    }
+    if (dto.r != null) this.registration = String(dto.r);
+    if (dto.t != null) this.typeCode = String(dto.t);
     if (dto.lat !== undefined) this.lat = dto.lat;
     if (dto.lon !== undefined) this.lon = dto.lon;
     if (dto.altitude !== undefined) this.altitude = dto.altitude;

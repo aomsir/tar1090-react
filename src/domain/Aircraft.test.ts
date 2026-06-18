@@ -49,4 +49,30 @@ describe('Aircraft', () => {
     ac.update({ hex: 'a', lat: 1, lon: 2 }, 1);
     expect(ac.hasPosition()).toBe(true);
   });
+
+  it('maps callsign to flight when flight is absent', () => {
+    const ac = new Aircraft('a');
+    ac.update({ hex: 'a', callsign: 'DLH9 ' }, 1);
+    expect(ac.flight).toBe('DLH9');
+  });
+
+  it('does not crash and keeps no flight when flight is null', () => {
+    const ac = new Aircraft('a');
+    ac.update({ hex: 'a', flight: null }, 1);
+    expect(ac.flight).toBeUndefined();
+  });
+
+  it('treats @@@@@@@@ as no callsign', () => {
+    const ac = new Aircraft('a');
+    ac.update({ hex: 'a', flight: 'CCA1' }, 1);
+    ac.update({ hex: 'a', flight: '@@@@@@@@' }, 2);
+    expect(ac.flight).toBeUndefined();
+  });
+
+  it('reads registration and type code from r/t fields', () => {
+    const ac = new Aircraft('a');
+    ac.update({ hex: 'a', r: 'B-1234', t: 'A320' }, 1);
+    expect(ac.registration).toBe('B-1234');
+    expect(ac.typeCode).toBe('A320');
+  });
 });

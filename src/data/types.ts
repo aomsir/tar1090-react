@@ -13,7 +13,10 @@ export type RawAltitude = number | 'ground';
 /** Raw aircraft DTO in dump1090-mutability style. */
 export interface AircraftDTO {
   hex: string;
-  flight?: string;
+  flight?: string | null;
+  callsign?: string | null;
+  r?: string | null;
+  t?: string | null;
   lat?: number;
   lon?: number;
   altitude?: RawAltitude;

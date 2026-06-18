@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aircraftFillColor, aircraftRotationRad } from './style';
+import { aircraftFillColor, aircraftRotationRad, aircraftStyle, markerLabel } from './style';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('map style helpers', () => {
@@ -22,5 +22,32 @@ describe('map style helpers', () => {
 
   it('defaults rotation to 0 when track is missing', () => {
     expect(aircraftRotationRad(new Aircraft('a'))).toBe(0);
+  });
+});
+
+describe('markerLabel', () => {
+  it('uses the trimmed flight when present', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101 ' }, 1);
+    expect(markerLabel(ac)).toBe('CCA101');
+  });
+
+  it('falls back to "reg: <registration>" when no flight', () => {
+    const ac = new Aircraft('abc123');
+    ac.registration = 'B-1234';
+    expect(markerLabel(ac)).toBe('reg: B-1234');
+  });
+
+  it('falls back to "hex: <hex>" when no flight or registration', () => {
+    const ac = new Aircraft('abc123');
+    expect(markerLabel(ac)).toBe('hex: abc123');
+  });
+});
+
+describe('aircraftStyle', () => {
+  it('renders the marker label as style text', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
+    expect(aircraftStyle(ac, false).getText()?.getText()).toBe('CCA101');
   });
 });
