@@ -267,12 +267,17 @@ describe('buildRows with peakStats', () => {
   it('overrides speed and distance with peak values', () => {
     const a = new Aircraft('aa');
     a.update({ hex: 'aa', lat: 30, lon: 110, speed: 100 }, 1000);
-    const peakStats = new Map<string, PeakStats>([
-      ['aa', { maxSpeed: 300, maxDist: 50 }],
-    ]);
+    const peakStats = new Map<string, PeakStats>([['aa', { maxSpeed: 300, maxDist: 50 }]]);
     const rows = buildRows(
       [a],
-      { query: '', filter: 'all', sortKey: 'speed', sortDir: 'desc', inViewOnly: false, extent: null },
+      {
+        query: '',
+        filter: 'all',
+        sortKey: 'speed',
+        sortDir: 'desc',
+        inViewOnly: false,
+        extent: null,
+      },
       peakStats,
     );
     expect(rows[0].speed).toBe(300);

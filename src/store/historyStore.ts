@@ -2,11 +2,7 @@ import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import type { PeakStats } from '@/features/playback/pTracks';
-import {
-  buildPTracks,
-  buildPeakStats,
-  buildAllHistoryAircraft,
-} from '@/features/playback/pTracks';
+import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];

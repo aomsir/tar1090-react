@@ -44,10 +44,7 @@ export function createPTracksLayer(): PTracksLayerHandle {
   };
 }
 
-export function syncPTracks(
-  source: VectorSource,
-  tracksMap: Map<string, TrackPoint[]>,
-): void {
+export function syncPTracks(source: VectorSource, tracksMap: Map<string, TrackPoint[]>): void {
   source.clear();
   for (const [hex, points] of tracksMap) {
     const segments = buildTrackSegments(points);

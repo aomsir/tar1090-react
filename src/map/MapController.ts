@@ -14,11 +14,7 @@ import {
   type AircraftLayerHandle,
 } from './aircraftLayer';
 import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
-import {
-  createPTracksLayer,
-  syncPTracks,
-  type PTracksLayerHandle,
-} from './pTracksLayer';
+import { createPTracksLayer, syncPTracks, type PTracksLayerHandle } from './pTracksLayer';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
 import type { TrackPoint } from '@/features/track/track';

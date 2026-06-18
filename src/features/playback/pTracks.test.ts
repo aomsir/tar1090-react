@@ -53,9 +53,7 @@ describe('buildPTracks', () => {
   });
 
   it('skips aircraft without lat/lon', () => {
-    const sparse: AircraftSnapshot[] = [
-      { now: 1, messages: 1, aircraft: [{ hex: 'xx' }] },
-    ];
+    const sparse: AircraftSnapshot[] = [{ now: 1, messages: 1, aircraft: [{ hex: 'xx' }] }];
     expect(buildPTracks(sparse).size).toBe(0);
   });
 
