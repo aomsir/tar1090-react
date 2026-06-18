@@ -75,4 +75,57 @@ describe('Aircraft', () => {
     expect(ac.registration).toBe('B-1234');
     expect(ac.typeCode).toBe('A320');
   });
+
+  it('preserves tar1090 optional detail fields from DTO', () => {
+    const ac = new Aircraft('abc123');
+    ac.update(
+      {
+        hex: 'abc123',
+        seen_pos: 3.2,
+        baro_rate: -512,
+        geom_rate: -384,
+        nav_altitude_mcp: 32000,
+        nav_altitude_fms: 34000,
+        nav_altitude_src: 'MCP',
+        nav_qnh: 1013.2,
+        nav_heading: 270,
+        mag_heading: 268,
+        true_heading: 271,
+        ias: 250,
+        tas: 430,
+        mach: 0.78,
+        oat: -42,
+        tat: -22,
+        wd: 280,
+        ws: 55,
+        addrtype: 'adsb_icao',
+        version: 2,
+        emergency: 'none',
+        dbFlags: 1,
+      },
+      100,
+    );
+
+    expect(ac.seenPos).toBe(3.2);
+    expect(ac.baroRate).toBe(-512);
+    expect(ac.geomRate).toBe(-384);
+    expect(ac.navAltitudeMcp).toBe(32000);
+    expect(ac.navAltitudeFms).toBe(34000);
+    expect(ac.navAltitudeSrc).toBe('MCP');
+    expect(ac.navQnh).toBe(1013.2);
+    expect(ac.navHeading).toBe(270);
+    expect(ac.magHeading).toBe(268);
+    expect(ac.trueHeading).toBe(271);
+    expect(ac.ias).toBe(250);
+    expect(ac.tas).toBe(430);
+    expect(ac.mach).toBe(0.78);
+    expect(ac.oat).toBe(-42);
+    expect(ac.tat).toBe(-22);
+    expect(ac.windDirection).toBe(280);
+    expect(ac.windSpeed).toBe(55);
+    expect(ac.addrType).toBe('adsb_icao');
+    expect(ac.version).toBe(2);
+    expect(ac.emergency).toBe('none');
+    expect(ac.rawDbFlags).toBe(1);
+  });
 });
