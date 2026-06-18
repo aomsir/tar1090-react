@@ -29,7 +29,12 @@ describe('usePlayback', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    const controller = { syncAircraft: vi.fn() } as unknown as MapController;
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
     usePlaybackStore.getState().setMode('history');
     render(<Harness controller={controller} />);
@@ -48,7 +53,12 @@ describe('usePlayback', () => {
         aircraft: [] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    const controller = { syncAircraft: vi.fn() } as unknown as MapController;
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setCursor(100);
@@ -69,7 +79,12 @@ describe('usePlayback', () => {
     historyStore.setFrames([
       { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
     ]);
-    const controller = { syncAircraft: vi.fn() } as unknown as MapController;
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setCursor(100);

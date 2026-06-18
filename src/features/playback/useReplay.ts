@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { usePlaybackStore } from '@/store/playbackStore';
+import { useReceiverStore } from '@/store/receiverStore';
 import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 
@@ -18,6 +19,8 @@ export function useReplay(): {
       usePlaybackStore.getState().setBounds(bounds);
       if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
       usePlaybackStore.getState().setMode('history');
+      const { lat, lon } = useReceiverStore.getState();
+      historyStore.buildPTracksData(lat, lon);
     } finally {
       usePlaybackStore.getState().setLoading(false);
     }
@@ -27,6 +30,7 @@ export function useReplay(): {
     const store = usePlaybackStore.getState();
     store.pause();
     store.setMode('live');
+    historyStore.clearPTracksData();
   }, []);
 
   return { enterHistory, exitToLive };

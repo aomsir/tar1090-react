@@ -16,6 +16,16 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
   }, [mode, cursorTime, controllerRef]);
 
   useEffect(() => {
+    if (mode === 'history') {
+      const data = historyStore.pTracksData;
+      if (data) controllerRef.current?.showPTracks(data);
+      controllerRef.current?.clearTrack();
+    } else {
+      controllerRef.current?.clearPTracks();
+    }
+  }, [mode, controllerRef]);
+
+  useEffect(() => {
     if (mode !== 'history' || !isPlaying) return;
     let raf = 0;
     let prev = performance.now();
