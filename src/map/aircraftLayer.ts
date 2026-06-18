@@ -54,3 +54,9 @@ export function syncFeatures(
     }
   }
 }
+
+export function setFeatureZoom(source: VectorSource, zoom: number): void {
+  for (const feature of source.getFeatures()) {
+    feature.set('zoom', zoom);
+  }
+}

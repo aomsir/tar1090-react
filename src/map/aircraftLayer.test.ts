@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createAircraftLayer, syncFeatures } from './aircraftLayer';
+import { createAircraftLayer, setFeatureZoom, syncFeatures } from './aircraftLayer';
 import { Aircraft } from '@/domain/Aircraft';
 
 function ac(hex: string, lat: number, lon: number): Aircraft {
@@ -53,5 +53,13 @@ describe('aircraftLayer', () => {
     const { source } = createAircraftLayer();
     syncFeatures(source, [ac('a', 10, 20)], null, 9);
     expect(source.getFeatureById('a')!.get('zoom')).toBe(9);
+  });
+
+  it('setFeatureZoom updates zoom on all existing features without resync', () => {
+    const { source } = createAircraftLayer();
+    syncFeatures(source, [ac('a', 10, 20), ac('b', 11, 21)], null, 6);
+    setFeatureZoom(source, 12);
+    expect(source.getFeatureById('a')!.get('zoom')).toBe(12);
+    expect(source.getFeatureById('b')!.get('zoom')).toBe(12);
   });
 });

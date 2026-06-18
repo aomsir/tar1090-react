@@ -6,7 +6,7 @@ import { fromLonLat, toLonLat } from 'ol/proj';
 import { getBottomLeft, getTopRight } from 'ol/extent';
 import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
-import { createAircraftLayer, syncFeatures, type AircraftLayerHandle } from './aircraftLayer';
+import { createAircraftLayer, setFeatureZoom, syncFeatures, type AircraftLayerHandle } from './aircraftLayer';
 import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
@@ -50,6 +50,12 @@ export class MapController {
       const hit = this.map.hasFeatureAtPixel(evt.pixel, { hitTolerance: 5 });
       const el = this.map.getTargetElement();
       if (el) el.style.cursor = hit ? 'pointer' : '';
+    });
+
+    this.map.on('moveend', () => {
+      const zoom = this.map.getView().getZoom() ?? 0;
+      setFeatureZoom(this.handle.source, zoom);
+      this.handle.layer.changed();
     });
   }
 
