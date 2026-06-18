@@ -39,6 +39,20 @@ describe('toDetail', () => {
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAT', value: '—' });
   });
 
+  it('renders ground altitude as Ground', () => {
+    const ac = new Aircraft('abc123');
+    ac.altitude = 'ground' as any;
+    const detail = toDetail(ac);
+    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Altitude', value: 'Ground' });
+  });
+
+  it('renders unseen delay as — when seen is Infinity', () => {
+    const ac = new Aircraft('abc123');
+    // seen defaults to Infinity
+    const detail = toDetail(ac);
+    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Altitude', value: '—' });
+  });
+
   it('maps enrichment and live fields into a detail view-model', () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {

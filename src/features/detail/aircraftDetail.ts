@@ -86,7 +86,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
     ],
   };
 
-  const altDisplay = typeof ac.altitude === 'number' ? formatAltitude(ac.altitude) : '\u2014';
+  const altDisplay = ac.altitude != null ? formatAltitude(ac.altitude) : '\u2014';
   const flightStatus: DetailGroup = {
     title: 'Flight status',
     rows: [
@@ -133,7 +133,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
   const signal: DetailGroup = {
     title: 'Signal quality',
     rows: [
-      { label: 'Signal delay', value: `${ac.seen.toFixed(1)} s` },
+      { label: 'Signal delay', value: Number.isFinite(ac.seen) ? `${ac.seen.toFixed(1)} s` : '\u2014' },
       { label: 'RSSI', value: typeof ac.rssi === 'number' && Number.isFinite(ac.rssi) ? `${ac.rssi.toFixed(1)} dBFS` : '\u2014' },
     ],
   };
