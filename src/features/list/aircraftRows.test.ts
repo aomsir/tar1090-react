@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
 import { toRow, buildRows, isInExtent, type RowQuery } from './aircraftRows';
 import { LIST_COLUMNS } from './columns';
+import type { PeakStats } from '@/features/playback/pTracks';
 
 function ac(
   hex: string,
@@ -260,4 +261,21 @@ it('formats original tar1090 columns from row data', () => {
   expect(byId.military.format(row)).toBe('yes');
   expect(byId.wd.format(row)).toBe('280°');
   expect(byId.ws.format(row)).toBe('55');
+});
+
+describe('buildRows with peakStats', () => {
+  it('overrides speed and distance with peak values', () => {
+    const a = new Aircraft('aa');
+    a.update({ hex: 'aa', lat: 30, lon: 110, speed: 100 }, 1000);
+    const peakStats = new Map<string, PeakStats>([
+      ['aa', { maxSpeed: 300, maxDist: 50 }],
+    ]);
+    const rows = buildRows(
+      [a],
+      { query: '', filter: 'all', sortKey: 'speed', sortDir: 'desc', inViewOnly: false, extent: null },
+      peakStats,
+    );
+    expect(rows[0].speed).toBe(300);
+    expect(rows[0].distance).toBe(50);
+  });
 });

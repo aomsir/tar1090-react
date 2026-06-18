@@ -3,8 +3,10 @@ import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
 import { useSelectionStore } from '@/store/selectionStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRows';
+import type { ListColumn } from '@/features/list/columns';
 
 const FILTERS: { id: FilterKey; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -34,8 +36,16 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const selectedHex = useSelectionStore((s) => s.selectedHex);
   const hiddenColumns = useListControls((s) => s.hiddenColumns);
   const toggleColumn = useListControls((s) => s.toggleColumn);
+  const isHistory = usePlaybackStore((s) => s.mode) === 'history';
   const visibleColumns = LIST_COLUMNS.filter((c) => !hiddenColumns.has(c.id));
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
+
+  const historyLabel = (col: ListColumn): string => {
+    if (!isHistory) return col.label;
+    if (col.id === 'speed') return 'Max. Spd. (kt)';
+    if (col.id === 'distance') return 'Max. Dist. (nmi)';
+    return col.label;
+  };
 
   return (
     <aside
@@ -76,7 +86,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           <div className="mt-1 flex flex-wrap gap-1">
             {LIST_COLUMNS.map((c) => {
               const checked = !hiddenColumns.has(c.id);
-              const label = c.id === 'flag' ? 'Flag' : c.label;
+              const label = c.id === 'flag' ? 'Flag' : historyLabel(c);
               return (
                 <label key={c.id} className="flex items-center gap-1 text-[11px] text-slate-300">
                   <input
@@ -127,11 +137,11 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                         className="hover:text-white"
                         onClick={() => toggleSort(c.id as SortKey)}
                       >
-                        {c.label}
+                        {historyLabel(c)}
                         {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
                       </button>
                     ) : (
-                      <span>{c.id === 'flag' ? 'Flag' : c.label}</span>
+                      <span>{c.id === 'flag' ? 'Flag' : historyLabel(c)}</span>
                     )}
                   </th>
                 );

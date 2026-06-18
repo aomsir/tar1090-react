@@ -1,6 +1,7 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
 import { distanceNm } from '@/domain/distance';
+import type { PeakStats } from '@/features/playback/pTracks';
 import { LIST_COLUMNS } from './columns';
 import type { ColumnId } from './columns';
 
@@ -119,9 +120,23 @@ function sortValue(row: AircraftRow, key: SortKey): number | string | null {
   return SORT_COLUMNS.get(key)?.sortValue(row) ?? null;
 }
 
-export function buildRows(list: Aircraft[], q: RowQuery): AircraftRow[] {
+export function buildRows(
+  list: Aircraft[],
+  q: RowQuery,
+  peakStats?: Map<string, PeakStats> | null,
+): AircraftRow[] {
   const rows = list
-    .map((ac) => toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon)))
+    .map((ac) => {
+      const row = toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon));
+      if (peakStats) {
+        const peak = peakStats.get(ac.hex);
+        if (peak) {
+          if (peak.maxSpeed !== undefined) row.speed = peak.maxSpeed;
+          if (peak.maxDist !== undefined) row.distance = peak.maxDist;
+        }
+      }
+      return row;
+    })
     .filter(
       (r) =>
         matchesQuery(r, q.query) &&
