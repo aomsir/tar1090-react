@@ -30,7 +30,7 @@ export function formatCoordinate(value: number | undefined): string {
   return typeof value === 'number' ? value.toFixed(4) : '';
 }
 
-export function formatDetail(value: number | string | undefined, suffix = ''): string {
+export function formatDetail(value: number | string | null | undefined, suffix = ''): string {
   if (value == null || value === '') return '—';
   return `${value}${suffix}`;
 }

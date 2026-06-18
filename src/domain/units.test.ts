@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatAge,
   formatCoordinate,
+  formatDetail,
   formatDistanceNm,
   formatNumber,
   formatRssi,
@@ -23,5 +24,16 @@ describe('tar1090 unit formatting', () => {
     expect(formatRssi(-8.42)).toBe('-8.4');
     expect(formatAge(3.7)).toBe('4');
     expect(formatCoordinate(34.238521)).toBe('34.2385');
+  });
+
+  it('formats numbers with decimal digits', () => {
+    expect(formatNumber(1234.567, 2)).toBe('1,234.57');
+  });
+
+  it('formats detail values with optional suffix', () => {
+    expect(formatDetail(undefined)).toBe('—');
+    expect(formatDetail(null)).toBe('—');
+    expect(formatDetail('B738')).toBe('B738');
+    expect(formatDetail(250, ' kt')).toBe('250 kt');
   });
 });
