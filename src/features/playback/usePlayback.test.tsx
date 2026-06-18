@@ -45,6 +45,46 @@ describe('usePlayback', () => {
     expect(last[0].hex).toBe('abc');
   });
 
+  it('shows pTracks and clears the single-aircraft track in history mode', () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
+          { hex: 'abc', lat: 1, lon: 1, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    historyStore.buildPTracksData();
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
+
+    usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
+    usePlaybackStore.getState().setMode('history');
+    render(<Harness controller={controller} />);
+
+    expect(controller.showPTracks).toHaveBeenCalledWith(historyStore.pTracksData);
+    expect(controller.clearTrack).toHaveBeenCalled();
+  });
+
+  it('clears pTracks outside history mode', () => {
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
+
+    render(<Harness controller={controller} />);
+
+    expect(controller.clearPTracks).toHaveBeenCalled();
+  });
+
   it('auto-pauses at the upper bound during playback', () => {
     historyStore.setFrames([
       {

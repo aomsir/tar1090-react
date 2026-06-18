@@ -5,6 +5,7 @@ import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 import { Aircraft } from '@/domain/Aircraft';
 
 function seed(hex: string, fields: Partial<Aircraft>): void {
@@ -16,6 +17,7 @@ function seed(hex: string, fields: Partial<Aircraft>): void {
 describe('ListPanel', () => {
   beforeEach(() => {
     aircraftStore.reset();
+    usePlaybackStore.getState().reset();
     useLiveTick.setState({ version: 0 });
     useListControls.setState({
       query: '',
@@ -88,6 +90,17 @@ describe('ListPanel', () => {
     expect(screen.getByRole('columnheader', { name: 'Dist. (nmi)' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'RSSI' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Hex ID' })).not.toBeInTheDocument();
+  });
+
+  it('uses max speed and distance headers in history mode', () => {
+    act(() => usePlaybackStore.getState().setMode('history'));
+
+    render(<ListPanel onSelect={vi.fn()} />);
+
+    expect(screen.getByRole('columnheader', { name: 'Max. Spd. (kt)' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Max. Dist. (nmi)' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Spd. (kt)' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Dist. (nmi)' })).not.toBeInTheDocument();
   });
 
   it('can show a hidden original column through column options', () => {

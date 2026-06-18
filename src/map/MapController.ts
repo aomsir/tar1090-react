@@ -25,6 +25,10 @@ export const GAODE_BASEMAP_URL =
 /** Default map dimming strength, matching tar1090's multiply blend behavior. */
 export const MAP_DIM_PERCENTAGE = 0.45;
 
+export function isAircraftHitLayer(layer: unknown, aircraftLayer: unknown): boolean {
+  return layer === aircraftLayer;
+}
+
 /** Dims tile renders with a Canvas postrender pass. */
 function dimTiles(evt: RenderEvent): void {
   const ctx = evt.context as CanvasRenderingContext2D | null;
@@ -61,6 +65,7 @@ export class MapController {
     this.map.on('click', (evt) => {
       const feature = this.map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike) => f, {
         hitTolerance: 5,
+        layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
       });
       const hex = feature ? ((feature.getId() as string | undefined) ?? null) : null;
       this.selectCb?.(hex);
@@ -68,7 +73,10 @@ export class MapController {
 
     this.map.on('pointermove', (evt) => {
       if (evt.dragging) return;
-      const hit = this.map.hasFeatureAtPixel(evt.pixel, { hitTolerance: 5 });
+      const hit = this.map.hasFeatureAtPixel(evt.pixel, {
+        hitTolerance: 5,
+        layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
+      });
       const el = this.map.getTargetElement();
       if (el) el.style.cursor = hit ? 'pointer' : '';
     });
