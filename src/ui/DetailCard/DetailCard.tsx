@@ -2,7 +2,6 @@ import { Chip } from '@heroui/react';
 import { X } from 'lucide-react';
 import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
 import { useSelectionStore } from '@/store/selectionStore';
-import { formatAltitude } from '@/domain/format';
 import { extractTrackPoints } from '@/features/track/track';
 import { buildTrackKml } from '@/features/track/kml';
 import { historyStore } from '@/store/historyStore';
@@ -67,27 +66,17 @@ export function DetailCard() {
         ) : null}
       </div>
 
-      <div className="mt-2 border-t border-white/10 pt-2">
-        <Field label="ICAO" value={d.hex} />
-        <Field label="Export track KML" value={d.registration || '—'} />
-        <Field
-          label="Export track KML"
-          value={d.typeCode ? `${d.typeCode}${d.typeLong ? ` · ${d.typeLong}` : ''}` : '—'}
-        />
-        <Field label="Export track KML" value={d.country || '—'} />
-        <Field label="Export track KML" value={formatAltitude(d.altitude)} />
-        <Field
-          label="Export track KML"
-          value={typeof d.speed === 'number' ? `${Math.round(d.speed)} kt` : '—'}
-        />
-        <Field label="Export track KML" value={typeof d.track === 'number' ? `${Math.round(d.track)}°` : '—'} />
-        <Field
-          label="Export track KML"
-          value={typeof d.vertRate === 'number' ? `${d.vertRate} ft/min` : '—'}
-        />
-        <Field label="Export track KML" value={d.squawk || '—'} />
-        <Field label="Export track KML" value={d.messages.toLocaleString('en-US')} />
-        <Field label="Export track KML" value={`${d.seen.toFixed(1)} s`} />
+      <div className="mt-2 flex-1 overflow-y-auto border-t border-white/10 pt-2">
+        {d.groups.map((group) => (
+          <section key={group.title} className="mb-3">
+            <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              {group.title}
+            </h3>
+            {group.rows.map((row) => (
+              <Field key={`${group.title}-${row.label}`} label={row.label} value={row.value} />
+            ))}
+          </section>
+        ))}
       </div>
 
       <button

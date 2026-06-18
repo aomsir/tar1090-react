@@ -40,6 +40,36 @@ describe('DetailCard', () => {
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
+  it('renders grouped original-style details and missing values', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      registration: 'B-2033',
+      typeCode: 'B738',
+      typeLong: 'BOEING 737-800',
+      altitude: 35000,
+      speed: 415,
+      ias: 250,
+      tas: 430,
+      mach: 0.78,
+      navAltitudeMcp: 32000,
+      windDirection: 280,
+      windSpeed: 55,
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+
+    expect(screen.getByText('Flight status')).toBeInTheDocument();
+    expect(screen.getByText('Navigation')).toBeInTheDocument();
+    expect(screen.getByText('Environment')).toBeInTheDocument();
+    expect(screen.getByText('IAS')).toBeInTheDocument();
+    expect(screen.getByText('250 kt')).toBeInTheDocument();
+    expect(screen.getByText('MCP altitude')).toBeInTheDocument();
+    expect(screen.getByText('32,000 ft')).toBeInTheDocument();
+  });
+
   it('exports a KML download for the selected aircraft track', () => {
     aircraftStore.reset();
     aircraftStore.applySnapshot({
