@@ -50,4 +50,21 @@ describe('ListPanel', () => {
     expect(screen.queryByText('AIR1')).not.toBeInTheDocument();
     expect(screen.getByText('GND1')).toBeInTheDocument();
   });
+
+  it('shows the squawk and type code columns', () => {
+    seed('A1', { flight: 'CCA101', typeCode: 'B738', squawk: '2000', altitude: 30000 });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    expect(screen.getByText('B738')).toBeInTheDocument();
+    expect(screen.getByText('2000')).toBeInTheDocument();
+  });
+
+  it('marks emergency squawk rows', () => {
+    seed('A1', { flight: 'HELP1', squawk: '7700', altitude: 30000 });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    expect(screen.getByTestId('row-A1').className).toContain('bg-red');
+  });
 });

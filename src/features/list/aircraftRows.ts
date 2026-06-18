@@ -2,7 +2,14 @@ import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
 
 export type FilterKey = 'all' | 'airborne' | 'ground' | 'military';
-export type SortKey = 'flight' | 'registration' | 'typeCode' | 'altitude' | 'speed';
+export type SortKey =
+  | 'flight'
+  | 'registration'
+  | 'typeCode'
+  | 'squawk'
+  | 'altitude'
+  | 'speed'
+  | 'rssi';
 export type SortDir = 'asc' | 'desc';
 /** [minLon, minLat, maxLon, maxLat] */
 export type Extent = [number, number, number, number];
@@ -12,9 +19,12 @@ export interface AircraftRow {
   flight: string;
   registration: string;
   typeCode: string;
+  squawk: string;
   altitude: RawAltitude | undefined;
   speed: number | undefined;
   track: number | undefined;
+  messages: number;
+  rssi: number | undefined;
   country: string;
   flagPath: string | null;
   isMilitary: boolean;
@@ -38,9 +48,12 @@ export function toRow(ac: Aircraft): AircraftRow {
     flight: ac.flight ?? '',
     registration: ac.registration ?? '',
     typeCode: ac.typeCode ?? '',
+    squawk: ac.squawk ?? '',
     altitude: ac.altitude,
     speed: ac.speed,
     track: ac.track,
+    messages: ac.messages,
+    rssi: ac.rssi,
     country: ac.country ?? '',
     flagPath: ac.flagPath ?? null,
     isMilitary: ac.isMilitary,
@@ -62,7 +75,10 @@ export function matchesQuery(row: AircraftRow, query: string): boolean {
   return (
     row.hex.toLowerCase().includes(q) ||
     row.flight.toLowerCase().includes(q) ||
-    row.registration.toLowerCase().includes(q)
+    row.registration.toLowerCase().includes(q) ||
+    row.typeCode.toLowerCase().includes(q) ||
+    row.squawk.toLowerCase().includes(q) ||
+    row.country.toLowerCase().includes(q)
   );
 }
 
@@ -91,19 +107,25 @@ export function isInExtent(
   return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
 }
 
-function compare(a: AircraftRow, b: AircraftRow, key: SortKey): number {
+/** Sort value for a column. Returns null when the value is missing. */
+function sortValue(row: AircraftRow, key: SortKey): number | string | null {
   switch (key) {
     case 'altitude':
-      return altitudeSortValue(a.altitude) - altitudeSortValue(b.altitude);
+      if (row.altitude === 'ground') return -1;
+      return typeof row.altitude === 'number' ? row.altitude : null;
     case 'speed':
-      return (a.speed ?? -Infinity) - (b.speed ?? -Infinity);
+      return typeof row.speed === 'number' ? row.speed : null;
+    case 'rssi':
+      return typeof row.rssi === 'number' ? row.rssi : null;
     case 'registration':
-      return a.registration.localeCompare(b.registration);
+      return row.registration || null;
     case 'typeCode':
-      return a.typeCode.localeCompare(b.typeCode);
+      return row.typeCode || null;
+    case 'squawk':
+      return row.squawk || null;
     case 'flight':
     default:
-      return a.flight.localeCompare(b.flight);
+      return row.flight || null;
   }
 }
 
@@ -118,7 +140,16 @@ export function buildRows(list: Aircraft[], q: RowQuery): AircraftRow[] {
     );
   const dir = q.sortDir === 'asc' ? 1 : -1;
   rows.sort((a, b) => {
-    const c = compare(a, b, q.sortKey);
+    const av = sortValue(a, q.sortKey);
+    const bv = sortValue(b, q.sortKey);
+    // Missing values always sort last, regardless of direction.
+    if (av === null && bv === null) return a.hex.localeCompare(b.hex);
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    const c =
+      typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av).localeCompare(String(bv));
     if (c !== 0) return c * dir;
     return a.hex.localeCompare(b.hex);
   });
