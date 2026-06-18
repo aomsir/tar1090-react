@@ -14,8 +14,14 @@ import {
   type AircraftLayerHandle,
 } from './aircraftLayer';
 import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
+import {
+  createPTracksLayer,
+  syncPTracks,
+  type PTracksLayerHandle,
+} from './pTracksLayer';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
+import type { TrackPoint } from '@/features/track/track';
 
 export const GAODE_BASEMAP_URL =
   'https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}';
@@ -37,12 +43,14 @@ export class MapController {
   private readonly map: Map;
   private readonly handle: AircraftLayerHandle;
   private readonly trackHandle: TrackLayerHandle;
+  private readonly pTracksHandle: PTracksLayerHandle;
   private selectedHex: string | null = null;
   private selectCb: ((hex: string | null) => void) | null = null;
 
   constructor(target: HTMLElement) {
     this.handle = createAircraftLayer();
     this.trackHandle = createTrackLayer();
+    this.pTracksHandle = createPTracksLayer();
     const tileLayer = new TileLayer({
       source: new XYZ({ url: GAODE_BASEMAP_URL, crossOrigin: 'anonymous', maxZoom: 19 }),
     });
@@ -50,7 +58,7 @@ export class MapController {
     this.map = new Map({
       target,
       controls: defaultControls({ rotate: false, attribution: false }),
-      layers: [tileLayer, this.trackHandle.layer, this.handle.layer],
+      layers: [tileLayer, this.pTracksHandle.layer, this.trackHandle.layer, this.handle.layer],
       view: new View({ center: fromLonLat([110, 30]), zoom: 6 }),
     });
 
@@ -89,6 +97,14 @@ export class MapController {
     this.trackHandle.source.clear();
   }
 
+  showPTracks(tracksMap: globalThis.Map<string, TrackPoint[]>): void {
+    syncPTracks(this.pTracksHandle.source, tracksMap);
+  }
+
+  clearPTracks(): void {
+    this.pTracksHandle.source.clear();
+  }
+
   centerOn(lon: number, lat: number, zoom?: number): void {
     const view = this.map.getView();
     view.animate({
@@ -117,6 +133,7 @@ export class MapController {
       feature.set('selected', feature.getId() === hex);
     }
     this.handle.layer.changed();
+    this.pTracksHandle.setSelectedHex(hex);
   }
 
   onSelect(cb: (hex: string | null) => void): void {
