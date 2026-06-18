@@ -27,7 +27,9 @@ export function distanceNm(
   const dLon = rad(toLon - fromLon);
   const lat1 = rad(fromLat);
   const lat2 = rad(toLat);
-  const a =
-    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  const a = Math.min(
+    1,
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2,
+  );
   return 2 * EARTH_RADIUS_NM * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

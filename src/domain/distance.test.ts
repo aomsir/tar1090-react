@@ -17,4 +17,11 @@ describe('distanceNm', () => {
   it('calculates receiver-relative nautical miles', () => {
     expect(distanceNm(0, 0, 0, 1)).toBeCloseTo(60.04, 1);
   });
+
+  it('returns finite distance for antipodal points', () => {
+    const d = distanceNm(90, 0, -90, 180);
+    expect(d).toBeDefined();
+    expect(Number.isFinite(d)).toBe(true);
+    expect(d!).toBeCloseTo(10807, -1);
+  });
 });
