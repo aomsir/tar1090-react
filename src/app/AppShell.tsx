@@ -44,11 +44,17 @@ export function AppShell() {
   const handleSelectFromList = useCallback((hex: string) => {
     useSelectionStore.getState().select(hex);
     const state = usePlaybackStore.getState();
-    const ac = state.mode === 'history'
-      ? historyStore.extractFrameAircraft(state.cursorTime).find((a) => a.hex === hex)
-      : aircraftStore.map.get(hex);
-    if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
-      controllerRef.current?.centerOn(ac.lon, ac.lat);
+    if (state.mode === 'history') {
+      const frame = historyStore.frameAt(state.cursorTime);
+      const dto = (frame?.aircraft ?? []).find((a) => a.hex === hex);
+      if (dto && typeof dto.lon === 'number' && typeof dto.lat === 'number') {
+        controllerRef.current?.centerOn(dto.lon, dto.lat);
+      }
+    } else {
+      const ac = aircraftStore.map.get(hex);
+      if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
+        controllerRef.current?.centerOn(ac.lon, ac.lat);
+      }
     }
   }, []);
 

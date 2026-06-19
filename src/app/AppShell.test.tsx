@@ -247,6 +247,22 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
+  it('does not center when no frames are loaded in history mode', () => {
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('781860');
+    });
+
+    expect(useSelectionStore.getState().selectedHex).toBe('781860');
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
   it('centers map on live aircraft when selected from list in live mode', () => {
     const ac = new Aircraft('a00001');
     ac.update({ hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number], Date.now());
