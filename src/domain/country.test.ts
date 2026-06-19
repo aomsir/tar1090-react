@@ -16,8 +16,13 @@ describe('country', () => {
     expect(findCountry('FFFFFF').country_code).toBeNull();
   });
 
-  it('builds an uppercase flag path under flags/3x2', () => {
-    expect(flagPath('za')).toBe('flags/3x2/ZA.svg');
+  it('returns absolute public flag URL with leading slash', () => {
+    expect(flagPath('US')).toBe('/flags/3x2/US.svg');
+    expect(flagPath('us')).toBe('/flags/3x2/US.svg');
+    expect(flagPath('za')).toBe('/flags/3x2/ZA.svg');
+  });
+
+  it('returns null for missing or empty country code', () => {
     expect(flagPath(null)).toBeNull();
     expect(flagPath('')).toBeNull();
   });

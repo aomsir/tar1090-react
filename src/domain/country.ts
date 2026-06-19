@@ -286,5 +286,5 @@ export function findCountry(icao: string): IcaoRange {
 
 export function flagPath(countryCode: string | null): string | null {
   if (!countryCode) return null;
-  return `flags/3x2/${countryCode.toUpperCase()}.svg`;
+  return `/flags/3x2/${countryCode.toUpperCase()}.svg`;
 }
