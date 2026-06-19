@@ -32,6 +32,13 @@ describe('enrichAircraft', () => {
     expect(ac.enrichmentState).toBe('done');
   });
 
+  it('maps AJ27 to C909 at runtime', async () => {
+    const ac = new Aircraft('780001');
+    await enrichAircraft(ac, deps(['B-001R', 'AJ27', '00', 'COMAC ARJ-21-700 Xiangfeng']));
+    expect(ac.typeCode).toBe('C909');
+    expect(ac.typeLong).toBe('COMAC C909');
+  });
+
   it('leaves registration undefined when DB misses and hex is unallocated', async () => {
     const ac = new Aircraft('FFFFFF');
     await enrichAircraft(ac, deps(null));

@@ -17,7 +17,9 @@ const defaultDeps: EnrichDeps = {
 export async function enrichAircraft(ac: Aircraft, deps: EnrichDeps = defaultDeps): Promise<void> {
   const entry = await deps.lookup(ac.hex);
   if (entry) {
-    const [reg, typeCode, flags, typeLong] = entry;
+    const [reg, rawTypeCode, flags, rawTypeLong] = entry;
+    const typeCode = rawTypeCode === 'AJ27' ? 'C909' : rawTypeCode;
+    const typeLong = rawTypeCode === 'AJ27' ? 'COMAC C909' : rawTypeLong;
     if (reg) ac.registration = reg;
     if (typeCode) ac.typeCode = typeCode;
     if (typeLong) ac.typeLong = typeLong;
