@@ -94,7 +94,7 @@ export function DetailCard() {
       <div className="mt-2 flex-1 overflow-y-auto border-t border-white/10 pt-2">
         {d.groups.map((group) => (
           <section key={group.title} className="mb-3">
-            <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <h3 className="mb-1 border-b border-white/10 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
               {group.title}
             </h3>
             {group.rows.map((row) => (
