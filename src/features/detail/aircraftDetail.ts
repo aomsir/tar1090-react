@@ -69,18 +69,20 @@ export function toDetail(ac: Aircraft): AircraftDetail {
 
 function buildGroups(ac: Aircraft): DetailGroup[] {
   const registration = dash(ac.registration);
-  const type = ac.typeCode
-    ? `${ac.typeCode}${ac.typeLong ? ` \u00b7 ${ac.typeLong}` : ''}`
-    : '\u2014';
+
+  const identityRows: { label: string; value: string }[] = [
+    { label: 'ICAO', value: ac.hex },
+    { label: 'Registration', value: registration },
+    { label: 'Type code', value: ac.typeCode || '\u2014' },
+  ];
+  if (ac.typeLong) {
+    identityRows.push({ label: 'Aircraft type', value: ac.typeLong });
+  }
+  identityRows.push({ label: 'Country', value: dash(ac.country) });
 
   const identity: DetailGroup = {
     title: 'Identity',
-    rows: [
-      { label: 'ICAO', value: ac.hex },
-      { label: 'Registration', value: registration },
-      { label: '\u673a\u578b', value: type },
-      { label: '\u56fd\u5bb6', value: dash(ac.country) },
-    ],
+    rows: identityRows,
   };
 
   const altDisplay = ac.altitude != null ? formatAltitude(ac.altitude) : '\u2014';

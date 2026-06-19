@@ -32,7 +32,10 @@ describe('toDetail', () => {
       'Ground',
       'Ground',
     ]);
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'IAS', value: '250 kt' });
+    const allRows = detail.groups.flatMap((g) => g.rows);
+    expect(allRows).toContainEqual({ label: 'Type code', value: 'B738' });
+    expect(allRows).toContainEqual({ label: 'Aircraft type', value: 'BOEING 737-800' });
+    expect(allRows).toContainEqual({ label: 'IAS', value: '250 kt' });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAS', value: '430 kt' });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Mach', value: '0.78' });
     expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({
