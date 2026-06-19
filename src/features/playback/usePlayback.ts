@@ -6,14 +6,16 @@ import type { MapController } from '@/map/MapController';
 
 export function usePlayback(controllerRef: RefObject<MapController | null>): void {
   const mode = usePlaybackStore((s) => s.mode);
-  const cursorTime = usePlaybackStore((s) => s.cursorTime);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const speed = usePlaybackStore((s) => s.speed);
 
+  // Clear live aircraft markers when entering history mode — history only
+  // shows pTracks lines; individual aircraft icons would be a semantic conflict.
   useEffect(() => {
-    if (mode !== 'history') return;
-    controllerRef.current?.syncAircraft(historyStore.extractFrameAircraft(cursorTime));
-  }, [mode, cursorTime, controllerRef]);
+    if (mode === 'history') {
+      controllerRef.current?.syncAircraft([]);
+    }
+  }, [mode, controllerRef]);
 
   useEffect(() => {
     if (mode === 'history') {

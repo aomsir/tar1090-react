@@ -23,30 +23,16 @@ describe('usePlayback', () => {
     usePlaybackStore.getState().reset();
   });
 
-  it('renders the nearest history frame to syncAircraft when cursor changes in history mode', () => {
-    historyStore.setFrames([
-      {
-        now: 100,
-        messages: 0,
-        aircraft: [
-          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
-        ] as unknown as AircraftSnapshot['aircraft'],
-      },
-    ]);
+  it('clears aircraft markers when entering history mode', () => {
     const controller = {
       syncAircraft: vi.fn(),
       showPTracks: vi.fn(),
       clearPTracks: vi.fn(),
       clearTrack: vi.fn(),
     } as unknown as MapController;
-    usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
     usePlaybackStore.getState().setMode('history');
     render(<Harness controller={controller} />);
-    act(() => usePlaybackStore.getState().setCursor(100));
-    const calls = (controller.syncAircraft as unknown as { mock: { calls: unknown[][] } }).mock
-      .calls;
-    const last = calls[calls.length - 1][0] as { hex: string }[];
-    expect(last[0].hex).toBe('abc');
+    expect(controller.syncAircraft).toHaveBeenCalledWith([]);
   });
 
   it('shows pTracks and clears the single-aircraft track in history mode', async () => {
