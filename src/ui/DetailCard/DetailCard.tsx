@@ -39,7 +39,7 @@ export function DetailCard() {
     URL.revokeObjectURL(url);
   };
 
-  const flagSrc = d.flagPath ? `/${d.flagPath}` : null;
+  const flagSrc = d.flagPath ?? null;
 
   return (
     <section

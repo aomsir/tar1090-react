@@ -64,7 +64,7 @@ describe('toDetail', () => {
       typeCode: 'A320',
       typeLong: 'Airbus A320',
       country: 'China',
-      flagPath: 'flags/3x2/CN.svg',
+      flagPath: '/flags/3x2/CN.svg',
       altitude: 35000,
       speed: 450,
       track: 90,
@@ -81,7 +81,7 @@ describe('toDetail', () => {
     expect(d.hex).toBe('780ABC');
     expect(d.flight).toBe('CCA101');
     expect(d.typeLong).toBe('Airbus A320');
-    expect(d.flagPath).toBe('flags/3x2/CN.svg');
+    expect(d.flagPath).toBe('/flags/3x2/CN.svg');
     expect(d.isMlat).toBe(true);
     expect(d.hasPosition).toBe(true);
   });

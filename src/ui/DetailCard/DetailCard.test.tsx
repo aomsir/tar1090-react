@@ -70,6 +70,22 @@ describe('DetailCard', () => {
     expect(screen.getByText('32,000 ft')).toBeInTheDocument();
   });
 
+  it('renders flag image with absolute path from flagPath', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      country: 'China',
+      flagPath: '/flags/3x2/CN.svg',
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+    const img = screen.getByAltText('China') as HTMLImageElement;
+    expect(img.src).toContain('/flags/3x2/CN.svg');
+    expect(img.src).not.toContain('//flags');
+  });
+
   it('exports a KML download for the selected aircraft track', () => {
     aircraftStore.reset();
     aircraftStore.applySnapshot({

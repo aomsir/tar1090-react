@@ -19,7 +19,7 @@ describe('enrichAircraft', () => {
     expect(ac.dbFlags).toBe('01');
     expect(ac.isMilitary).toBe(true);
     expect(ac.country).toBe('South Africa');
-    expect(ac.flagPath).toBe('flags/3x2/ZA.svg');
+    expect(ac.flagPath).toBe('/flags/3x2/ZA.svg');
     expect(ac.enrichmentState).toBe('done');
   });
 

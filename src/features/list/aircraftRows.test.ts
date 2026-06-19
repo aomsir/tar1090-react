@@ -247,7 +247,7 @@ it('formats original tar1090 columns from row data', () => {
     windDirection: 280,
     windSpeed: 55,
     country: 'China',
-    flagPath: 'flags/3x2/CN.svg',
+    flagPath: '/flags/3x2/CN.svg',
     isMlat: false,
   };
   const byId = Object.fromEntries(LIST_COLUMNS.map((c) => [c.id, c]));
