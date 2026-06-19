@@ -15,7 +15,7 @@ export function useSelectedAircraft(): AircraftDetail | null {
     if (!hex) return null;
     if (mode === 'history') {
       const historyAc = historyStore.allAircraft.find((a) => a.hex === hex);
-      if (historyAc) return toDetail(historyAc);
+      return historyAc ? toDetail(historyAc) : null;
     }
     const ac = aircraftStore.map.get(hex);
     return ac ? toDetail(ac) : null;

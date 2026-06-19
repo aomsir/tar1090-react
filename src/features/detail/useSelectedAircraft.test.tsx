@@ -46,6 +46,18 @@ describe('useSelectedAircraft', () => {
     expect(result.current?.flight).toBe('HIST01');
   });
 
+  it('returns null in history mode when hex is missing from history but present in live store', () => {
+    const liveAc = new Aircraft('DEAD01');
+    liveAc.flight = 'STALE';
+    aircraftStore.map.set('DEAD01', liveAc);
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useSelectionStore.getState().select('DEAD01'));
+
+    const { result } = renderHook(() => useSelectedAircraft());
+    expect(result.current).toBeNull();
+  });
+
   it('still reads live aircraft store in live mode', () => {
     const liveAc = new Aircraft('112233');
     liveAc.flight = 'LIVE01';
