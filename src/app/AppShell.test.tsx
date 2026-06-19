@@ -265,7 +265,10 @@ describe('AppShell', () => {
 
   it('centers map on live aircraft when selected from list in live mode', () => {
     const ac = new Aircraft('a00001');
-    ac.update({ hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number], Date.now());
+    ac.update(
+      { hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
     aircraftStore.map.set('a00001', ac);
 
     render(<AppShell />);
