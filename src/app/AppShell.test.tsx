@@ -63,15 +63,19 @@ vi.mock('@/ui/ListPanel/ListPanel', () => ({
 
 import { AppShell } from './AppShell';
 import { useSelectionStore } from '@/store/selectionStore';
+import { aircraftStore } from '@/store/aircraftStore';
+import { Aircraft } from '@/domain/Aircraft';
 
 describe('AppShell', () => {
   beforeEach(() => {
     useSelectionStore.setState({ selectedHex: null });
     historyStore.reset();
+    aircraftStore.reset();
     usePlaybackStore.getState().reset();
     useLiveTick.setState({ version: 0 });
     capturedOnReady = null;
     capturedSelectCb = null;
+    capturedListOnSelect = null;
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.centerOn.mockClear();
@@ -173,5 +177,23 @@ describe('AppShell', () => {
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
+  });
+
+  it('centers map on live aircraft when selected from list in live mode', () => {
+    const ac = new Aircraft('a00001');
+    ac.update({ hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number], Date.now());
+    aircraftStore.map.set('a00001', ac);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(capturedListOnSelect).toBeTypeOf('function');
+    act(() => {
+      capturedListOnSelect!('a00001');
+    });
+
+    expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
   });
 });
