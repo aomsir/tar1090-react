@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { aircraftStore } from '@/store/aircraftStore';
+import { historyStore } from '@/store/historyStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
@@ -9,8 +11,10 @@ import { useSelectedAircraft } from './useSelectedAircraft';
 describe('useSelectedAircraft', () => {
   beforeEach(() => {
     aircraftStore.reset();
+    historyStore.reset();
     useLiveTick.setState({ version: 0 });
     useSelectionStore.setState({ selectedHex: null });
+    usePlaybackStore.setState({ mode: 'live' });
   });
 
   it('returns null when nothing is selected', () => {
@@ -26,5 +30,31 @@ describe('useSelectedAircraft', () => {
     const { result } = renderHook(() => useSelectedAircraft());
     act(() => useSelectionStore.getState().select('780ABC'));
     expect(result.current?.flight).toBe('CCA101');
+  });
+
+  it('returns detail from history store in history mode', () => {
+    const ac = new Aircraft('AABBCC');
+    ac.flight = 'HIST01';
+    historyStore.allAircraft = [ac];
+    aircraftStore.map.clear();
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useSelectionStore.getState().select('AABBCC'));
+
+    const { result } = renderHook(() => useSelectedAircraft());
+    expect(result.current?.hex).toBe('AABBCC');
+    expect(result.current?.flight).toBe('HIST01');
+  });
+
+  it('still reads live aircraft store in live mode', () => {
+    const liveAc = new Aircraft('112233');
+    liveAc.flight = 'LIVE01';
+    aircraftStore.map.set('112233', liveAc);
+
+    act(() => useSelectionStore.getState().select('112233'));
+
+    const { result } = renderHook(() => useSelectedAircraft());
+    expect(result.current?.hex).toBe('112233');
+    expect(result.current?.flight).toBe('LIVE01');
   });
 });
