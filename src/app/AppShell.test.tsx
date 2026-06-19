@@ -179,6 +179,74 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
   });
 
+  it('centers on current-frame position in history mode, not last-seen', () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    historyStore.buildPTracksData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setCursor(100);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('781860');
+    });
+
+    expect(fakeController.centerOn).toHaveBeenCalledWith(100, 10);
+  });
+
+  it('does not center when selected aircraft is absent from current frame', () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: 'aaaaaa', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    historyStore.buildPTracksData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setCursor(100);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('781860');
+    });
+
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
   it('centers map on live aircraft when selected from list in live mode', () => {
     const ac = new Aircraft('a00001');
     ac.update({ hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number], Date.now());

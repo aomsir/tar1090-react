@@ -43,9 +43,9 @@ export function AppShell() {
 
   const handleSelectFromList = useCallback((hex: string) => {
     useSelectionStore.getState().select(hex);
-    const mode = usePlaybackStore.getState().mode;
-    const ac = mode === 'history'
-      ? historyStore.allAircraft.find((a) => a.hex === hex)
+    const state = usePlaybackStore.getState();
+    const ac = state.mode === 'history'
+      ? historyStore.extractFrameAircraft(state.cursorTime).find((a) => a.hex === hex)
       : aircraftStore.map.get(hex);
     if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
       controllerRef.current?.centerOn(ac.lon, ac.lat);
