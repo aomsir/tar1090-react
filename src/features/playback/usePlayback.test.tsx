@@ -23,18 +23,6 @@ describe('usePlayback', () => {
     usePlaybackStore.getState().reset();
   });
 
-  it('clears aircraft markers when entering history mode', () => {
-    const controller = {
-      syncAircraft: vi.fn(),
-      showPTracks: vi.fn(),
-      clearPTracks: vi.fn(),
-      clearTrack: vi.fn(),
-    } as unknown as MapController;
-    usePlaybackStore.getState().setMode('history');
-    render(<Harness controller={controller} />);
-    expect(controller.syncAircraft).toHaveBeenCalledWith([]);
-  });
-
   it('shows pTracks in history mode', async () => {
     historyStore.setFrames([
       {

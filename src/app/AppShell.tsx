@@ -33,9 +33,17 @@ export function AppShell() {
     else c.clearTrack();
   }, [trackSegments]);
 
+  // Live: show all live aircraft. History: only show the selected aircraft.
   useEffect(() => {
-    if (mode === 'live') controllerRef.current?.syncAircraft(aircraftStore.list());
-  }, [mode]);
+    if (mode === 'live') {
+      controllerRef.current?.syncAircraft(aircraftStore.list());
+    } else {
+      const list = selectedHex
+        ? historyStore.allAircraft.filter((ac) => ac.hex === selectedHex)
+        : [];
+      controllerRef.current?.syncAircraft(list);
+    }
+  }, [mode, selectedHex]);
 
   useEffect(() => {
     controllerRef.current?.setSelected(selectedHex);

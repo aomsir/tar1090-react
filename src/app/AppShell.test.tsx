@@ -5,6 +5,10 @@ import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 
+vi.mock('@/domain/enrich', () => ({
+  enrichAircraft: vi.fn(async () => {}),
+}));
+
 let capturedOnReady: ((controller: unknown) => void) | null = null;
 let capturedSelectCb: ((hex: string | null) => void) | null = null;
 let capturedListOnSelect: ((hex: string) => void) | null = null;
@@ -152,7 +156,7 @@ describe('AppShell', () => {
     expect(segs.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('centers map on history aircraft when selected from list in history mode', () => {
+  it('centers map on history aircraft when selected from list in history mode', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -162,7 +166,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
 
@@ -179,7 +183,7 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
   });
 
-  it('centers on current-frame position in history mode, not last-seen', () => {
+  it('centers on current-frame position in history mode, not last-seen', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -196,7 +200,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setCursor(100);
@@ -213,7 +217,7 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).toHaveBeenCalledWith(100, 10);
   });
 
-  it('does not center when selected aircraft is absent from current frame', () => {
+  it('does not center when selected aircraft is absent from current frame', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -230,7 +234,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setCursor(100);
@@ -261,6 +265,42 @@ describe('AppShell', () => {
 
     expect(useSelectionStore.getState().selectedHex).toBe('781860');
     expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('syncs only the selected aircraft marker in history mode', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 25, lon: 120, altitude: 1000 },
+          { hex: 'aaaaaa', lat: 30, lon: 110, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPTracksData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    // Before selection: empty aircraft list
+    expect(fakeController.syncAircraft).toHaveBeenCalledWith([]);
+
+    fakeController.syncAircraft.mockClear();
+    act(() => {
+      capturedListOnSelect!('781860');
+    });
+
+    // After selection: only the selected aircraft
+    const calls = fakeController.syncAircraft.mock.calls;
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    const lastList = calls[calls.length - 1][0] as { hex: string }[];
+    expect(lastList.length).toBe(1);
+    expect(lastList[0].hex).toBe('781860');
   });
 
   it('centers map on live aircraft when selected from list in live mode', () => {
