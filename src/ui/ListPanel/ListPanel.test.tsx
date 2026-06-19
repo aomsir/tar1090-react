@@ -103,6 +103,25 @@ describe('ListPanel', () => {
     expect(screen.queryByRole('columnheader', { name: 'Dist. (nmi)' })).not.toBeInTheDocument();
   });
 
+  it('panel has min-h-0 so flex child can shrink and scroll', () => {
+    render(<ListPanel onSelect={vi.fn()} />);
+    const panel = screen.getByTestId('list-panel');
+    expect(panel.className).toContain('min-h-0');
+  });
+
+  it('scroll container has overflow-auto for both axes', () => {
+    render(<ListPanel onSelect={vi.fn()} />);
+    const panel = screen.getByTestId('list-panel');
+    const scrollContainer = panel.querySelector('.overflow-auto');
+    expect(scrollContainer).toBeTruthy();
+  });
+
+  it('table has stable min-width to prevent column distortion', () => {
+    render(<ListPanel onSelect={vi.fn()} />);
+    const table = screen.getByRole('table');
+    expect(table.className).toMatch(/min-w-/);
+  });
+
   it('can show a hidden original column through column options', () => {
     seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 30000 });
     act(() => useLiveTick.getState().bump());

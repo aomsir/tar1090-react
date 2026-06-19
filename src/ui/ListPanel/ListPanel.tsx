@@ -50,7 +50,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   return (
     <aside
       data-testid="list-panel"
-      className="glass absolute bottom-16 right-4 top-16 flex w-96 flex-col p-3 text-white"
+      className="glass absolute bottom-16 right-4 top-16 flex min-h-0 w-96 flex-col p-3 text-white"
     >
       <div className="flex gap-1 rounded-md bg-white/5 p-0.5" role="tablist" aria-label="Aircraft filters">
         {FILTERS.map((f) => (
@@ -114,8 +114,8 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
         </button>
       </div>
 
-      <div className="mt-2 flex-1 overflow-y-auto">
-        <table className="w-full text-[13px]">
+      <div className="mt-2 min-h-0 flex-1 overflow-auto">
+        <table className="min-w-[640px] w-full text-[13px] table-fixed">
           <thead className="sticky top-0 bg-inherit">
             <tr className="border-b border-white/10 text-[12px] text-slate-400">
               {visibleColumns.map((c) => {
