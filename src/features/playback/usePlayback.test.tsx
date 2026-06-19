@@ -35,7 +35,7 @@ describe('usePlayback', () => {
     expect(controller.syncAircraft).toHaveBeenCalledWith([]);
   });
 
-  it('shows pTracks and clears the single-aircraft track in history mode', async () => {
+  it('shows pTracks in history mode', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -62,7 +62,6 @@ describe('usePlayback', () => {
       historyStore.pTracksData,
       expect.any(Number),
     );
-    expect(controller.clearTrack).toHaveBeenCalled();
   });
 
   it('clears pTracks outside history mode', () => {

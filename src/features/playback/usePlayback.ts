@@ -24,7 +24,6 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
       // "estimated" dashes when frames were sampled at a coarser step.
       const gap = historyStore.frameInterval() * 3;
       if (data) controllerRef.current?.showPTracks(data, gap);
-      controllerRef.current?.clearTrack();
     } else {
       controllerRef.current?.clearPTracks();
     }

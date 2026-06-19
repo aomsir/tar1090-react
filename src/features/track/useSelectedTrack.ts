@@ -69,6 +69,9 @@ export function useSelectedTrack(): TrackSegment[] {
     const historyPts = bounds ? extractTrackPoints(historyStore.frames, hex) : [];
     const tailPts = tailByHex[hex] ?? [];
     const merged = [...historyPts, ...tailPts].sort((a, b) => a.ts - b.ts);
-    return buildTrackSegments(merged);
+    // In history mode use dynamic gap threshold (same as pTracks) so sampled
+    // frames don't produce all-dashed segments.
+    const gapThresholdSec = bounds ? historyStore.frameInterval() * 3 : undefined;
+    return buildTrackSegments(merged, { gapThresholdSec });
   }, [hex, bounds, tailByHex]);
 }
