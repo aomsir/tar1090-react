@@ -10,6 +10,7 @@ export function useReplay(): {
 } {
   const enterHistory = useCallback(async () => {
     const store = usePlaybackStore.getState();
+    if (store.loading) return;
     store.setLoading(true);
     try {
       await historyLoader.ensureLoaded((p) =>
