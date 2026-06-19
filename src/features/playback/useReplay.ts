@@ -21,7 +21,7 @@ export function useReplay(): {
       if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
       usePlaybackStore.getState().setMode('history');
       const { lat, lon } = useReceiverStore.getState();
-      historyStore.buildPTracksData(lat, lon);
+      await historyStore.buildPTracksData(lat, lon);
     } finally {
       usePlaybackStore.getState().setLoading(false);
     }

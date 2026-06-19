@@ -101,8 +101,8 @@ export class MapController {
     this.trackHandle.source.clear();
   }
 
-  showPTracks(tracksMap: globalThis.Map<string, TrackPoint[]>): void {
-    syncPTracks(this.pTracksHandle.source, tracksMap);
+  showPTracks(tracksMap: globalThis.Map<string, TrackPoint[]>, gapThresholdSec?: number): void {
+    syncPTracks(this.pTracksHandle.source, tracksMap, gapThresholdSec);
   }
 
   clearPTracks(): void {

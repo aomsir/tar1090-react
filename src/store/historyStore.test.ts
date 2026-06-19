@@ -1,6 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { historyStore } from './historyStore';
 import type { AircraftSnapshot } from '@/data/types';
+
+vi.mock('@/domain/enrich', () => ({
+  enrichAircraft: vi.fn(async () => {}),
+}));
 
 const frame = (now: number, ac: Record<string, unknown>[] = []): AircraftSnapshot => ({
   now,
@@ -41,7 +45,7 @@ describe('historyStore', () => {
 describe('pTracks data', () => {
   beforeEach(() => historyStore.reset());
 
-  it('buildPTracksData populates pTracksData, peakStats, allAircraft', () => {
+  it('buildPTracksData populates pTracksData, peakStats, allAircraft', async () => {
     const frames: AircraftSnapshot[] = [
       {
         now: 1000,
@@ -50,14 +54,14 @@ describe('pTracks data', () => {
       },
     ];
     historyStore.setFrames(frames);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     expect(historyStore.pTracksData).not.toBeNull();
     expect(historyStore.pTracksData!.size).toBe(1);
     expect(historyStore.peakStats).not.toBeNull();
     expect(historyStore.allAircraft.length).toBe(1);
   });
 
-  it('clearPTracksData resets all pTracks fields', () => {
+  it('clearPTracksData resets all pTracks fields', async () => {
     const frames: AircraftSnapshot[] = [
       {
         now: 1000,
@@ -66,10 +70,20 @@ describe('pTracks data', () => {
       },
     ];
     historyStore.setFrames(frames);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     historyStore.clearPTracksData();
     expect(historyStore.pTracksData).toBeNull();
     expect(historyStore.peakStats).toBeNull();
     expect(historyStore.allAircraft).toEqual([]);
+  });
+
+  it('frameInterval returns median gap between consecutive frames', () => {
+    historyStore.setFrames([frame(100), frame(130), frame(160), frame(190), frame(220)]);
+    expect(historyStore.frameInterval()).toBe(30);
+  });
+
+  it('frameInterval defaults to 30 when fewer than 2 frames', () => {
+    historyStore.setFrames([frame(100)]);
+    expect(historyStore.frameInterval()).toBe(30);
   });
 });

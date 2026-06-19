@@ -44,10 +44,14 @@ export function createPTracksLayer(): PTracksLayerHandle {
   };
 }
 
-export function syncPTracks(source: VectorSource, tracksMap: Map<string, TrackPoint[]>): void {
+export function syncPTracks(
+  source: VectorSource,
+  tracksMap: Map<string, TrackPoint[]>,
+  gapThresholdSec?: number,
+): void {
   source.clear();
   for (const [hex, points] of tracksMap) {
-    const segments = buildTrackSegments(points);
+    const segments = buildTrackSegments(points, { gapThresholdSec });
     for (const seg of segments) {
       if (seg.coords.length < 2) continue;
       const feature = new Feature({

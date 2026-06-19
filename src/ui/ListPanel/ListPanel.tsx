@@ -116,7 +116,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
 
       <div className="mt-2 min-h-0 flex-1 overflow-auto">
         <table className="min-w-[640px] w-full text-[13px] table-fixed">
-          <thead className="sticky top-0 bg-inherit">
+          <thead className="sticky top-0 z-10 bg-zinc-950">
             <tr className="border-b border-white/10 text-[12px] text-slate-400">
               {visibleColumns.map((c) => {
                 const sortable = c.id !== 'flag';

@@ -3,6 +3,7 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import type { PeakStats } from '@/features/playback/pTracks';
 import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
+import { enrichAircraft } from '@/domain/enrich';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
@@ -19,16 +20,29 @@ export class HistoryStore {
     this.clearPTracksData();
   }
 
-  buildPTracksData(siteLat?: number, siteLon?: number): void {
+  async buildPTracksData(siteLat?: number, siteLon?: number): Promise<void> {
     this.pTracksData = buildPTracks(this.frames);
     this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
     this.allAircraft = buildAllHistoryAircraft(this.frames);
+    // Enrich all aircraft with registration, type, etc. from the client-side
+    // database. History frames from the backend don't contain these fields.
+    await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
   }
 
   clearPTracksData(): void {
     this.pTracksData = null;
     this.peakStats = null;
     this.allAircraft = [];
+  }
+
+  /** Median interval between consecutive frames (seconds). */
+  frameInterval(): number {
+    const n = this.frames.length;
+    if (n < 2) return 30;
+    const gaps: number[] = [];
+    for (let i = 1; i < n; i++) gaps.push(this.frames[i].now - this.frames[i - 1].now);
+    gaps.sort((a, b) => a - b);
+    return gaps[Math.floor(gaps.length / 2)];
   }
 
   timeBounds(): { min: number; max: number } | null {

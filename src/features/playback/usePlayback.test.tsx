@@ -7,6 +7,10 @@ import { historyStore } from '@/store/historyStore';
 import type { MapController } from '@/map/MapController';
 import type { AircraftSnapshot } from '@/data/types';
 
+vi.mock('@/domain/enrich', () => ({
+  enrichAircraft: vi.fn(async () => {}),
+}));
+
 function Harness({ controller }: { controller: MapController }) {
   const ref = useRef<MapController | null>(controller);
   usePlayback(ref);
@@ -45,7 +49,7 @@ describe('usePlayback', () => {
     expect(last[0].hex).toBe('abc');
   });
 
-  it('shows pTracks and clears the single-aircraft track in history mode', () => {
+  it('shows pTracks and clears the single-aircraft track in history mode', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -56,7 +60,7 @@ describe('usePlayback', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    historyStore.buildPTracksData();
+    await historyStore.buildPTracksData();
     const controller = {
       syncAircraft: vi.fn(),
       showPTracks: vi.fn(),
@@ -68,7 +72,10 @@ describe('usePlayback', () => {
     usePlaybackStore.getState().setMode('history');
     render(<Harness controller={controller} />);
 
-    expect(controller.showPTracks).toHaveBeenCalledWith(historyStore.pTracksData);
+    expect(controller.showPTracks).toHaveBeenCalledWith(
+      historyStore.pTracksData,
+      expect.any(Number),
+    );
     expect(controller.clearTrack).toHaveBeenCalled();
   });
 
