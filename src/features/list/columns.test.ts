@@ -25,6 +25,7 @@ describe('tar1090 list columns', () => {
       'military',
       'wd',
       'ws',
+      'last_seen',
     ]);
   });
 
@@ -42,6 +43,7 @@ describe('tar1090 list columns', () => {
       'military',
       'wd',
       'ws',
+      'last_seen',
     ]);
     expect(visibleColumnIds(new Set(DEFAULT_HIDDEN_COLUMNS))).toEqual([
       'flag',

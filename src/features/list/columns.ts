@@ -30,7 +30,8 @@ export type ColumnId =
   | 'data_source'
   | 'military'
   | 'wd'
-  | 'ws';
+  | 'ws'
+  | 'last_seen';
 
 export interface ListColumn {
   id: ColumnId;
@@ -57,6 +58,7 @@ export const DEFAULT_HIDDEN_COLUMNS: ColumnId[] = [
   'military',
   'wd',
   'ws',
+  'last_seen',
 ];
 
 export const LIST_COLUMNS: ListColumn[] = [
@@ -186,6 +188,14 @@ export const LIST_COLUMNS: ListColumn[] = [
     align: 'right',
     format: (r) => formatSpeedKt(r.windSpeed),
     sortValue: (r) => missing(r.windSpeed),
+  },
+  {
+    id: 'last_seen',
+    label: 'Last Seen',
+    align: 'right',
+    format: (r) =>
+      typeof r.lastSeenTime === 'number' ? Math.round(r.lastSeenTime).toString() : '',
+    sortValue: (r) => missing(r.lastSeenTime),
   },
 ];
 

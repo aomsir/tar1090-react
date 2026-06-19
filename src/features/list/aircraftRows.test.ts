@@ -249,6 +249,7 @@ it('formats original tar1090 columns from row data', () => {
     country: 'China',
     flagPath: '/flags/3x2/CN.svg',
     isMlat: false,
+    lastSeenTime: undefined,
   };
   const byId = Object.fromEntries(LIST_COLUMNS.map((c) => [c.id, c]));
   expect(byId.registration.format(row)).toBe('B-2033');
@@ -261,6 +262,53 @@ it('formats original tar1090 columns from row data', () => {
   expect(byId.military.format(row)).toBe('yes');
   expect(byId.wd.format(row)).toBe('280°');
   expect(byId.ws.format(row)).toBe('55');
+});
+
+describe('buildRows sort by last_seen', () => {
+  it('sorts by lastSeenTime descending', () => {
+    const f1 = ac('LS1', { flight: 'A' });
+    f1.lastUpdated = 100;
+    const f2 = ac('LS2', { flight: 'B' });
+    f2.lastUpdated = 300;
+    const f3 = ac('LS3', { flight: 'C' });
+    f3.lastUpdated = 200;
+    const rows = buildRows([f1, f2, f3], { ...base, sortKey: 'last_seen', sortDir: 'desc' });
+    expect(rows.map((r) => r.hex)).toEqual(['LS2', 'LS3', 'LS1']);
+  });
+
+  it('sorts by lastSeenTime ascending', () => {
+    const f1 = ac('LS1', { flight: 'A' });
+    f1.lastUpdated = 100;
+    const f2 = ac('LS2', { flight: 'B' });
+    f2.lastUpdated = 300;
+    const f3 = ac('LS3', { flight: 'C' });
+    f3.lastUpdated = 200;
+    const rows = buildRows([f1, f2, f3], { ...base, sortKey: 'last_seen', sortDir: 'asc' });
+    expect(rows.map((r) => r.hex)).toEqual(['LS1', 'LS3', 'LS2']);
+  });
+});
+
+describe('altitude sort stability', () => {
+  it('keeps missing altitude last and ground below numeric altitude in both directions', () => {
+    const aGround = ac('GND', { flight: 'G', altitude: 'ground' });
+    const aHigh = ac('HI', { flight: 'H', altitude: 30000 });
+    const aLow = ac('LO', { flight: 'L', altitude: 5000 });
+    const aMissing = ac('MIS', { flight: 'M' });
+
+    const desc = buildRows([aGround, aHigh, aLow, aMissing], {
+      ...base,
+      sortKey: 'altitude',
+      sortDir: 'desc',
+    });
+    expect(desc.map((r) => r.hex)).toEqual(['HI', 'LO', 'GND', 'MIS']);
+
+    const asc = buildRows([aGround, aHigh, aLow, aMissing], {
+      ...base,
+      sortKey: 'altitude',
+      sortDir: 'asc',
+    });
+    expect(asc.map((r) => r.hex)).toEqual(['GND', 'LO', 'HI', 'MIS']);
+  });
 });
 
 describe('buildRows with peakStats', () => {
