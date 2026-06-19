@@ -42,7 +42,7 @@ export class HistoryLoader {
   private async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
     const receiver = this.cachedReceiver ?? (await this.source.getReceiver());
     const total = receiver.history ?? 0;
-    const frames: AircraftSnapshot[] = [];
+    const frames: Array<AircraftSnapshot | undefined> = new Array(total).fill(undefined);
     let done = 0;
     let next = 0;
     const worker = async (): Promise<void> => {
@@ -50,7 +50,7 @@ export class HistoryLoader {
         const n = next++;
         if (n >= total) return;
         try {
-          frames.push(await this.source.getHistoryFrame(n));
+          frames[n] = await this.source.getHistoryFrame(n);
         } catch {
           // skip a missing/failed frame
         }
@@ -60,7 +60,7 @@ export class HistoryLoader {
     };
     const lanes = Math.min(this.concurrency, total || 1);
     await Promise.all(Array.from({ length: lanes }, () => worker()));
-    historyStore.setFrames(frames);
+    historyStore.setFrames(frames.filter((f): f is AircraftSnapshot => f !== undefined));
     this.loaded = true;
   }
 }
