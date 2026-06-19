@@ -1,4 +1,5 @@
 import { Play, Pause, History, X } from 'lucide-react';
+import { Button, Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReplay } from '@/features/playback/useReplay';
 
@@ -25,9 +26,14 @@ export function ReplayBar() {
       className="glass absolute bottom-3 left-4 right-4 flex h-11 items-center gap-3 px-4 text-white"
     >
       {loading ? (
-        <span className="text-sm text-slate-300">
-          Loading History… {progress.done}/{progress.total}
-        </span>
+        <Button size="sm" isPending isDisabled aria-label="History">
+          {({ isPending }) => (
+            <>
+              {isPending ? <Spinner color="current" size="sm" /> : <History size={16} />}
+              {progress.done}/{progress.total}
+            </>
+          )}
+        </Button>
       ) : mode === 'history' ? (
         <>
           <button
@@ -75,13 +81,9 @@ export function ReplayBar() {
           </button>
         </>
       ) : (
-        <button
-          type="button"
-          onClick={() => void enterHistory()}
-          className="flex items-center gap-1 text-sm text-slate-200 hover:text-white"
-        >
+        <Button size="sm" variant="ghost" onPress={() => void enterHistory()} aria-label="History">
           <History size={16} /> History
-        </button>
+        </Button>
       )}
     </footer>
   );
