@@ -74,7 +74,7 @@ export function toRow(ac: Aircraft, distance?: number): AircraftRow {
     isMlat: ac.isMlat,
     windDirection: ac.windDirection,
     windSpeed: ac.windSpeed,
-    lastSeenTime: ac.lastUpdated || undefined,
+    lastSeenTime: ac.lastUpdated === 0 ? undefined : ac.lastUpdated,
   };
 }
 

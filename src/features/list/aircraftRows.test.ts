@@ -85,6 +85,18 @@ describe('toRow', () => {
     a.geomRate = 128;
     expect(toRow(a).vertRate).toBe(128);
   });
+
+  it('maps lastUpdated=0 to lastSeenTime=undefined', () => {
+    const a = ac('Z0', { flight: 'A' });
+    a.lastUpdated = 0;
+    expect(toRow(a).lastSeenTime).toBeUndefined();
+  });
+
+  it('maps positive lastUpdated to lastSeenTime', () => {
+    const a = ac('Z1', { flight: 'B' });
+    a.lastUpdated = 1718812800;
+    expect(toRow(a).lastSeenTime).toBe(1718812800);
+  });
 });
 
 describe('isInExtent', () => {
@@ -262,6 +274,72 @@ it('formats original tar1090 columns from row data', () => {
   expect(byId.military.format(row)).toBe('yes');
   expect(byId.wd.format(row)).toBe('280°');
   expect(byId.ws.format(row)).toBe('55');
+});
+
+describe('last_seen column format', () => {
+  it('formats lastSeenTime as local HH:mm:ss, not raw epoch', () => {
+    const row = {
+      hex: 'a',
+      flight: '',
+      route: '',
+      registration: '',
+      typeCode: '',
+      squawk: '',
+      altitude: undefined,
+      speed: undefined,
+      vertRate: undefined,
+      distance: undefined,
+      track: undefined,
+      messages: 0,
+      seen: 0,
+      rssi: undefined,
+      lat: undefined,
+      lon: undefined,
+      dataSource: '',
+      country: '',
+      flagPath: null,
+      isMilitary: false,
+      isMlat: false,
+      windDirection: undefined,
+      windSpeed: undefined,
+      lastSeenTime: 1718812800,
+    };
+    const byId = Object.fromEntries(LIST_COLUMNS.map((c) => [c.id, c]));
+    const formatted = byId.last_seen.format(row);
+    expect(formatted).not.toBe('1718812800');
+    expect(formatted).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+  });
+
+  it('returns empty string when lastSeenTime is undefined', () => {
+    const row = {
+      hex: 'a',
+      flight: '',
+      route: '',
+      registration: '',
+      typeCode: '',
+      squawk: '',
+      altitude: undefined,
+      speed: undefined,
+      vertRate: undefined,
+      distance: undefined,
+      track: undefined,
+      messages: 0,
+      seen: 0,
+      rssi: undefined,
+      lat: undefined,
+      lon: undefined,
+      dataSource: '',
+      country: '',
+      flagPath: null,
+      isMilitary: false,
+      isMlat: false,
+      windDirection: undefined,
+      windSpeed: undefined,
+      lastSeenTime: undefined,
+    };
+    const byId = Object.fromEntries(LIST_COLUMNS.map((c) => [c.id, c]));
+    expect(byId.last_seen.format(row)).toBe('');
+  });
 });
 
 describe('buildRows sort by last_seen', () => {

@@ -30,6 +30,15 @@ export function formatCoordinate(value: number | undefined): string {
   return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(4) : '';
 }
 
+export function formatTimestamp(epochSec: number | undefined): string {
+  if (typeof epochSec !== 'number' || !Number.isFinite(epochSec)) return '';
+  const d = new Date(epochSec * 1000);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
 export function formatDetail(value: number | string | null | undefined, suffix = ''): string {
   if (value == null || value === '') return '—';
   if (typeof value === 'number' && !Number.isFinite(value)) return '—';

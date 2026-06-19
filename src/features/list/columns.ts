@@ -5,6 +5,7 @@ import {
   formatDistanceNm,
   formatRssi,
   formatSpeedKt,
+  formatTimestamp,
   formatVerticalRate,
 } from '@/domain/units';
 import type { AircraftRow } from './aircraftRows';
@@ -193,8 +194,7 @@ export const LIST_COLUMNS: ListColumn[] = [
     id: 'last_seen',
     label: 'Last Seen',
     align: 'right',
-    format: (r) =>
-      typeof r.lastSeenTime === 'number' ? Math.round(r.lastSeenTime).toString() : '',
+    format: (r) => formatTimestamp(r.lastSeenTime),
     sortValue: (r) => missing(r.lastSeenTime),
   },
 ];
