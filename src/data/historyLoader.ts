@@ -17,6 +17,7 @@ export class HistoryLoader {
   private readonly concurrency: number;
   private promise: Promise<void> | null = null;
   private cachedReceiver: Receiver | null = null;
+  private loadGeneration = 0;
   loaded = false;
 
   constructor(source?: HistorySource, concurrency = 12) {
@@ -37,9 +38,11 @@ export class HistoryLoader {
   reset(): void {
     this.promise = null;
     this.loaded = false;
+    this.loadGeneration++;
   }
 
   private async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
+    const generation = this.loadGeneration;
     const receiver = this.cachedReceiver ?? (await this.source.getReceiver());
     const total = receiver.history ?? 0;
     const frames: Array<AircraftSnapshot | undefined> = new Array(total).fill(undefined);
@@ -60,6 +63,7 @@ export class HistoryLoader {
     };
     const lanes = Math.min(this.concurrency, total || 1);
     await Promise.all(Array.from({ length: lanes }, () => worker()));
+    if (this.loadGeneration !== generation) return;
     historyStore.setFrames(frames.filter((f): f is AircraftSnapshot => f !== undefined));
     this.loaded = true;
   }
