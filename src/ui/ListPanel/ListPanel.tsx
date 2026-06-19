@@ -176,12 +176,14 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                         </td>
                       );
                     }
+                    const value = c.format(r);
                     return (
                       <td
                         key={c.id}
                         className={`px-1 py-1 truncate ${align === 'right' ? 'text-right' : 'text-left'}`}
+                        {...(value ? { title: value } : {})}
                       >
-                        {c.format(r) || '—'}
+                        {value || '—'}
                       </td>
                     );
                   })}

@@ -71,7 +71,7 @@ describe('ListPanel', () => {
     expect(screen.getByTestId('row-A1').className).toContain('bg-red');
   });
 
-  it('renders original default visible tar1090 columns', () => {
+  it('renders all default visible tar1090 columns', () => {
     seed('A1', {
       flight: 'CCA101',
       typeCode: 'B738',
@@ -84,9 +84,13 @@ describe('ListPanel', () => {
 
     render(<ListPanel onSelect={vi.fn()} />);
 
+    expect(screen.getByRole('columnheader', { name: 'Flag' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Callsign' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Route' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Type' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Squawk' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Alt\. \(ft\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Spd. (kt)' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Dist. (nmi)' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'RSSI' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Hex ID' })).not.toBeInTheDocument();
@@ -103,23 +107,43 @@ describe('ListPanel', () => {
     expect(screen.queryByRole('columnheader', { name: 'Dist. (nmi)' })).not.toBeInTheDocument();
   });
 
-  it('panel has min-h-0 so flex child can shrink and scroll', () => {
+  it('truncated cells expose full value via title attribute', () => {
+    seed('A1', { flight: 'LONGCALLSIGN', altitude: 30000 });
+    act(() => useLiveTick.getState().bump());
+
     render(<ListPanel onSelect={vi.fn()} />);
-    const panel = screen.getByTestId('list-panel');
-    expect(panel.className).toContain('min-h-0');
+
+    const cell = screen.getByText('LONGCALLSIGN');
+    expect(cell.closest('td')?.getAttribute('title')).toBe('LONGCALLSIGN');
   });
 
-  it('scroll container has overflow-auto for both axes', () => {
+  it('missing value cells do not have title', () => {
+    seed('A1', { flight: 'CCA101', altitude: 30000 });
+    act(() => useLiveTick.getState().bump());
+
     render(<ListPanel onSelect={vi.fn()} />);
-    const panel = screen.getByTestId('list-panel');
-    const scrollContainer = panel.querySelector('.overflow-auto');
-    expect(scrollContainer).toBeTruthy();
+
+    const dashCells = screen.getAllByText('—');
+    for (const el of dashCells) {
+      expect(el.closest('td')?.hasAttribute('title')).toBe(false);
+    }
   });
 
-  it('table has stable min-width to prevent column distortion', () => {
+  it('panel has a dedicated scroll region wrapping the table', () => {
+    render(<ListPanel onSelect={vi.fn()} />);
+    const panel = screen.getByTestId('list-panel');
+    const table = screen.getByRole('table');
+    const scrollRegion = table.parentElement;
+    expect(scrollRegion).toBeTruthy();
+    expect(scrollRegion).not.toBe(panel);
+  });
+
+  it('table has fixed layout and minimum width for column stability', () => {
     render(<ListPanel onSelect={vi.fn()} />);
     const table = screen.getByRole('table');
-    expect(table.className).toMatch(/min-w-/);
+    const cls = table.className;
+    expect(cls).toContain('table-fixed');
+    expect(cls).toMatch(/min-w-/);
   });
 
   it('can show a hidden original column through column options', () => {
