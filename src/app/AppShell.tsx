@@ -13,6 +13,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { useMapViewStore } from '@/store/mapViewStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { aircraftStore } from '@/store/aircraftStore';
+import { historyStore } from '@/store/historyStore';
 import type { MapController } from '@/map/MapController';
 
 export function AppShell() {
@@ -42,7 +43,10 @@ export function AppShell() {
 
   const handleSelectFromList = useCallback((hex: string) => {
     useSelectionStore.getState().select(hex);
-    const ac = aircraftStore.map.get(hex);
+    const mode = usePlaybackStore.getState().mode;
+    const ac = mode === 'history'
+      ? historyStore.allAircraft.find((a) => a.hex === hex)
+      : aircraftStore.map.get(hex);
     if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
       controllerRef.current?.centerOn(ac.lon, ac.lat);
     }

@@ -2,6 +2,7 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import { distanceNm } from '@/domain/distance';
 import { Aircraft } from '@/domain/Aircraft';
+import { findCountry, flagPath } from '@/domain/country';
 
 export function buildPTracks(frames: AircraftSnapshot[]): Map<string, TrackPoint[]> {
   const map = new Map<string, TrackPoint[]>();
@@ -67,6 +68,9 @@ export function buildAllHistoryAircraft(frames: AircraftSnapshot[]): Aircraft[] 
       let ac = map.get(dto.hex);
       if (!ac) {
         ac = new Aircraft(dto.hex);
+        const range = findCountry(dto.hex);
+        ac.country = range.country;
+        ac.flagPath = flagPath(range.country_code);
         map.set(dto.hex, ac);
       }
       ac.update(dto, f.now);

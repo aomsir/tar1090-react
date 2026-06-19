@@ -107,4 +107,34 @@ describe('buildAllHistoryAircraft', () => {
   it('returns empty array for empty frames', () => {
     expect(buildAllHistoryAircraft([]).length).toBe(0);
   });
+
+  it('sets country and flagPath for known ICAO hexes', () => {
+    const usFrames: AircraftSnapshot[] = [
+      { now: 1000, messages: 1, aircraft: [{ hex: 'a00001', lat: 40, lon: -74 }] },
+    ];
+    const result = buildAllHistoryAircraft(usFrames);
+    const ac = result[0];
+    expect(ac.country).toBe('United States');
+    expect(ac.flagPath).toBe('/flags/3x2/US.svg');
+  });
+
+  it('sets country and flagPath for South African hex', () => {
+    const zaFrames: AircraftSnapshot[] = [
+      { now: 1000, messages: 1, aircraft: [{ hex: '008012', lat: -33, lon: 18 }] },
+    ];
+    const result = buildAllHistoryAircraft(zaFrames);
+    const ac = result[0];
+    expect(ac.country).toBe('South Africa');
+    expect(ac.flagPath).toBe('/flags/3x2/ZA.svg');
+  });
+
+  it('sets null flagPath for unassigned ICAO hexes', () => {
+    const unknownFrames: AircraftSnapshot[] = [
+      { now: 1000, messages: 1, aircraft: [{ hex: 'ffffff', lat: 0, lon: 0 }] },
+    ];
+    const result = buildAllHistoryAircraft(unknownFrames);
+    const ac = result[0];
+    expect(ac.country).toBe('Unassigned (reserved for future use)');
+    expect(ac.flagPath).toBeNull();
+  });
 });

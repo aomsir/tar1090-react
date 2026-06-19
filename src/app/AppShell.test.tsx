@@ -7,6 +7,7 @@ import { useLiveTick } from '@/store/liveTick';
 
 let capturedOnReady: ((controller: unknown) => void) | null = null;
 let capturedSelectCb: ((hex: string | null) => void) | null = null;
+let capturedListOnSelect: ((hex: string) => void) | null = null;
 
 const fakeController = {
   onSelect: vi.fn((cb: (hex: string | null) => void) => {
@@ -51,6 +52,12 @@ vi.mock('@/data/historyLoader', () => ({
         },
       ]);
     }),
+  },
+}));
+vi.mock('@/ui/ListPanel/ListPanel', () => ({
+  ListPanel: ({ onSelect }: { onSelect: (hex: string) => void }) => {
+    capturedListOnSelect = onSelect;
+    return <div data-testid="list-panel" />;
   },
 }));
 
@@ -139,5 +146,32 @@ describe('AppShell', () => {
     await waitFor(() => expect(fakeController.showTrack).toHaveBeenCalled());
     const segs = fakeController.showTrack.mock.calls.at(-1)![0] as unknown[];
     expect(segs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('centers map on history aircraft when selected from list in history mode', () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 25, lon: 120, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    historyStore.buildPTracksData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(capturedListOnSelect).toBeTypeOf('function');
+    act(() => {
+      capturedListOnSelect!('781860');
+    });
+
+    expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
   });
 });
