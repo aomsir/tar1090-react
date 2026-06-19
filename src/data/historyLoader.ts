@@ -15,14 +15,16 @@ export interface LoadProgress {
 export class HistoryLoader {
   private readonly source: HistorySource;
   private readonly concurrency: number;
+  private readonly maxFrames: number;
   private promise: Promise<void> | null = null;
   private cachedReceiver: Receiver | null = null;
   private loadGeneration = 0;
   loaded = false;
 
-  constructor(source?: HistorySource, concurrency = 12) {
+  constructor(source?: HistorySource, concurrency = 48, maxFrames = 2000) {
     this.source = source ?? new PollingSource();
     this.concurrency = concurrency;
+    this.maxFrames = maxFrames;
   }
 
   /** Reuse a receiver already fetched elsewhere (avoids a duplicate request). */
@@ -44,24 +46,35 @@ export class HistoryLoader {
   private async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
     const generation = this.loadGeneration;
     const receiver = this.cachedReceiver ?? (await this.source.getReceiver());
-    const total = receiver.history ?? 0;
-    const frames: Array<AircraftSnapshot | undefined> = new Array(total).fill(undefined);
+    const rawTotal = receiver.history ?? 0;
+
+    // Sample frame indices when rawTotal exceeds maxFrames
+    const step = rawTotal > this.maxFrames ? Math.ceil(rawTotal / this.maxFrames) : 1;
+    const indices: number[] = [];
+    for (let i = 0; i < rawTotal; i += step) indices.push(i);
+    // Always include last frame so time range is complete
+    if (rawTotal > 0 && indices[indices.length - 1] !== rawTotal - 1) {
+      indices.push(rawTotal - 1);
+    }
+
+    const loadTotal = indices.length;
+    const frames: Array<AircraftSnapshot | undefined> = new Array(loadTotal).fill(undefined);
     let done = 0;
     let next = 0;
     const worker = async (): Promise<void> => {
       for (;;) {
-        const n = next++;
-        if (n >= total) return;
+        const slot = next++;
+        if (slot >= loadTotal) return;
         try {
-          frames[n] = await this.source.getHistoryFrame(n);
+          frames[slot] = await this.source.getHistoryFrame(indices[slot]!);
         } catch {
           // skip a missing/failed frame
         }
         done++;
-        onProgress?.({ done, total });
+        onProgress?.({ done, total: loadTotal });
       }
     };
-    const lanes = Math.min(this.concurrency, total || 1);
+    const lanes = Math.min(this.concurrency, loadTotal || 1);
     await Promise.all(Array.from({ length: lanes }, () => worker()));
     if (this.loadGeneration !== generation) return;
     historyStore.setFrames(frames.filter((f): f is AircraftSnapshot => f !== undefined));

@@ -1,5 +1,5 @@
 import { Play, Pause, History, X } from 'lucide-react';
-import { Button, Spinner } from '@heroui/react';
+import { Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReplay } from '@/features/playback/useReplay';
 
@@ -20,71 +20,85 @@ export function ReplayBar() {
   const bounds = usePlaybackStore((s) => s.bounds);
   const { enterHistory, exitToLive } = useReplay();
 
-  return (
-    <footer
-      data-testid="replay-bar"
-      className="glass absolute bottom-3 left-4 right-4 flex h-11 items-center gap-3 px-4 text-white"
-    >
-      {loading ? (
-        <Button size="sm" isPending isDisabled aria-label="History">
-          {({ isPending }) => (
-            <>
-              {isPending ? <Spinner color="current" size="sm" /> : <History size={16} />}
-              {progress.done}/{progress.total}
-            </>
-          )}
-        </Button>
-      ) : mode === 'history' ? (
-        <>
-          <button
-            type="button"
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-            onClick={() =>
-              isPlaying ? usePlaybackStore.getState().pause() : usePlaybackStore.getState().play()
-            }
-            className="rounded p-1 hover:bg-white/10"
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <input
-            type="range"
-            aria-label="Statistics panel"
-            min={bounds?.min ?? 0}
-            max={bounds?.max ?? 0}
-            value={cursorTime}
-            step={1}
-            onChange={(e) => usePlaybackStore.getState().setCursor(Number(e.target.value))}
-            className="flex-1 accent-sky-400"
-          />
-          <span className="w-20 text-xs tabular-nums text-slate-300">
-            {formatClock(cursorTime)}
+  /* Fullscreen loading overlay */
+  if (loading) {
+    return (
+      <div
+        data-testid="replay-bar"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      >
+        <div className="flex flex-col items-center gap-3 text-white">
+          <Spinner size="lg" color="current" />
+          <span className="text-sm tabular-nums">
+            Loading History… {progress.done}/{progress.total}
           </span>
-          <select
-            aria-label="Timeline"
-            value={speed}
-            onChange={(e) => usePlaybackStore.getState().setSpeed(Number(e.target.value))}
-            className="rounded bg-white/10 px-1 text-xs"
-          >
-            {SPEEDS.map((s) => (
-              <option key={s} value={s}>
-                {s}x
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            aria-label="Speed"
-            onClick={exitToLive}
-            className="rounded p-1 hover:bg-white/10"
-          >
-            <X size={16} />
-          </button>
-        </>
-      ) : (
-        <Button size="sm" variant="ghost" onPress={() => void enterHistory()} aria-label="History">
-          <History size={16} /> History
-        </Button>
-      )}
-    </footer>
+        </div>
+      </div>
+    );
+  }
+
+  /* History playback controls */
+  if (mode === 'history') {
+    return (
+      <footer
+        data-testid="replay-bar"
+        className="glass absolute bottom-3 left-4 right-4 flex h-11 items-center gap-3 px-4 text-white"
+      >
+        <button
+          type="button"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+          onClick={() =>
+            isPlaying ? usePlaybackStore.getState().pause() : usePlaybackStore.getState().play()
+          }
+          className="rounded p-1 hover:bg-white/10"
+        >
+          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+        <input
+          type="range"
+          aria-label="Statistics panel"
+          min={bounds?.min ?? 0}
+          max={bounds?.max ?? 0}
+          value={cursorTime}
+          step={1}
+          onChange={(e) => usePlaybackStore.getState().setCursor(Number(e.target.value))}
+          className="flex-1 accent-sky-400"
+        />
+        <span className="w-20 text-xs tabular-nums text-slate-300">{formatClock(cursorTime)}</span>
+        <select
+          aria-label="Timeline"
+          value={speed}
+          onChange={(e) => usePlaybackStore.getState().setSpeed(Number(e.target.value))}
+          className="rounded bg-white/10 px-1 text-xs"
+        >
+          {SPEEDS.map((s) => (
+            <option key={s} value={s}>
+              {s}x
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          aria-label="Speed"
+          onClick={exitToLive}
+          className="rounded p-1 hover:bg-white/10"
+        >
+          <X size={16} />
+        </button>
+      </footer>
+    );
+  }
+
+  /* Live mode: compact floating button */
+  return (
+    <button
+      data-testid="replay-bar"
+      type="button"
+      aria-label="History"
+      onClick={() => void enterHistory()}
+      className="glass absolute bottom-3 left-4 flex items-center gap-1.5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
+    >
+      <History size={14} /> History
+    </button>
   );
 }

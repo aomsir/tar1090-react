@@ -30,7 +30,7 @@ describe('HistoryLoader', () => {
   it('loads all frames into historyStore and reports progress', async () => {
     const source = makeSource(5);
     const onProgress = vi.fn();
-    const loader = new HistoryLoader(source, 2);
+    const loader = new HistoryLoader(source, 2, 2000);
     await loader.ensureLoaded(onProgress);
     expect(historyStore.frames).toHaveLength(5);
     expect(source.frameCalls).toBe(5);
@@ -40,11 +40,36 @@ describe('HistoryLoader', () => {
 
   it('is single-flight: concurrent/repeat calls fetch the receiver once', async () => {
     const source = makeSource(3);
-    const loader = new HistoryLoader(source, 4);
+    const loader = new HistoryLoader(source, 4, 2000);
     await Promise.all([loader.ensureLoaded(), loader.ensureLoaded()]);
     await loader.ensureLoaded();
     expect(source.receiverCalls).toBe(1);
     expect(source.frameCalls).toBe(3);
+  });
+
+  it('samples frames when total exceeds maxFrames', async () => {
+    const requested: number[] = [];
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 100 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        requested.push(n);
+        return { now: 100 + n, messages: 0, aircraft: [] };
+      },
+    };
+    const onProgress = vi.fn();
+    // maxFrames=10, total=100 → step=10, indices=[0,10,20,...,90,99]
+    const loader = new HistoryLoader(source, 4, 10);
+    await loader.ensureLoaded(onProgress);
+    // 10 sampled + last frame 99 = 11
+    expect(requested).toHaveLength(11);
+    expect(requested).toContain(0);
+    expect(requested).toContain(99);
+    expect(requested).not.toContain(1);
+    // progress reports sampled count, not raw total
+    expect(onProgress).toHaveBeenLastCalledWith({ done: 11, total: 11 });
+    expect(historyStore.frames).toHaveLength(11);
   });
 
   it('stores frames in numeric order even when responses complete out of order', async () => {

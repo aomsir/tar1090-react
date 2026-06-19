@@ -23,9 +23,13 @@ describe('ReplayBar', () => {
     historyStore.reset();
   });
 
-  it('shows a compact history entry button in live mode without legacy long text', () => {
+  it('shows a compact history entry button in live mode without a full-width bar', () => {
     render(<ReplayBar />);
-    expect(screen.getByRole('button', { name: /history/i })).toBeInTheDocument();
+    const btn = screen.getByRole('button', { name: /history/i });
+    expect(btn).toBeInTheDocument();
+    // Button itself is the replay-bar root — not wrapped in a full-width footer
+    expect(btn).toHaveAttribute('data-testid', 'replay-bar');
+    expect(btn.tagName).toBe('BUTTON');
     expect(screen.queryByText('All')).not.toBeInTheDocument();
   });
 
@@ -52,12 +56,14 @@ describe('ReplayBar', () => {
     expect(usePlaybackStore.getState().mode).toBe('live');
   });
 
-  it('shows a button-like loading state with progress text instead of standalone span', () => {
-    usePlaybackStore.setState({ loading: true, progress: { done: 1, total: 3 } });
+  it('shows a fullscreen loading overlay with progress', () => {
+    usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
     render(<ReplayBar />);
-    expect(screen.getByText(/1\/3/)).toBeInTheDocument();
-    expect(screen.queryByText(/History/)).not.toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: /history/i });
-    expect(btn).toBeDisabled();
+    const overlay = screen.getByTestId('replay-bar');
+    // Overlay uses fixed positioning (fullscreen)
+    expect(overlay.className).toMatch(/fixed/);
+    expect(overlay.className).toMatch(/inset-0/);
+    expect(screen.getByText(/42\/100/)).toBeInTheDocument();
+    expect(screen.getByText(/Loading History/)).toBeInTheDocument();
   });
 });
