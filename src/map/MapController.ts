@@ -41,24 +41,27 @@ function dimTiles(evt: RenderEvent): void {
 
 export class MapController {
   private readonly map: Map;
+  private readonly tileLayer: TileLayer<XYZ>;
   private readonly handle: AircraftLayerHandle;
   private readonly trackHandle: TrackLayerHandle;
   private readonly pTracksHandle: PTracksLayerHandle;
   private selectedHex: string | null = null;
   private selectCb: ((hex: string | null) => void) | null = null;
+  private followEnabled = false;
+  private dimEnabled = true;
 
   constructor(target: HTMLElement) {
     this.handle = createAircraftLayer();
     this.trackHandle = createTrackLayer();
     this.pTracksHandle = createPTracksLayer();
-    const tileLayer = new TileLayer({
+    this.tileLayer = new TileLayer({
       source: new XYZ({ url: GAODE_BASEMAP_URL, crossOrigin: 'anonymous', maxZoom: 19 }),
     });
-    tileLayer.on('postrender', dimTiles);
+    this.tileLayer.on('postrender', dimTiles);
     this.map = new Map({
       target,
       controls: defaultControls({ rotate: false, attribution: false }),
-      layers: [tileLayer, this.pTracksHandle.layer, this.trackHandle.layer, this.handle.layer],
+      layers: [this.tileLayer, this.pTracksHandle.layer, this.trackHandle.layer, this.handle.layer],
       view: new View({ center: fromLonLat([110, 30]), zoom: 6 }),
     });
 
@@ -142,6 +145,48 @@ export class MapController {
 
   onSelect(cb: (hex: string | null) => void): void {
     this.selectCb = cb;
+  }
+
+  resetView(): void {
+    this.map.getView().animate({
+      center: fromLonLat([110, 30]),
+      zoom: 6,
+      duration: 350,
+    });
+  }
+
+  setDim(enabled: boolean): void {
+    if (enabled === this.dimEnabled) return;
+    this.dimEnabled = enabled;
+    if (enabled) {
+      this.tileLayer.on('postrender', dimTiles);
+    } else {
+      this.tileLayer.un('postrender', dimTiles);
+    }
+    this.tileLayer.changed();
+  }
+
+  setFollow(enabled: boolean): void {
+    this.followEnabled = enabled;
+  }
+
+  isFollowing(): boolean {
+    return this.followEnabled;
+  }
+
+  requestFullscreen(): void {
+    this.map.getTargetElement()?.ownerDocument?.documentElement?.requestFullscreen?.();
+  }
+
+  exitFullscreen(): void {
+    document.exitFullscreen?.();
+  }
+
+  setLabelConfig(config: { enabled: boolean; extended: number; trackLabels: boolean }): void {
+    this.handle.labelConfig = config;
+    this.handle.layer.changed();
+    this.trackHandle.labelConfig = config;
+    this.trackHandle.layer.changed();
   }
 
   dispose(): void {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GAODE_BASEMAP_URL, isAircraftHitLayer } from './MapController';
+import { GAODE_BASEMAP_URL, isAircraftHitLayer, MAP_DIM_PERCENTAGE } from './MapController';
 
 describe('MapController basemap', () => {
   it('uses original Gaode tar1090 tile URL', () => {
@@ -14,5 +14,11 @@ describe('MapController basemap', () => {
 
     expect(isAircraftHitLayer(aircraftLayer, aircraftLayer)).toBe(true);
     expect(isAircraftHitLayer(pTracksLayer, aircraftLayer)).toBe(false);
+  });
+});
+
+describe('MapController constants', () => {
+  it('has a default dim percentage of 0.45', () => {
+    expect(MAP_DIM_PERCENTAGE).toBe(0.45);
   });
 });

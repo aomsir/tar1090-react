@@ -6,9 +6,16 @@ import { fromLonLat } from 'ol/proj';
 import type { Aircraft } from '@/domain/Aircraft';
 import { aircraftStyle } from './style';
 
+export interface LabelConfig {
+  enabled: boolean;
+  extended: number;
+  trackLabels: boolean;
+}
+
 export interface AircraftLayerHandle {
   layer: VectorLayer<VectorSource>;
   source: VectorSource;
+  labelConfig?: LabelConfig;
 }
 
 export function createAircraftLayer(): AircraftLayerHandle {

@@ -10,6 +10,7 @@ import type { TrackSegment } from '@/features/track/track';
 export interface TrackLayerHandle {
   layer: VectorLayer<VectorSource>;
   source: VectorSource;
+  labelConfig?: import('./aircraftLayer').LabelConfig;
 }
 
 export function createTrackLayer(): TrackLayerHandle {
