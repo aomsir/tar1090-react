@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { Button, ToggleButtonGroup, ToggleButton, Slider, Switch, Label } from '@heroui/react';
 import type { Key } from '@heroui/react';
 import { X } from 'lucide-react';
@@ -66,10 +65,10 @@ export function SettingsPanel() {
         className="mb-3"
       >
         {UNIT_OPTIONS.map((opt, i) => (
-          <Fragment key={opt.id}>
+          <ToggleButton key={opt.id} id={opt.id}>
             {i > 0 && <ToggleButtonGroup.Separator />}
-            <ToggleButton id={opt.id}>{opt.label}</ToggleButton>
-          </Fragment>
+            {opt.label}
+          </ToggleButton>
         ))}
       </ToggleButtonGroup>
 
