@@ -74,12 +74,20 @@ vi.mock('@/ui/ListPanel/ListPanel', () => ({
 
 import { AppShell } from './AppShell';
 import { useSelectionStore } from '@/store/selectionStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { aircraftStore } from '@/store/aircraftStore';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('AppShell', () => {
   beforeEach(() => {
-    useSelectionStore.setState({ selectedHex: null });
+    useSelectionStore.setState({ selectedHex: null, selectedHexes: new Set() });
+    useToolbarStore.setState({
+      onlyMilitary: false,
+      isolation: false,
+      filterGroundVehicles: false,
+      filterBlockedMLAT: false,
+      follow: false,
+    });
     historyStore.reset();
     aircraftStore.reset();
     usePlaybackStore.getState().reset();
@@ -362,5 +370,58 @@ describe('AppShell', () => {
   it('renders the toolbar', () => {
     render(<AppShell />);
     expect(screen.getByTestId('toolbar')).toBeInTheDocument();
+  });
+
+  it('re-syncs aircraft when onlyMilitary toggles without selection change', () => {
+    const ac1 = new Aircraft('a00001');
+    ac1.update(
+      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    const ac2 = new Aircraft('a00002');
+    (ac2 as any).isMilitary = true;
+    ac2.update(
+      { hex: 'a00002', lat: 30, lon: 40 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('a00001', ac1);
+    aircraftStore.map.set('a00002', ac2);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.syncAircraft.mockClear();
+
+    act(() => {
+      useToolbarStore.getState().toggle('onlyMilitary');
+    });
+
+    expect(fakeController.syncAircraft).toHaveBeenCalled();
+    const lastList = fakeController.syncAircraft.mock.calls.at(-1)![0] as { hex: string }[];
+    expect(lastList.length).toBe(1);
+    expect(lastList[0].hex).toBe('a00002');
+  });
+
+  it('centers on selected aircraft when follow is toggled on', () => {
+    const ac = new Aircraft('b00001');
+    ac.update(
+      { hex: 'b00001', lat: 55, lon: -120 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('b00001', ac);
+    useSelectionStore.setState({ selectedHex: 'b00001' });
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.centerOn.mockClear();
+
+    act(() => {
+      useToolbarStore.setState({ follow: true });
+    });
+
+    expect(fakeController.centerOn).toHaveBeenCalledWith(-120, 55);
   });
 });

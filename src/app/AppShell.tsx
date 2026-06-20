@@ -23,6 +23,12 @@ import type { MapController } from '@/map/MapController';
 export function AppShell() {
   const controllerRef = useRef<MapController | null>(null);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
+  const selectedHexes = useSelectionStore((s) => s.selectedHexes);
+  const onlyMilitary = useToolbarStore((s) => s.onlyMilitary);
+  const isolation = useToolbarStore((s) => s.isolation);
+  const filterGroundVehicles = useToolbarStore((s) => s.filterGroundVehicles);
+  const filterBlockedMLAT = useToolbarStore((s) => s.filterBlockedMLAT);
+  const follow = useToolbarStore((s) => s.follow);
 
   useLiveData(controllerRef);
   useUrlSync();
@@ -50,7 +56,18 @@ export function AppShell() {
       const c = controllerRef.current;
       if (!c) return;
       if (state.mapDim !== prev.mapDim) c.setDim(state.mapDim);
-      if (state.follow !== prev.follow) c.setFollow(state.follow);
+      if (state.follow !== prev.follow) {
+        c.setFollow(state.follow);
+        if (state.follow) {
+          const hex = useSelectionStore.getState().selectedHex;
+          if (hex) {
+            const ac = aircraftStore.map.get(hex);
+            if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
+              c.centerOn(ac.lon, ac.lat);
+            }
+          }
+        }
+      }
       if (
         state.enableLabels !== prev.enableLabels ||
         state.extendedLabels !== prev.extendedLabels ||
@@ -80,10 +97,6 @@ export function AppShell() {
   // Live: show all live aircraft. History: only show the selected aircraft.
   useEffect(() => {
     if (mode === 'live') {
-      const { onlyMilitary, isolation, filterGroundVehicles, filterBlockedMLAT } =
-        useToolbarStore.getState();
-      const { selectedHexes } = useSelectionStore.getState();
-
       let list = aircraftStore.list();
       if (onlyMilitary) list = list.filter((ac) => ac.isMilitary);
       if (isolation && selectedHexes.size > 0) {
@@ -93,7 +106,7 @@ export function AppShell() {
       if (filterBlockedMLAT) list = list.filter((ac) => !ac.hex.startsWith('~'));
       controllerRef.current?.syncAircraft(list);
 
-      if (useToolbarStore.getState().follow && selectedHex) {
+      if (follow && selectedHex) {
         const ac = aircraftStore.map.get(selectedHex);
         if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
           controllerRef.current?.centerOn(ac.lon, ac.lat);
@@ -105,7 +118,16 @@ export function AppShell() {
         : [];
       controllerRef.current?.syncAircraft(list);
     }
-  }, [mode, selectedHex]);
+  }, [
+    mode,
+    selectedHex,
+    selectedHexes,
+    onlyMilitary,
+    isolation,
+    filterGroundVehicles,
+    filterBlockedMLAT,
+    follow,
+  ]);
 
   useEffect(() => {
     controllerRef.current?.setSelected(selectedHex);
