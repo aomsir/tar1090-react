@@ -26,6 +26,12 @@ const fakeController = {
   showTrack: vi.fn(),
   clearTrack: vi.fn(),
   dispose: vi.fn(),
+  resetView: vi.fn(),
+  setDim: vi.fn(),
+  setFollow: vi.fn(),
+  requestFullscreen: vi.fn(),
+  exitFullscreen: vi.fn(),
+  setLabelConfig: vi.fn(),
 };
 
 vi.mock('@/map/MapView', () => ({
@@ -89,6 +95,12 @@ describe('AppShell', () => {
     fakeController.getViewExtentLonLat.mockClear();
     fakeController.showTrack.mockClear();
     fakeController.clearTrack.mockClear();
+    fakeController.resetView.mockClear();
+    fakeController.setDim.mockClear();
+    fakeController.setFollow.mockClear();
+    fakeController.requestFullscreen.mockClear();
+    fakeController.exitFullscreen.mockClear();
+    fakeController.setLabelConfig.mockClear();
   });
 
   it('renders command bar, list panel, replay bar and map regions', () => {
@@ -345,5 +357,10 @@ describe('AppShell', () => {
     usePlaybackStore.getState().setMode('history');
     render(<AppShell />);
     expect(screen.queryByTestId('seed-loading-overlay')).not.toBeInTheDocument();
+  });
+
+  it('renders the toolbar', () => {
+    render(<AppShell />);
+    expect(screen.getByTestId('toolbar')).toBeInTheDocument();
   });
 });
