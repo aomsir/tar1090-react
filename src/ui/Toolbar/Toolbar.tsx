@@ -139,7 +139,8 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
 
         <Separator />
 
-        {/* SYSTEM */}
+        {/* SYSTEM group */}
+        <GroupLabel color="text-slate-300">SYSTEM</GroupLabel>
         <ToolbarButton icon={Settings} tooltip="Open settings panel" onPress={() => state.toggleSettings()} type="action" />
       </nav>
 

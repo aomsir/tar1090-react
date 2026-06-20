@@ -9,10 +9,9 @@ describe('Toolbar', () => {
     useToolbarStore.setState(useToolbarStore.getInitialState());
   });
 
-  it('renders all 14 toolbar buttons', () => {
+  it('renders all 15 toolbar buttons (14 feature + 1 settings)', () => {
     render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
     const buttons = screen.getAllByRole('button');
-    // 14 ToolbarButtons + 1 extra from HeroUI Tooltip wrapper
     expect(buttons.length).toBe(15);
   });
 
@@ -44,5 +43,6 @@ describe('Toolbar', () => {
     const settingsBtn = screen.getByLabelText('Open settings panel');
     fireEvent.click(settingsBtn);
     expect(useToolbarStore.getState().settingsOpen).toBe(true);
+    expect(screen.getByTestId('settings-panel')).toBeTruthy();
   });
 });
