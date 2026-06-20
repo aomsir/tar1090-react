@@ -10,13 +10,20 @@ import {
   type TrackPoint,
   type TrackSegment,
 } from './track';
+import { loadAircraftTrace, mergeTracePoints } from './aircraftTrace';
+import { getHistorySeed, useSeedVersion } from '@/data/liveHistorySeeder';
 
 export function useSelectedTrack(): TrackSegment[] {
   const hex = useSelectionStore((s) => s.selectedHex);
   const version = useLiveTick((s) => s.version);
+  const mode = usePlaybackStore((s) => s.mode);
   const bounds = usePlaybackStore((s) => s.bounds);
   const [tailByHex, setTailByHex] = useState<Record<string, TrackPoint[]>>({});
+  const [traceByHex, setTraceByHex] = useState<Record<string, TrackPoint[]>>({});
   const prevHexRef = useRef<string | null>(null);
+  const loadedTraceHexesRef = useRef(new Set<string>());
+  const loadingTraceHexesRef = useRef(new Set<string>());
+  const seedVersion = useSeedVersion((s) => s.version);
 
   // When a new aircraft is selected, seed tail from its accumulated positionHistory
   // so the track renders immediately without waiting for polling ticks.
@@ -37,6 +44,32 @@ export function useSelectedTrack(): TrackSegment[] {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTailByHex((prev) => ({ ...prev, [hex]: seed }));
   }, [hex]);
+
+  useEffect(() => {
+    if (!hex || mode !== 'live') return;
+    if (loadedTraceHexesRef.current.has(hex) || loadingTraceHexesRef.current.has(hex)) return;
+
+    let cancelled = false;
+    loadingTraceHexesRef.current.add(hex);
+    loadAircraftTrace(hex)
+      .then((points) => {
+        if (cancelled) return;
+        loadedTraceHexesRef.current.add(hex);
+        setTraceByHex((prev) => (prev[hex] ? prev : { ...prev, [hex]: points }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        loadedTraceHexesRef.current.add(hex);
+        setTraceByHex((prev) => (prev[hex] ? prev : { ...prev, [hex]: [] }));
+      })
+      .finally(() => {
+        loadingTraceHexesRef.current.delete(hex);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hex, mode]);
 
   useEffect(() => {
     if (!hex) return;
@@ -66,12 +99,15 @@ export function useSelectedTrack(): TrackSegment[] {
 
   return useMemo(() => {
     if (!hex) return [];
-    const historyPts = bounds ? extractTrackPoints(historyStore.frames, hex) : [];
+    const tracePts = traceByHex[hex];
+    const basePts = mode === 'history'
+      ? extractTrackPoints(historyStore.frames, hex)
+      : (tracePts && tracePts.length > 0 ? tracePts : getHistorySeed(hex) ?? []);
     const tailPts = tailByHex[hex] ?? [];
-    const merged = [...historyPts, ...tailPts].sort((a, b) => a.ts - b.ts);
-    // In history mode use dynamic gap threshold (same as pTracks) so sampled
-    // frames don't produce all-dashed segments.
-    const gapThresholdSec = bounds ? historyStore.frameInterval() * 3 : undefined;
+    const merged = mergeTracePoints([...basePts, ...tailPts]);
+    const gapThresholdSec = mode === 'history' && bounds ? historyStore.frameInterval() * 3 : undefined;
     return buildTrackSegments(merged, { gapThresholdSec });
-  }, [hex, bounds, tailByHex]);
+    // seedVersion is intentionally in deps to re-evaluate when history seed becomes available
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hex, mode, bounds, traceByHex, tailByHex, seedVersion]);
 }

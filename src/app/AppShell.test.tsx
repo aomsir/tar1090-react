@@ -141,6 +141,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
+    usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
 
     render(<AppShell />);

@@ -11,6 +11,8 @@ import type { MapController } from '@/map/MapController';
 import { AircraftEnricher } from './AircraftEnricher';
 import { enrichAircraft } from '@/domain/enrich';
 import { historyLoader } from '@/data/historyLoader';
+import { loadLiveHistory } from '@/data/liveHistorySeeder';
+import type { AircraftSnapshot } from '@/data/types';
 
 type Source = AircraftDataSource & { setRefresh?: (ms: number) => void };
 
@@ -46,9 +48,15 @@ export function useLiveData(
     if (!receiver) return;
     if (receiver.refresh && sourceRef.current?.setRefresh)
       sourceRef.current.setRefresh(receiver.refresh);
-    // Share the receiver so history replay does not refetch it.
     historyLoader.setReceiver(receiver);
     useReceiverStore.getState().setReceiverPosition(receiver.lat, receiver.lon);
+    // Seed live history for pre-refresh track display
+    const src = sourceRef.current;
+    if (src && 'getHistoryFrame' in src && receiver.history > 0) {
+      const getFrame = (n: number) =>
+        (src as unknown as { getHistoryFrame: (n: number) => Promise<AircraftSnapshot> }).getHistoryFrame(n);
+      void loadLiveHistory(getFrame, receiver.history, 240);
+    }
   }, [receiver]);
 
   useEffect(() => {
