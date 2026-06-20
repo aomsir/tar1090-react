@@ -54,6 +54,7 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
           isActive={state.mapDim}
           onPress={() => state.toggle('mapDim')}
         />
+        {/* fullscreen is transient UI state, excluded from persisted toggle keys */}
         <ToolbarButton
           icon={state.fullscreen ? Minimize : Maximize}
           tooltip="Fullscreen mode"

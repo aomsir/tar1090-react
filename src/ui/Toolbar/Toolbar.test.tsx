@@ -43,6 +43,6 @@ describe('Toolbar', () => {
     const settingsBtn = screen.getByLabelText('Open settings panel');
     fireEvent.click(settingsBtn);
     expect(useToolbarStore.getState().settingsOpen).toBe(true);
-    expect(screen.getByTestId('settings-panel')).toBeTruthy();
+    expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
   });
 });
