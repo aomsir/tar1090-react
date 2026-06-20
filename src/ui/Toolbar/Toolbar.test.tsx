@@ -1,0 +1,48 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Toolbar } from './Toolbar';
+import { useToolbarStore } from '@/store/toolbarStore';
+
+describe('Toolbar', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useToolbarStore.setState(useToolbarStore.getInitialState());
+  });
+
+  it('renders all 14 toolbar buttons', () => {
+    render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
+    const buttons = screen.getAllByRole('button');
+    // 14 ToolbarButtons + 1 extra from HeroUI Tooltip wrapper
+    expect(buttons.length).toBe(15);
+  });
+
+  it('toggles enableLabels when label button is clicked', () => {
+    render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
+    const labelBtn = screen.getByLabelText('Aircraft labels');
+    fireEvent.click(labelBtn);
+    expect(useToolbarStore.getState().enableLabels).toBe(true);
+  });
+
+  it('calls onResetView when home button is clicked', () => {
+    const onResetView = vi.fn();
+    render(<Toolbar onResetView={onResetView} onRandomPlane={() => {}} />);
+    const homeBtn = screen.getByLabelText('Reset map view');
+    fireEvent.click(homeBtn);
+    expect(onResetView).toHaveBeenCalledOnce();
+  });
+
+  it('calls onRandomPlane when random button is clicked', () => {
+    const onRandomPlane = vi.fn();
+    render(<Toolbar onResetView={() => {}} onRandomPlane={onRandomPlane} />);
+    const randomBtn = screen.getByLabelText('Random aircraft');
+    fireEvent.click(randomBtn);
+    expect(onRandomPlane).toHaveBeenCalledOnce();
+  });
+
+  it('opens settings panel when settings button is clicked', () => {
+    render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
+    const settingsBtn = screen.getByLabelText('Open settings panel');
+    fireEvent.click(settingsBtn);
+    expect(useToolbarStore.getState().settingsOpen).toBe(true);
+  });
+});
