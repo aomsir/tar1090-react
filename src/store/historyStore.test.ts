@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { historyStore } from './historyStore';
+import { useLiveTick } from './liveTick';
 import type { AircraftSnapshot } from '@/data/types';
 
 vi.mock('@/domain/enrich', () => ({
@@ -85,5 +86,20 @@ describe('pTracks data', () => {
   it('frameInterval defaults to 30 when fewer than 2 frames', () => {
     historyStore.setFrames([frame(100)]);
     expect(historyStore.frameInterval()).toBe(30);
+  });
+
+  it('bumps liveTick after buildPTracksData so useAircraftRows re-renders', async () => {
+    const before = useLiveTick.getState().version;
+    const frames: AircraftSnapshot[] = [
+      {
+        now: 1000,
+        messages: 1,
+        aircraft: [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }],
+      },
+    ];
+    historyStore.setFrames(frames);
+    await historyStore.buildPTracksData();
+    const after = useLiveTick.getState().version;
+    expect(after).toBeGreaterThan(before);
   });
 });

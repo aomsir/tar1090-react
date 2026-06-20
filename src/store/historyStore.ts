@@ -4,6 +4,7 @@ import type { TrackPoint } from '@/features/track/track';
 import type { PeakStats } from '@/features/playback/pTracks';
 import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
 import { enrichAircraft } from '@/domain/enrich';
+import { useLiveTick } from './liveTick';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
@@ -27,6 +28,9 @@ export class HistoryStore {
     // Enrich all aircraft with registration, type, etc. from the client-side
     // database. History frames from the backend don't contain these fields.
     await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
+    // Bump liveTick so useAircraftRows' useMemo invalidates and picks up
+    // the enriched type/registration data.
+    useLiveTick.getState().bump();
   }
 
   clearPTracksData(): void {
