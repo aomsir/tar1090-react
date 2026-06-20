@@ -44,6 +44,7 @@ export interface AircraftDTO {
   tat?: number;
   wd?: number;
   ws?: number;
+  type?: string | null;
   addrtype?: string;
   version?: number;
   emergency?: string;

@@ -134,4 +134,22 @@ describe('Aircraft', () => {
     ac.update({ hex: 'abc123', dbFlags: 0 }, 100);
     expect(ac.rawDbFlags).toBe(0);
   });
+
+  it('maps original tar1090 type field into addrType', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', type: 'adsb_icao' }, 100);
+    expect(ac.addrType).toBe('adsb_icao');
+  });
+
+  it('treats mlat lat source as mlat even when type is absent', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', mlat: ['lat'] }, 100);
+    expect(ac.addrType).toBe('mlat');
+  });
+
+  it('falls back to adsb when positioned aircraft has no explicit source type', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', lat: 31.2, lon: 121.5 }, 100);
+    expect(ac.addrType).toBe('adsb');
+  });
 });

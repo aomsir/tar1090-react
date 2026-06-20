@@ -276,6 +276,55 @@ it('formats original tar1090 columns from row data', () => {
   expect(byId.ws.format(row)).toBe('55');
 });
 
+it('formats data source values like original tar1090', () => {
+  const col = LIST_COLUMNS.find((c) => c.id === 'data_source');
+  expect(col).toBeDefined();
+  
+  const baseRow = {
+    hex: 'abc',
+    flight: '',
+    route: '',
+    registration: '',
+    typeCode: '',
+    squawk: '',
+    altitude: undefined,
+    speed: undefined,
+    vertRate: undefined,
+    distance: undefined,
+    track: undefined,
+    messages: 0,
+    seen: 0,
+    rssi: undefined,
+    lat: undefined,
+    lon: undefined,
+    country: '',
+    flagPath: null,
+    isMilitary: false,
+    isMlat: false,
+    windDirection: undefined,
+    windSpeed: undefined,
+    lastSeenTime: undefined,
+  };
+
+  expect(col?.format({ ...baseRow, dataSource: 'adsb_icao' })).toBe('ADS-B');
+  expect(col?.format({ ...baseRow, dataSource: 'mlat' })).toBe('MLAT');
+  expect(col?.format({ ...baseRow, dataSource: 'mode_s' })).toBe('Mode S');
+  expect(col?.format({ ...baseRow, dataSource: 'uat' })).toBe('UAT');
+  expect(col?.format({ ...baseRow, dataSource: 'adsb' })).toBe('ADS-B');
+  expect(col?.format({ ...baseRow, dataSource: 'adsb_other' })).toBe('ADS-B');
+  expect(col?.format({ ...baseRow, dataSource: 'adsb_icao_nt' })).toBe('ADS-B noTP');
+  expect(col?.format({ ...baseRow, dataSource: 'adsr' })).toBe('ADS-R or UAT');
+  expect(col?.format({ ...baseRow, dataSource: 'tisb' })).toBe('TIS-B');
+  expect(col?.format({ ...baseRow, dataSource: 'modeS' })).toBe('Mode S');
+  expect(col?.format({ ...baseRow, dataSource: 'ais' })).toBe('AIS');
+  expect(col?.format({ ...baseRow, dataSource: 'mode_ac' })).toBe('Mode A/C');
+  expect(col?.format({ ...baseRow, dataSource: 'adsc' })).toBe('Sat. ADS-C');
+  expect(col?.format({ ...baseRow, dataSource: 'other' })).toBe('Other');
+  expect(col?.format({ ...baseRow, dataSource: 'unknown' })).toBe('Unknown');
+  expect(col?.format({ ...baseRow, dataSource: '' })).toBe('');
+  expect(col?.format({ ...baseRow, dataSource: 'invalid' })).toBe('Unknown');
+});
+
 describe('last_seen column format', () => {
   it('formats lastSeenTime as local HH:mm:ss, not raw epoch', () => {
     const row = {

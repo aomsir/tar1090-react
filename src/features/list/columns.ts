@@ -46,6 +46,47 @@ function missing(value: number | string | undefined): number | string | null {
   return value === undefined || value === '' ? null : value;
 }
 
+function formatDataSource(source: string): string {
+  switch (source) {
+    case 'uat':
+      return 'UAT';
+    case 'mlat':
+      return 'MLAT';
+    case 'adsb':
+    case 'adsb_icao':
+    case 'adsb_other':
+      return 'ADS-B';
+    case 'adsb_icao_nt':
+      return 'ADS-B noTP';
+    case 'adsr':
+    case 'adsr_icao':
+    case 'adsr_other':
+      return 'ADS-R or UAT';
+    case 'tisb_icao':
+    case 'tisb_trackfile':
+    case 'tisb_other':
+    case 'tisb':
+      return 'TIS-B';
+    case 'modeS':
+    case 'mode_s':
+      return 'Mode S';
+    case 'ais':
+      return 'AIS';
+    case 'mode_ac':
+      return 'Mode A/C';
+    case 'adsc':
+      return 'Sat. ADS-C';
+    case 'other':
+      return 'Other';
+    case 'unknown':
+      return 'Unknown';
+    case '':
+      return '';
+    default:
+      return 'Unknown';
+  }
+}
+
 export const DEFAULT_HIDDEN_COLUMNS: ColumnId[] = [
   'icao',
   'registration',
@@ -166,7 +207,7 @@ export const LIST_COLUMNS: ListColumn[] = [
     id: 'data_source',
     label: 'Source',
     align: 'right',
-    format: (r) => r.dataSource,
+    format: (r) => formatDataSource(r.dataSource),
     sortValue: (r) => missing(r.dataSource),
   },
   {
