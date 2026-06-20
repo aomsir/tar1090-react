@@ -8,9 +8,10 @@ const CONCURRENCY = 240;
 
 interface SeedVersionState {
   version: number;
+  loading: boolean;
 }
 
-export const useSeedVersion = create<SeedVersionState>(() => ({ version: 0 }));
+export const useSeedVersion = create<SeedVersionState>(() => ({ version: 0, loading: false }));
 
 const seedMap = new Map<string, TrackPoint[]>();
 
@@ -24,60 +25,65 @@ export async function loadLiveHistory(
   maxFrames = 2000,
 ): Promise<void> {
   if (historyCount <= 0) return;
+  useSeedVersion.setState({ loading: true });
 
-  const start = Math.max(0, historyCount - maxFrames);
-  const total = historyCount - start;
-  const indices = Array.from({ length: total }, (_, i) => start + i);
+  try {
+    const start = Math.max(0, historyCount - maxFrames);
+    const total = historyCount - start;
+    const indices = Array.from({ length: total }, (_, i) => start + i);
 
-  const frames: Array<AircraftSnapshot | undefined> = new Array(total).fill(undefined);
-  let next = 0;
+    const frames: Array<AircraftSnapshot | undefined> = new Array(total).fill(undefined);
+    let next = 0;
 
-  const worker = async (): Promise<void> => {
-    for (;;) {
-      const slot = next++;
-      if (slot >= total) return;
-      try {
-        frames[slot] = await getFrame(indices[slot]!);
-      } catch {
-        /* skip failed frame */
+    const worker = async (): Promise<void> => {
+      for (;;) {
+        const slot = next++;
+        if (slot >= total) return;
+        try {
+          frames[slot] = await getFrame(indices[slot]!);
+        } catch {
+          /* skip failed frame */
+        }
+      }
+    };
+
+    const lanes = Math.min(CONCURRENCY, total || 1);
+    await Promise.all(Array.from({ length: lanes }, () => worker()));
+
+    const sorted = frames
+      .filter((f): f is AircraftSnapshot => f != null)
+      .sort((a, b) => a.now - b.now);
+
+    for (const frame of sorted) {
+      for (const dto of frame.aircraft ?? []) {
+        if (typeof dto.lat !== 'number' || typeof dto.lon !== 'number') continue;
+        const hex = dto.hex.toLowerCase();
+        let pts = seedMap.get(hex);
+        if (!pts) {
+          pts = [];
+          seedMap.set(hex, pts);
+        }
+        const last = pts[pts.length - 1];
+        if (last && last.lon === dto.lon && last.lat === dto.lat) continue;
+        pts.push({
+          lon: dto.lon,
+          lat: dto.lat,
+          alt: dto.altitude,
+          ts: frame.now,
+          track: dto.track,
+          speed: dto.speed,
+          ground: dto.altitude === 'ground',
+        });
       }
     }
-  };
 
-  const lanes = Math.min(CONCURRENCY, total || 1);
-  await Promise.all(Array.from({ length: lanes }, () => worker()));
-
-  const sorted = frames
-    .filter((f): f is AircraftSnapshot => f != null)
-    .sort((a, b) => a.now - b.now);
-
-  for (const frame of sorted) {
-    for (const dto of frame.aircraft ?? []) {
-      if (typeof dto.lat !== 'number' || typeof dto.lon !== 'number') continue;
-      const hex = dto.hex.toLowerCase();
-      let pts = seedMap.get(hex);
-      if (!pts) {
-        pts = [];
-        seedMap.set(hex, pts);
-      }
-      const last = pts[pts.length - 1];
-      if (last && last.lon === dto.lon && last.lat === dto.lat) continue;
-      pts.push({
-        lon: dto.lon,
-        lat: dto.lat,
-        alt: dto.altitude,
-        ts: frame.now,
-        track: dto.track,
-        speed: dto.speed,
-        ground: dto.altitude === 'ground',
-      });
-    }
+    useSeedVersion.setState({ version: Date.now() });
+  } finally {
+    useSeedVersion.setState({ loading: false });
   }
-
-  useSeedVersion.setState({ version: Date.now() });
 }
 
 export function clearHistorySeedForTest(): void {
   seedMap.clear();
-  useSeedVersion.setState({ version: 0 });
+  useSeedVersion.setState({ version: 0, loading: false });
 }

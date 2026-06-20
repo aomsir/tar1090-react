@@ -131,6 +131,30 @@ describe('liveHistorySeeder', () => {
     expect(useSeedVersion.getState().version).toBeGreaterThan(0);
   });
 
+  it('sets loading=true during fetch and loading=false after completion', async () => {
+    expect(useSeedVersion.getState().loading).toBe(false);
+
+    let resolveFrame!: (v: AircraftSnapshot) => void;
+    const getFrame = () =>
+      new Promise<AircraftSnapshot>((r) => {
+        resolveFrame = r;
+      });
+
+    const promise = loadLiveHistory(getFrame, 1, 2000);
+
+    expect(useSeedVersion.getState().loading).toBe(true);
+
+    resolveFrame({ now: 100, messages: 0, aircraft: [] });
+    await promise;
+
+    expect(useSeedVersion.getState().loading).toBe(false);
+  });
+
+  it('does not set loading when historyCount <= 0', async () => {
+    await loadLiveHistory(makeGetFrame({}), 0);
+    expect(useSeedVersion.getState().loading).toBe(false);
+  });
+
   it('normalizes hex to lowercase for lookup', async () => {
     const frames: Record<number, AircraftSnapshot> = {
       0: { now: 100, messages: 0, aircraft: [{ hex: 'AbC', lat: 1, lon: 2 }] },
