@@ -15,6 +15,12 @@ const defaultDeps: EnrichDeps = {
 };
 
 export async function enrichAircraft(ac: Aircraft, deps: EnrichDeps = defaultDeps): Promise<void> {
+  // Country/flag is a pure synchronous hex-range lookup — set it immediately
+  // so the UI can render flags without waiting for the db network request.
+  const country = findCountry(ac.hex);
+  ac.country = country.country;
+  ac.flagPath = flagPath(country.country_code);
+
   const entry = await deps.lookup(ac.hex);
   if (entry) {
     const [reg, rawTypeCode, flags, rawTypeLong] = entry;
@@ -30,8 +36,5 @@ export async function enrichAircraft(ac: Aircraft, deps: EnrichDeps = defaultDep
     const derived = deps.registrationFromHexId(ac.hex);
     if (derived) ac.registration = derived;
   }
-  const country = findCountry(ac.hex);
-  ac.country = country.country;
-  ac.flagPath = flagPath(country.country_code);
   ac.enrichmentState = 'done';
 }

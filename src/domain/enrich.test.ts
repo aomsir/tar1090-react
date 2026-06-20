@@ -45,4 +45,27 @@ describe('enrichAircraft', () => {
     expect(ac.registration).toBeUndefined();
     expect(ac.enrichmentState).toBe('done');
   });
+
+  it('sets country and flagPath before the db lookup resolves', async () => {
+    let resolveLookup!: (v: null) => void;
+    const slowDeps = {
+      lookup: vi.fn(() => new Promise<null>((r) => { resolveLookup = r; })),
+      registrationFromHexId: () => null,
+    };
+    const ac = new Aircraft('A00001'); // US range
+    const promise = enrichAircraft(ac, slowDeps);
+
+    // Before db resolves, country/flag should already be set
+    await vi.waitFor(() => {
+      expect(ac.country).toBe('United States');
+      expect(ac.flagPath).toBe('/flags/3x2/US.svg');
+    });
+
+    // enrichmentState should NOT be 'done' yet (db still pending)
+    expect(ac.enrichmentState).not.toBe('done');
+
+    resolveLookup(null);
+    await promise;
+    expect(ac.enrichmentState).toBe('done');
+  });
 });
