@@ -4,6 +4,7 @@ import type { AircraftSnapshot } from '@/data/types';
 import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
+import { useSeedVersion, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
 
 vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
@@ -77,6 +78,7 @@ describe('AppShell', () => {
     aircraftStore.reset();
     usePlaybackStore.getState().reset();
     useLiveTick.setState({ version: 0 });
+    clearHistorySeedForTest();
     capturedOnReady = null;
     capturedSelectCb = null;
     capturedListOnSelect = null;
@@ -323,5 +325,25 @@ describe('AppShell', () => {
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
+  });
+
+  it('shows a loading overlay when live history seed is loading', () => {
+    useSeedVersion.setState({ loading: true });
+    render(<AppShell />);
+    expect(screen.getByTestId('seed-loading-overlay')).toBeInTheDocument();
+    expect(screen.getByText(/Loading/)).toBeInTheDocument();
+  });
+
+  it('hides the loading overlay when seed loading completes', () => {
+    useSeedVersion.setState({ loading: false });
+    render(<AppShell />);
+    expect(screen.queryByTestId('seed-loading-overlay')).not.toBeInTheDocument();
+  });
+
+  it('does not show seed loading overlay in history mode', () => {
+    useSeedVersion.setState({ loading: true });
+    usePlaybackStore.getState().setMode('history');
+    render(<AppShell />);
+    expect(screen.queryByTestId('seed-loading-overlay')).not.toBeInTheDocument();
   });
 });

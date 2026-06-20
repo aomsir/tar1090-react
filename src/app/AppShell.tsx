@@ -11,9 +11,11 @@ import { usePlayback } from '@/features/playback/usePlayback';
 import { useSelectedTrack } from '@/features/track/useSelectedTrack';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { aircraftStore } from '@/store/aircraftStore';
 import { historyStore } from '@/store/historyStore';
+import { useSeedVersion } from '@/data/liveHistorySeeder';
 import type { MapController } from '@/map/MapController';
 
 export function AppShell() {
@@ -25,6 +27,7 @@ export function AppShell() {
   usePlayback(controllerRef);
   const trackSegments = useSelectedTrack();
   const mode = usePlaybackStore((s) => s.mode);
+  const seedLoading = useSeedVersion((s) => s.loading);
 
   useEffect(() => {
     const c = controllerRef.current;
@@ -86,6 +89,19 @@ export function AppShell() {
       <ListPanel onSelect={handleSelectFromList} />
       <AltitudeLegend />
       <ReplayBar />
+      {seedLoading && mode === 'live' && (
+        <div
+          data-testid="seed-loading-overlay"
+          role="status"
+          aria-label="Loading live history data"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        >
+          <div className="flex flex-col items-center gap-3 text-white">
+            <Spinner size="lg" color="current" />
+            <span className="text-sm">Loading…</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
