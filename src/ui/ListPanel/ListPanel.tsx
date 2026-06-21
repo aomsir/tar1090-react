@@ -199,10 +199,10 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                           value || '—'
                         )}
                         {c.id === 'flight' && r.isMilitary ? (
-                          <Chip size="sm" color="danger" variant="flat" className="ml-1 scale-75">MIL</Chip>
+                          <Chip size="sm" color="danger" variant="soft" className="ml-1 scale-75">MIL</Chip>
                         ) : null}
                         {c.id === 'flight' && r.isMlat ? (
-                          <Chip size="sm" color="warning" variant="flat" className="ml-1 scale-75">MLAT</Chip>
+                          <Chip size="sm" color="warning" variant="soft" className="ml-1 scale-75">MLAT</Chip>
                         ) : null}
                       </td>
                     );

@@ -115,10 +115,10 @@ export function DetailCard() {
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {d.isMilitary ? (
-              <Chip color="danger" size="sm" variant="bordered">Military</Chip>
+              <Chip color="danger" size="sm" variant="secondary">Military</Chip>
             ) : null}
             {d.isMlat ? (
-              <Chip color="warning" size="sm" variant="bordered">MLAT</Chip>
+              <Chip color="warning" size="sm" variant="secondary">MLAT</Chip>
             ) : null}
           </div>
         </div>
