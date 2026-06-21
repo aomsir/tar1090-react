@@ -1,6 +1,7 @@
 import { PollingSource } from './pollingSource';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot, Receiver } from './types';
+import { HISTORY_LOAD_CONCURRENCY } from '@/config/history';
 
 export type HistoryRange = '1d' | '3d' | '1w' | '1m' | 'unlimited';
 
@@ -32,7 +33,7 @@ export class HistoryLoader {
   private loadGeneration = 0;
   loaded = false;
 
-  constructor(source?: HistorySource, concurrency = 48) {
+  constructor(source?: HistorySource, concurrency = HISTORY_LOAD_CONCURRENCY) {
     this.source = source ?? new PollingSource();
     this.concurrency = concurrency;
   }

@@ -27,6 +27,13 @@ function makeSource(count: number): HistorySource & { frameCalls: number; receiv
 describe('HistoryLoader', () => {
   beforeEach(() => historyStore.reset());
 
+  it('uses the explicit constructor concurrency when provided', async () => {
+    const source = makeSource(3);
+    const loader = new HistoryLoader(source, 1);
+    await loader.ensureLoaded();
+    expect(source.frameCalls).toBe(3);
+  });
+
   it('loads all frames into historyStore and reports progress', async () => {
     const source = makeSource(5);
     const onProgress = vi.fn();
