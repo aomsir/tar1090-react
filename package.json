@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "vendor-db": "bash scripts/vendor-db.sh",
+    "prebuild": "bash scripts/vendor-db.sh --skip-if-exists",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",

@@ -26,6 +26,9 @@ lerna-debug.log*
 *.sln
 *.sw?
 
+# Downloaded DB (fetched by scripts/vendor-db.sh)
+public/db/
+
 # Project-local (not part of the React app)
 tar1090-*/
 docs/
