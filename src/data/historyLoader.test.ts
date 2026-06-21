@@ -34,6 +34,12 @@ describe('HistoryLoader', () => {
     expect(source.frameCalls).toBe(3);
   });
 
+  it('defaults concurrency to HISTORY_LOAD_CONCURRENCY when not specified', async () => {
+    const { HISTORY_LOAD_CONCURRENCY } = await import('@/config/history');
+    const loader = new HistoryLoader(makeSource(1));
+    expect((loader as any).concurrency).toBe(HISTORY_LOAD_CONCURRENCY);
+  });
+
   it('loads all frames into historyStore and reports progress', async () => {
     const source = makeSource(5);
     const onProgress = vi.fn();
