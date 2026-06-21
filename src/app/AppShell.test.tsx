@@ -490,6 +490,41 @@ describe('AppShell', () => {
     expect(tracksMap.get('a00001')!.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('allTracks refreshes pTracks on new live ticks', () => {
+    const ac = new Aircraft('a00001');
+    ac.update(
+      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
+      1000,
+    );
+    ac.update(
+      { hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number],
+      1001,
+    );
+    aircraftStore.map.set('a00001', ac);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      useToolbarStore.setState({ allTracks: true });
+    });
+    fakeController.showPTracks.mockClear();
+
+    act(() => {
+      ac.update(
+        { hex: 'a00001', lat: 12, lon: 22 } as AircraftSnapshot['aircraft'][number],
+        1002,
+      );
+      useLiveTick.getState().bump();
+    });
+
+    expect(fakeController.showPTracks).toHaveBeenCalled();
+    const tracksMap = fakeController.showPTracks.mock.calls.at(-1)![0] as Map<string, unknown[]>;
+    expect(tracksMap.get('a00001')!.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('allTracks clears pTracks when disabled in live mode', () => {
     render(<AppShell />);
     act(() => {

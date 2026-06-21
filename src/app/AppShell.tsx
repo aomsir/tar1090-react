@@ -18,6 +18,7 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { aircraftStore } from '@/store/aircraftStore';
 import { historyStore } from '@/store/historyStore';
 import { useSeedVersion } from '@/data/liveHistorySeeder';
+import { useLiveTick } from '@/store/liveTick';
 import type { MapController } from '@/map/MapController';
 import type { TrackPoint } from '@/features/track/track';
 
@@ -31,6 +32,7 @@ export function AppShell() {
   const filterBlockedMLAT = useToolbarStore((s) => s.filterBlockedMLAT);
   const follow = useToolbarStore((s) => s.follow);
   const allTracks = useToolbarStore((s) => s.allTracks);
+  const liveVersion = useLiveTick((s) => s.version);
 
   useLiveData(controllerRef);
   useUrlSync();
@@ -158,7 +160,7 @@ export function AppShell() {
       })));
     }
     c.showPTracks(tracks);
-  }, [allTracks, mode]);
+  }, [allTracks, mode, liveVersion]);
 
   const handleSelectFromList = useCallback((hex: string) => {
     useSelectionStore.getState().select(hex);
