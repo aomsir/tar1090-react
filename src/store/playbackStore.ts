@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { HistoryRange } from '@/data/historyLoader';
 
 export type PlaybackMode = 'live' | 'history';
 
@@ -23,6 +24,10 @@ interface PlaybackState {
   setLoading: (b: boolean) => void;
   setProgress: (done: number, total: number) => void;
   setBounds: (b: Bounds | null) => void;
+  range: HistoryRange;
+  rangeSelectOpen: boolean;
+  setRange: (r: HistoryRange) => void;
+  setRangeSelectOpen: (b: boolean) => void;
   reset: () => void;
 }
 
@@ -37,6 +42,8 @@ export const usePlaybackStore = create<PlaybackState>((set, get) => ({
   loading: false,
   progress: { done: 0, total: 0 },
   bounds: null,
+  range: '1d',
+  rangeSelectOpen: false,
   setMode: (mode) => set({ mode }),
   setCursor: (t) => set({ cursorTime: clamp(t, get().bounds) }),
   play: () => set({ isPlaying: true }),
@@ -45,6 +52,8 @@ export const usePlaybackStore = create<PlaybackState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setProgress: (done, total) => set({ progress: { done, total } }),
   setBounds: (bounds) => set({ bounds }),
+  setRange: (range) => set({ range }),
+  setRangeSelectOpen: (rangeSelectOpen) => set({ rangeSelectOpen }),
   reset: () =>
     set({
       mode: 'live',
@@ -53,5 +62,6 @@ export const usePlaybackStore = create<PlaybackState>((set, get) => ({
       loading: false,
       progress: { done: 0, total: 0 },
       bounds: null,
+      rangeSelectOpen: false,
     }),
 }));
