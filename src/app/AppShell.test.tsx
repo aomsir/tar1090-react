@@ -398,6 +398,15 @@ describe('AppShell', () => {
     expect(screen.getByTestId('toolbar')).toBeInTheDocument();
   });
 
+  it('renders toolbar and list inside a shared right dock', () => {
+    render(<AppShell />);
+
+    const dock = screen.getByTestId('right-dock');
+    expect(dock).toBeInTheDocument();
+    expect(screen.getByTestId('toolbar-dock-slot')).toContainElement(screen.getByTestId('toolbar'));
+    expect(screen.getByTestId('list-dock-slot')).toContainElement(screen.getByTestId('list-panel'));
+  });
+
   it('re-syncs aircraft when onlyMilitary toggles without selection change', () => {
     const ac1 = new Aircraft('a00001');
     ac1.update(

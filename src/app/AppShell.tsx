@@ -204,10 +204,19 @@ export function AppShell() {
       />
       <CommandBar />
       <DetailCard />
-      <ListPanel onSelect={handleSelectFromList} />
+      <div
+        data-testid="right-dock"
+        className="pointer-events-none absolute bottom-16 right-4 top-16 z-10 flex items-center gap-3"
+      >
+        <div data-testid="toolbar-dock-slot" className="pointer-events-auto">
+          <Toolbar onResetView={handleResetView} onRandomPlane={handleRandomPlane} />
+        </div>
+        <div data-testid="list-dock-slot" className="pointer-events-auto h-full">
+          <ListPanel onSelect={handleSelectFromList} />
+        </div>
+      </div>
       <AltitudeLegend />
       <ReplayBar />
-      <Toolbar onResetView={handleResetView} onRandomPlane={handleRandomPlane} />
       {seedLoading && mode === 'live' && (
         <div
           data-testid="seed-loading-overlay"
