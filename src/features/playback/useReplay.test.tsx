@@ -6,7 +6,7 @@ import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot } from '@/data/types';
 
 const { ensureLoadedMock } = vi.hoisted(() => ({
-  ensureLoadedMock: vi.fn(async (onProgress?: (p: { done: number; total: number }) => void, _range?: string) => {
+  ensureLoadedMock: vi.fn(async (onProgress?: (p: { done: number; total: number }) => void) => {
     historyStore.setFrames([
       { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
     ]);
