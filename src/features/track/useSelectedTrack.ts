@@ -74,7 +74,18 @@ export function useSelectedTrack(): TrackSegment[] {
   useEffect(() => {
     if (!hex) return;
     const ac = aircraftStore.map.get(hex);
-    if (!ac || typeof ac.lon !== 'number' || typeof ac.lat !== 'number') return;
+    if (!ac) {
+      // Aircraft pruned from store – clear cached track data so the trail disappears
+      if (usePlaybackStore.getState().mode === 'live') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTailByHex((prev) => (hex in prev ? {} : prev));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTraceByHex((prev) => (hex in prev ? {} : prev));
+        loadedTraceHexesRef.current.delete(hex);
+      }
+      return;
+    }
+    if (typeof ac.lon !== 'number' || typeof ac.lat !== 'number') return;
     const lon = ac.lon;
     const lat = ac.lat;
     // tail must accumulate across ticks; aircraftStore is non-reactive so we update state here.
