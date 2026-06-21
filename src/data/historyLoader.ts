@@ -2,6 +2,16 @@ import { PollingSource } from './pollingSource';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot, Receiver } from './types';
 
+export type HistoryRange = '1d' | '3d' | '1w' | '1m' | 'unlimited';
+
+export const HISTORY_RANGES: readonly { key: HistoryRange; label: string; seconds: number }[] = [
+  { key: '1d',        label: '1 day',  seconds: 86400 },
+  { key: '3d',        label: '3 days', seconds: 259200 },
+  { key: '1w',        label: '1 week', seconds: 604800 },
+  { key: '1m',        label: '1 month', seconds: 2592000 },
+  { key: 'unlimited', label: 'All', seconds: Infinity },
+];
+
 export interface HistorySource {
   getReceiver(): Promise<Receiver>;
   getHistoryFrame(n: number): Promise<AircraftSnapshot>;
