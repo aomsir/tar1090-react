@@ -42,8 +42,8 @@ export class HistoryLoader {
     this.cachedReceiver = receiver;
   }
 
-  ensureLoaded(onProgress?: (p: LoadProgress) => void): Promise<void> {
-    if (!this.promise) this.promise = this.load(onProgress);
+  ensureLoaded(onProgress?: (p: LoadProgress) => void, range: HistoryRange = '1d'): Promise<void> {
+    if (!this.promise) this.promise = this.load(range, onProgress);
     return this.promise;
   }
 
@@ -53,17 +53,48 @@ export class HistoryLoader {
     this.loadGeneration++;
   }
 
-  private async load(onProgress?: (p: LoadProgress) => void): Promise<void> {
+  private async load(range: HistoryRange, onProgress?: (p: LoadProgress) => void): Promise<void> {
     const generation = this.loadGeneration;
     const receiver = this.cachedReceiver ?? (await this.source.getReceiver());
     const rawTotal = receiver.history ?? 0;
+    if (rawTotal === 0) {
+      historyStore.setFrames([]);
+      this.loaded = true;
+      return;
+    }
 
-    // Sample frame indices when rawTotal exceeds maxFrames
-    const step = rawTotal > this.maxFrames ? Math.ceil(rawTotal / this.maxFrames) : 1;
+    // Determine startIdx based on range
+    let startIdx = 0;
+    const probeCache = new Map<number, AircraftSnapshot>();
+
+    if (range !== 'unlimited' && rawTotal > 1) {
+      const rangeSec = HISTORY_RANGES.find((r) => r.key === range)!.seconds;
+      try {
+        const [firstFrame, lastFrame] = await Promise.all([
+          this.source.getHistoryFrame(0),
+          this.source.getHistoryFrame(rawTotal - 1),
+        ]);
+        probeCache.set(0, firstFrame);
+        probeCache.set(rawTotal - 1, lastFrame);
+        const cutoff = lastFrame.now - rangeSec;
+        if (cutoff > firstFrame.now) {
+          const span = lastFrame.now - firstFrame.now;
+          startIdx = Math.floor(((cutoff - firstFrame.now) / span) * rawTotal);
+          startIdx = Math.max(0, Math.min(startIdx, rawTotal - 1));
+        }
+      } catch {
+        // Probe failed; fall back to loading all frames
+        startIdx = 0;
+      }
+    }
+
+    // Sample frame indices from [startIdx, rawTotal-1]
+    const rangeTotal = rawTotal - startIdx;
+    const step = rangeTotal > this.maxFrames ? Math.ceil(rangeTotal / this.maxFrames) : 1;
     const indices: number[] = [];
-    for (let i = 0; i < rawTotal; i += step) indices.push(i);
+    for (let i = startIdx; i < rawTotal; i += step) indices.push(i);
     // Always include last frame so time range is complete
-    if (rawTotal > 0 && indices[indices.length - 1] !== rawTotal - 1) {
+    if (indices[indices.length - 1] !== rawTotal - 1) {
       indices.push(rawTotal - 1);
     }
 
@@ -75,8 +106,11 @@ export class HistoryLoader {
       for (;;) {
         const slot = next++;
         if (slot >= loadTotal) return;
+        const frameIdx = indices[slot]!;
         try {
-          frames[slot] = await this.source.getHistoryFrame(indices[slot]!);
+          // Reuse probed frames
+          const cached = probeCache.get(frameIdx);
+          frames[slot] = cached ?? (await this.source.getHistoryFrame(frameIdx));
         } catch {
           // skip a missing/failed frame
         }

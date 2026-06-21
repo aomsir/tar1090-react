@@ -160,6 +160,114 @@ describe('HistoryLoader', () => {
     setFramesMock.mockRestore();
   });
 
+  it('loads all frames when range covers entire span', async () => {
+    const requested: number[] = [];
+    // 100 frames, span = 99s, range '1d' = 86400s → no frames skipped
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 100 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        requested.push(n);
+        return { now: 100 + n, messages: 0, aircraft: [] };
+      },
+    };
+    const loader = new HistoryLoader(source, 48, 2000);
+    await loader.ensureLoaded(undefined, '1d');
+    // range > span → startIdx stays 0 → all frames loaded
+    expect(requested).toContain(0);
+    expect(requested).toContain(99);
+    expect(historyStore.frames.length).toBeGreaterThanOrEqual(100);
+  });
+
+  it('skips early frames when range is smaller than span', async () => {
+    const requested: number[] = [];
+    // 100 frames: now = n * 1000, span = 99000s, range '1d' = 86400s
+    // cutoff = 99000 - 86400 = 12600 → startIdx = floor(12600/99000 * 100) = 12
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 100 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        requested.push(n);
+        return { now: n * 1000, messages: 0, aircraft: [] };
+      },
+    };
+    const loader = new HistoryLoader(source, 48, 2000);
+    await loader.ensureLoaded(undefined, '1d');
+    // Probe fetches frame 0, main loop starts at 12
+    expect(requested).toContain(0);
+    expect(requested).toContain(99);
+    expect(requested).not.toContain(1);
+    expect(requested).not.toContain(11);
+    expect(requested).toContain(12);
+    // total: frame 0 (probe cache) + frames 12..99 (main, 99 reused from cache) = 88
+    expect(historyStore.frames.length).toBe(88);
+  });
+
+  it('skips more frames with shorter range', async () => {
+    const requested: number[] = [];
+    // 500 frames: now = n * 1000, span = 499000s, range '1d' = 86400s
+    // cutoff = 499000 - 86400 = 412600 → startIdx = floor(412600/499000 * 500) = 413
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 500 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        requested.push(n);
+        return { now: n * 1000, messages: 0, aircraft: [] };
+      },
+    };
+    const loader = new HistoryLoader(source, 48, 2000);
+    await loader.ensureLoaded(undefined, '1d');
+    // Probe fetches frame 0 and 499, main loop starts at 413
+    expect(requested).toContain(0);
+    expect(requested).toContain(499);
+    expect(requested).not.toContain(1);
+    expect(requested).not.toContain(412);
+    expect(requested).toContain(413);
+    // total: frame 0 (probe cache) + frames 413..499 (main, 499 reused from cache) = 87
+    expect(historyStore.frames.length).toBe(87);
+  });
+
+  it('probes first and last frame for range estimation', async () => {
+    const requested: number[] = [];
+    // 100 frames: now = n * 1000, span = 99000s > range '1d' = 86400s
+    // Probe frames 0 and 99 fetched first (via probeCache), then main loop from 12
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 100 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        requested.push(n);
+        return { now: n * 1000, messages: 0, aircraft: [] };
+      },
+    };
+    const loader = new HistoryLoader(source, 48, 2000);
+    await loader.ensureLoaded(undefined, '1d');
+    // Both probe frames are in the requested list
+    expect(requested).toContain(0);
+    expect(requested).toContain(99);
+  });
+
+  it('falls back to unlimited when probe frame fetch fails', async () => {
+    let callCount = 0;
+    const source: HistorySource = {
+      async getReceiver() {
+        return { version: '1', refresh: 1000, history: 5 };
+      },
+      async getHistoryFrame(n: number): Promise<AircraftSnapshot> {
+        callCount++;
+        if (callCount <= 2) throw new Error('probe failed');
+        return { now: 100 + n, messages: 0, aircraft: [] };
+      },
+    };
+    const loader = new HistoryLoader(source, 48, 2000);
+    // Should not throw; falls back to loading all frames
+    await loader.ensureLoaded(undefined, '1d');
+    expect(historyStore.frames.length).toBeGreaterThan(0);
+  });
+
   it('swallows errors from stale in-flight load after reset()', async () => {
     let staleFrame0Reject: ((e: unknown) => void) | null = null;
     const source: HistorySource = {
