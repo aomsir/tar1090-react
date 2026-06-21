@@ -186,6 +186,14 @@ export function AppShell() {
           controllerRef.current = controller;
           controller.onSelect((hex) => useSelectionStore.getState().select(hex));
           controller.setSelected(useSelectionStore.getState().selectedHex);
+
+          const toolbarState = useToolbarStore.getState();
+          controller.setLabelConfig({
+            enabled: toolbarState.enableLabels,
+            extended: toolbarState.extendedLabels,
+            trackLabels: toolbarState.trackLabels,
+          });
+
           const pushExtent = () => {
             const extent = controller.getViewExtentLonLat();
             if (extent) useMapViewStore.getState().setExtent(extent);

@@ -152,6 +152,26 @@ describe('AppShell', () => {
     expect(fakeController.onViewChange).toHaveBeenCalled();
   });
 
+  it('rehydrates label config into the controller on map ready', () => {
+    useToolbarStore.setState({
+      enableLabels: true,
+      extendedLabels: 2,
+      trackLabels: true,
+    });
+
+    render(<AppShell />);
+
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.setLabelConfig).toHaveBeenCalledWith({
+      enabled: true,
+      extended: 2,
+      trackLabels: true,
+    });
+  });
+
   it('draws the selected aircraft track when history is already loaded', async () => {
     historyStore.setFrames([
       {
