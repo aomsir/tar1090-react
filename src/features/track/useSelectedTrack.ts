@@ -79,7 +79,6 @@ export function useSelectedTrack(): TrackSegment[] {
       if (usePlaybackStore.getState().mode === 'live') {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setTailByHex((prev) => (hex in prev ? {} : prev));
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTraceByHex((prev) => (hex in prev ? {} : prev));
         loadedTraceHexesRef.current.delete(hex);
       }
@@ -90,7 +89,6 @@ export function useSelectedTrack(): TrackSegment[] {
     const lat = ac.lat;
     // tail must accumulate across ticks; aircraftStore is non-reactive so we update state here.
     // Deps are bounded ([hex, version]) so this cannot loop.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTailByHex((prev) => {
       const prevPts = prev[hex] ?? [];
       const last = prevPts[prevPts.length - 1];
