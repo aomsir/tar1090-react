@@ -12,6 +12,8 @@ export const HISTORY_RANGES: readonly { key: HistoryRange; label: string; second
   { key: 'unlimited', label: 'All', seconds: Infinity },
 ];
 
+const HISTORY_FILE_SECONDS = 30;
+
 export interface HistorySource {
   getReceiver(): Promise<Receiver>;
   getHistoryFrame(n: number): Promise<AircraftSnapshot>;
@@ -25,16 +27,14 @@ export interface LoadProgress {
 export class HistoryLoader {
   private readonly source: HistorySource;
   private readonly concurrency: number;
-  private readonly maxFrames: number;
   private promise: Promise<void> | null = null;
   private cachedReceiver: Receiver | null = null;
   private loadGeneration = 0;
   loaded = false;
 
-  constructor(source?: HistorySource, concurrency = 48, maxFrames = 2000) {
+  constructor(source?: HistorySource, concurrency = 48) {
     this.source = source ?? new PollingSource();
     this.concurrency = concurrency;
-    this.maxFrames = maxFrames;
   }
 
   /** Reuse a receiver already fetched elsewhere (avoids a duplicate request). */
@@ -63,54 +63,23 @@ export class HistoryLoader {
       return;
     }
 
-    // Determine startIdx based on range
-    let startIdx = 0;
-    const probeCache = new Map<number, AircraftSnapshot>();
+    const rangeSeconds = HISTORY_RANGES.find((r) => r.key === range)!.seconds;
+    const filesNeeded =
+      range === 'unlimited' ? rawTotal : Math.floor(rangeSeconds / HISTORY_FILE_SECONDS);
+    const startIdx = Math.max(0, rawTotal - filesNeeded);
 
-    if (range !== 'unlimited' && rawTotal > 1) {
-      const rangeSec = HISTORY_RANGES.find((r) => r.key === range)!.seconds;
-      try {
-        const [firstFrame, lastFrame] = await Promise.all([
-          this.source.getHistoryFrame(0),
-          this.source.getHistoryFrame(rawTotal - 1),
-        ]);
-        probeCache.set(0, firstFrame);
-        probeCache.set(rawTotal - 1, lastFrame);
-        const cutoff = lastFrame.now - rangeSec;
-        if (cutoff > firstFrame.now) {
-          const span = lastFrame.now - firstFrame.now;
-          startIdx = Math.floor(((cutoff - firstFrame.now) / span) * rawTotal);
-          startIdx = Math.max(0, Math.min(startIdx, rawTotal - 1));
-        }
-      } catch {
-        // Probe failed; fall back to loading all frames
-        startIdx = 0;
-      }
-    }
-
-    // Sample frame indices from [startIdx, rawTotal-1]
-    const rangeTotal = rawTotal - startIdx;
-    const step = rangeTotal > this.maxFrames ? Math.ceil(rangeTotal / this.maxFrames) : 1;
-    const indices: number[] = [];
-    for (let i = startIdx; i < rawTotal; i += step) indices.push(i);
-    // Always include last frame so time range is complete
-    if (indices[indices.length - 1] !== rawTotal - 1) {
-      indices.push(rawTotal - 1);
-    }
-
-    const loadTotal = indices.length;
+    const loadTotal = rawTotal - startIdx;
     const frames: Array<AircraftSnapshot | undefined> = new Array(loadTotal).fill(undefined);
     let done = 0;
     let next = 0;
+
     const worker = async (): Promise<void> => {
       for (;;) {
         const slot = next++;
         if (slot >= loadTotal) return;
-        const frameIdx = indices[slot]!;
+        const frameIdx = startIdx + slot;
         try {
-          // Reuse probed frames
-          const cached = probeCache.get(frameIdx);
-          frames[slot] = cached ?? (await this.source.getHistoryFrame(frameIdx));
+          frames[slot] = await this.source.getHistoryFrame(frameIdx);
         } catch {
           // skip a missing/failed frame
         }
@@ -118,6 +87,7 @@ export class HistoryLoader {
         onProgress?.({ done, total: loadTotal });
       }
     };
+
     const lanes = Math.min(this.concurrency, loadTotal || 1);
     await Promise.all(Array.from({ length: lanes }, () => worker()));
     if (this.loadGeneration !== generation) return;
