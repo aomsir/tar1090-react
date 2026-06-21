@@ -20,7 +20,11 @@ export interface AircraftLayerHandle {
 
 export function createAircraftLayer(): AircraftLayerHandle {
   const source = new VectorSource();
-  const handle: AircraftLayerHandle = { layer: null as unknown as VectorLayer<VectorSource>, source };
+  const handle: AircraftLayerHandle = {
+    layer: null as unknown as VectorLayer<VectorSource>,
+    source,
+    labelConfig: { enabled: false, extended: 0, trackLabels: false },
+  };
   const layer = new VectorLayer({
     source,
     style: (feature) =>

@@ -9,6 +9,11 @@ function ac(hex: string, lat: number, lon: number): Aircraft {
 }
 
 describe('aircraftLayer', () => {
+  it('starts with labels disabled by default', () => {
+    const handle = createAircraftLayer();
+    expect(handle.labelConfig).toEqual({ enabled: false, extended: 0, trackLabels: false });
+  });
+
   it('adds one feature per positioned aircraft, keyed by hex', () => {
     const { source } = createAircraftLayer();
     syncFeatures(source, [ac('a', 10, 20), ac('b', 11, 21)], null);

@@ -17,7 +17,11 @@ export interface TrackLayerHandle {
 
 export function createTrackLayer(): TrackLayerHandle {
   const source = new VectorSource();
-  const handle: TrackLayerHandle = { layer: null as unknown as VectorLayer<VectorSource>, source };
+  const handle: TrackLayerHandle = {
+    layer: null as unknown as VectorLayer<VectorSource>,
+    source,
+    labelConfig: { enabled: false, extended: 0, trackLabels: false },
+  };
   const layer = new VectorLayer({
     source,
     style: (feature) => {
