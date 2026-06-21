@@ -4,6 +4,7 @@ import { DetailCard } from './DetailCard';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot } from '@/data/types';
@@ -13,6 +14,7 @@ describe('DetailCard', () => {
     aircraftStore.reset();
     useLiveTick.setState({ version: 0 });
     useSelectionStore.setState({ selectedHex: null });
+    useToolbarStore.setState(useToolbarStore.getInitialState());
   });
 
   it('renders nothing when no aircraft is selected', () => {
@@ -185,5 +187,27 @@ describe('DetailCard', () => {
     expect(createSpy).toHaveBeenCalledTimes(1);
     expect(createSpy.mock.calls[0][0]).toBeInstanceOf(Blob);
     expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a resize handle on the right edge', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, { flight: 'CCA101', altitude: 35000 });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+    expect(screen.getByTestId('resize-handle')).toBeInTheDocument();
+  });
+
+  it('panel width reflects detailWidth from store', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, { flight: 'CCA101', altitude: 35000 });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+    useToolbarStore.setState({ detailWidth: 400 });
+
+    render(<DetailCard />);
+    const panel = screen.getByTestId('detail-card');
+    expect(panel.style.width).toBe('400px');
   });
 });

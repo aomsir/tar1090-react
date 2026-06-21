@@ -1,8 +1,10 @@
+import { useCallback, useEffect, useRef } from 'react';
 import { Chip } from '@heroui/react';
 import { X } from 'lucide-react';
 import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
 import { useAircraftPhoto } from '@/features/detail/useAircraftPhoto';
 import { useSelectionStore } from '@/store/selectionStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { extractTrackPoints } from '@/features/track/track';
 import { buildTrackKml } from '@/features/track/kml';
 import { historyStore } from '@/store/historyStore';
@@ -34,6 +36,49 @@ export function DetailCard() {
     d?.registration,
     d?.typeCode,
   );
+  const detailWidth = useToolbarStore((s) => s.detailWidth);
+  const setDetailWidth = useToolbarStore((s) => s.setDetailWidth);
+  const isDragging = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isDragging.current = true;
+      const startX = e.clientX;
+      const startWidth = detailWidth;
+
+      const onMouseMove = (ev: MouseEvent) => {
+        if (!isDragging.current) return;
+        const delta = ev.clientX - startX;
+        setDetailWidth(startWidth + delta);
+      };
+
+      const onMouseUp = () => {
+        isDragging.current = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        cleanupRef.current = null;
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+
+      cleanupRef.current = () => {
+        isDragging.current = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+    },
+    [detailWidth, setDetailWidth],
+  );
+
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.();
+    };
+  }, []);
+
   if (!d) return null;
 
   const handleExportKml = () => {
@@ -54,7 +99,8 @@ export function DetailCard() {
   return (
     <section
       data-testid="detail-card"
-      className="glass absolute bottom-16 left-4 top-16 flex w-64 flex-col p-3 text-white"
+      className="glass absolute bottom-16 left-4 top-16 flex flex-col p-3 text-white"
+      style={{ width: `${detailWidth}px` }}
     >
       <div className="flex items-start gap-2.5">
         <div className="flex-1">
@@ -159,6 +205,11 @@ export function DetailCard() {
       >
         Export KML
       </button>
+      <div
+        data-testid="resize-handle"
+        onMouseDown={handleMouseDown}
+        className="absolute right-0 top-1/2 h-10 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-white/15 opacity-0 transition-opacity hover:opacity-100"
+      />
     </section>
   );
 }
