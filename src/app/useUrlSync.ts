@@ -13,7 +13,7 @@ export function useUrlSync(): void {
   useEffect(() => {
     const { icao, mode: urlMode } = parseQuery(window.location.search);
     if (icao) select(icao);
-    if (urlMode === 'history') void enterHistory();
+    if (urlMode === 'history') void enterHistory(usePlaybackStore.getState().range);
   }, [select, enterHistory]);
 
   useEffect(() => {

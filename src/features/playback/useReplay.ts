@@ -3,18 +3,22 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useReceiverStore } from '@/store/receiverStore';
 import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
+import type { HistoryRange } from '@/data/historyLoader';
 
 export function useReplay(): {
-  enterHistory: () => Promise<void>;
+  enterHistory: (range: HistoryRange) => Promise<void>;
   exitToLive: () => void;
 } {
-  const enterHistory = useCallback(async () => {
+  const enterHistory = useCallback(async (range: HistoryRange) => {
     const store = usePlaybackStore.getState();
     if (store.loading) return;
     store.setLoading(true);
     try {
-      await historyLoader.ensureLoaded((p) =>
-        usePlaybackStore.getState().setProgress(p.done, p.total),
+      store.setRange(range);
+      historyLoader.reset();
+      await historyLoader.ensureLoaded(
+        (p) => usePlaybackStore.getState().setProgress(p.done, p.total),
+        range,
       );
       const bounds = historyStore.timeBounds();
       usePlaybackStore.getState().setBounds(bounds);

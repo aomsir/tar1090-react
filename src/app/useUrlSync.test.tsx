@@ -41,6 +41,7 @@ describe('useUrlSync', () => {
     window.history.replaceState(null, '', '/?mode=history');
     render(<Harness />);
     expect(enterHistoryMock).toHaveBeenCalledTimes(1);
+    expect(enterHistoryMock).toHaveBeenCalledWith('1d');
   });
 
   it('syncs playback mode to the URL', () => {
