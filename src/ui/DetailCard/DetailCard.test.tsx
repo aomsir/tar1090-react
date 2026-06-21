@@ -126,6 +126,27 @@ describe('DetailCard', () => {
     expect(subtitle.textContent).toContain('A320');
   });
 
+  it('each detail group has a colored accent bar', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      registration: 'B-2033',
+      typeCode: 'A320',
+      altitude: 35000,
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+
+    const groups = screen.getByTestId('detail-card').querySelectorAll('section[data-testid^="group-"]');
+    expect(groups.length).toBe(6);
+    for (const group of groups) {
+      const bar = group.querySelector('[data-testid="group-bar"]');
+      expect(bar).toBeTruthy();
+    }
+  });
+
   it('exports a KML download for the selected aircraft track', () => {
     aircraftStore.reset();
     aircraftStore.applySnapshot({

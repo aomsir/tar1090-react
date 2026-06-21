@@ -8,11 +8,20 @@ import { buildTrackKml } from '@/features/track/kml';
 import { historyStore } from '@/store/historyStore';
 import { formatAltitude } from '@/domain/format';
 
+const COLOR_MAP: Record<string, { bar: string; text: string }> = {
+  indigo: { bar: 'bg-indigo-400', text: 'text-indigo-300' },
+  emerald: { bar: 'bg-emerald-400', text: 'text-emerald-300' },
+  sky: { bar: 'bg-sky-400', text: 'text-sky-300' },
+  amber: { bar: 'bg-amber-400', text: 'text-amber-300' },
+  teal: { bar: 'bg-teal-400', text: 'text-teal-300' },
+  slate: { bar: 'bg-slate-400', text: 'text-slate-300' },
+};
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-2 py-0.5 text-xs">
-      <span className="text-slate-400">{label}</span>
-      <span className="text-slate-100">{value}</span>
+    <div className="flex justify-between gap-2 py-[3px] text-xs">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-mono text-slate-300">{value}</span>
     </div>
   );
 }
@@ -120,23 +129,33 @@ export function DetailCard() {
         </div>
       </div>
 
-      <div className="mt-2 flex-1 overflow-y-auto border-t border-white/10 pt-2">
-        {d.groups.map((group) => (
-          <section key={group.title} className="mb-3">
-            <h3 className="mb-1 border-b border-white/10 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
-              {group.title}
-            </h3>
-            {group.rows.map((row) => (
-              <Field key={`${group.title}-${row.label}`} label={row.label} value={row.value} />
-            ))}
-          </section>
-        ))}
+      <div className="mt-3 flex-1 space-y-2 overflow-y-auto">
+        {d.groups.map((group) => {
+          const colors = COLOR_MAP[group.color] ?? COLOR_MAP.slate;
+          return (
+            <section
+              key={group.title}
+              data-testid={`group-${group.color}`}
+              className="rounded-lg border border-white/[0.06] bg-white/[0.04] p-2.5"
+            >
+              <div className="mb-2 flex items-center gap-1.5">
+                <div data-testid="group-bar" className={`h-3 w-[3px] rounded-sm ${colors.bar}`} />
+                <h3 className={`text-[11px] font-semibold uppercase tracking-wide ${colors.text}`}>
+                  {group.title}
+                </h3>
+              </div>
+              {group.rows.map((row) => (
+                <Field key={`${group.title}-${row.label}`} label={row.label} value={row.value} />
+              ))}
+            </section>
+          );
+        })}
       </div>
 
       <button
         type="button"
         onClick={handleExportKml}
-        className="mt-2 rounded bg-white/10 py-1 text-xs hover:bg-white/20"
+        className="mt-3 w-full rounded-lg border border-indigo-500/25 bg-indigo-500/12 py-2 text-xs font-medium text-indigo-300 transition-colors hover:bg-indigo-500/20"
       >
         Export KML
       </button>
