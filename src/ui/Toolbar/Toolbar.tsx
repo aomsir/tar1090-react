@@ -40,7 +40,7 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
   const state = useToolbarStore();
 
   return (
-    <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2">
+    <div data-testid="toolbar-shell" className="relative">
       <nav
         data-testid="toolbar"
         className="glass flex flex-col items-center gap-0.5 p-2"

@@ -130,6 +130,17 @@ describe('ListPanel', () => {
     }
   });
 
+  it('uses parent-managed dock sizing instead of viewport absolute positioning', () => {
+    render(<ListPanel onSelect={vi.fn()} />);
+
+    const panel = screen.getByTestId('list-panel');
+    expect(panel.className).toContain('h-full');
+    expect(panel.className).not.toContain('absolute');
+    expect(panel.className).not.toContain('top-16');
+    expect(panel.className).not.toContain('bottom-16');
+    expect(panel.className).not.toContain('right-4');
+  });
+
   it('panel has a dedicated scroll region wrapping the table', () => {
     render(<ListPanel onSelect={vi.fn()} />);
     const panel = screen.getByTestId('list-panel');

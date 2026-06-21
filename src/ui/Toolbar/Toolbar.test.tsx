@@ -38,6 +38,11 @@ describe('Toolbar', () => {
     expect(onRandomPlane).toHaveBeenCalledOnce();
   });
 
+  it('renders inside a relative shell so the settings panel can anchor in docked layout', () => {
+    render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
+    expect(screen.getByTestId('toolbar-shell').className).toContain('relative');
+  });
+
   it('opens settings panel when settings button is clicked', () => {
     render(<Toolbar onResetView={() => {}} onRandomPlane={() => {}} />);
     const settingsBtn = screen.getByLabelText('Open settings panel');

@@ -50,7 +50,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   return (
     <aside
       data-testid="list-panel"
-      className="glass absolute bottom-16 right-4 top-16 flex min-h-0 w-96 flex-col p-3 text-white"
+      className="glass flex h-full min-h-0 w-96 flex-col p-3 text-white"
     >
       <div className="flex gap-1 rounded-md bg-white/5 p-0.5" role="tablist" aria-label="Aircraft filters">
         {FILTERS.map((f) => (
