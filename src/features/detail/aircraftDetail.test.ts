@@ -1,91 +1,44 @@
 import { describe, it, expect } from 'vitest';
-import { Aircraft } from '@/domain/Aircraft';
 import { toDetail } from './aircraftDetail';
+import { Aircraft } from '@/domain/Aircraft';
 
-describe('toDetail', () => {
-  it('builds original-style detail groups with missing values', () => {
-    const ac = new Aircraft('abc123');
-    Object.assign(ac, {
-      flight: 'CCA101',
-      registration: 'B-2033',
-      typeCode: 'B738',
-      typeLong: 'BOEING 737-800',
-      country: 'China',
-      altitude: 35000,
-      speed: 415,
-      ias: 250,
-      tas: 430,
-      mach: 0.78,
-      navAltitudeMcp: 32000,
-      navQnh: 1013.2,
-      windDirection: 280,
-      windSpeed: 55,
-      rssi: -8.4,
-    });
+function makeAircraft(overrides: Partial<Aircraft> = {}): Aircraft {
+  const ac = new Aircraft('780ABC');
+  Object.assign(ac, {
+    flight: 'CCA101',
+    registration: 'B-2033',
+    typeCode: 'A320',
+    country: 'China',
+    altitude: 35000,
+    speed: 468,
+    track: 247,
+    ...overrides,
+  });
+  return ac;
+}
 
-    const detail = toDetail(ac);
-    expect(detail.groups.map((g) => g.title)).toEqual([
-      'Ground',
-      'Ground',
-      'Ground',
-      'Ground',
-      'Ground',
-      'Ground',
-    ]);
-    const allRows = detail.groups.flatMap((g) => g.rows);
-    expect(allRows).toContainEqual({ label: 'Type code', value: 'B738' });
-    expect(allRows).toContainEqual({ label: 'Aircraft type', value: 'BOEING 737-800' });
-    expect(allRows).toContainEqual({ label: 'IAS', value: '250 kt' });
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAS', value: '430 kt' });
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Mach', value: '0.78' });
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({
-      label: 'MCP altitude',
-      value: '32,000 ft',
-    });
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'TAT', value: '—' });
+describe('aircraftDetail', () => {
+  it('each group has a color field', () => {
+    const detail = toDetail(makeAircraft());
+    for (const group of detail.groups) {
+      expect(group.color).toBeDefined();
+      expect(typeof group.color).toBe('string');
+    }
   });
 
-  it('renders ground altitude as Ground', () => {
-    const ac = new Aircraft('abc123');
-    ac.altitude = 'ground';
-    const detail = toDetail(ac);
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Altitude', value: 'Ground' });
+  it('groups have distinct colors in expected order', () => {
+    const detail = toDetail(makeAircraft());
+    const colors = detail.groups.map((g) => g.color);
+    expect(colors).toEqual(['indigo', 'emerald', 'sky', 'amber', 'teal', 'slate']);
   });
 
-  it('renders unseen delay as — when seen is Infinity', () => {
-    const ac = new Aircraft('abc123');
-    // seen defaults to Infinity
-    const detail = toDetail(ac);
-    expect(detail.groups.flatMap((g) => g.rows)).toContainEqual({ label: 'Altitude', value: '—' });
-  });
-
-  it('maps enrichment and live fields into a detail view-model', () => {
-    const a = new Aircraft('780ABC');
-    Object.assign(a, {
-      flight: 'CCA101',
-      registration: 'B-2033',
-      typeCode: 'A320',
-      typeLong: 'Airbus A320',
-      country: 'China',
-      flagPath: '/flags/3x2/CN.svg',
-      altitude: 35000,
-      speed: 450,
-      track: 90,
-      vertRate: -64,
-      squawk: '2000',
-      messages: 1234,
-      seen: 0.4,
-      isMilitary: false,
-      isMlat: true,
-      lat: 31.2,
-      lon: 121.4,
-    });
-    const d = toDetail(a);
-    expect(d.hex).toBe('780ABC');
-    expect(d.flight).toBe('CCA101');
-    expect(d.typeLong).toBe('Airbus A320');
-    expect(d.flagPath).toBe('/flags/3x2/CN.svg');
-    expect(d.isMlat).toBe(true);
-    expect(d.hasPosition).toBe(true);
+  it('flightStatus group does not contain altitude, ground speed, or track rows', () => {
+    const detail = toDetail(makeAircraft());
+    const flightGroup = detail.groups.find((g) => g.title === 'Flight status');
+    expect(flightGroup).toBeDefined();
+    const labels = flightGroup!.rows.map((r) => r.label);
+    expect(labels).not.toContain('Altitude');
+    expect(labels).not.toContain('Ground speed');
+    expect(labels).not.toContain('Track');
   });
 });

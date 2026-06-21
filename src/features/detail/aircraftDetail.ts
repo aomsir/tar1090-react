@@ -1,6 +1,5 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
-import { formatAltitude } from '@/domain/format';
 
 export interface DetailRow {
   label: string;
@@ -9,6 +8,7 @@ export interface DetailRow {
 
 export interface DetailGroup {
   title: string;
+  color: 'indigo' | 'emerald' | 'sky' | 'amber' | 'teal' | 'slate';
   rows: DetailRow[];
 }
 
@@ -82,22 +82,20 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
 
   const identity: DetailGroup = {
     title: 'Identity',
+    color: 'indigo',
     rows: identityRows,
   };
 
-  const altDisplay = ac.altitude != null ? formatAltitude(ac.altitude) : '\u2014';
   const flightStatus: DetailGroup = {
     title: 'Flight status',
+    color: 'emerald',
     rows: [
-      { label: '\u9ad8\u5ea6', value: altDisplay },
-      { label: '\u5730\u901f', value: kt(ac.speed) },
       { label: 'IAS', value: kt(ac.ias) },
       { label: 'TAS', value: kt(ac.tas) },
       {
         label: 'Mach',
         value: typeof ac.mach === 'number' && Number.isFinite(ac.mach) ? `${ac.mach}` : '\u2014',
       },
-      { label: '\u822a\u5411', value: deg(ac.track) },
       {
         label: 'Vertical rate',
         value:
@@ -111,6 +109,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
 
   const position: DetailGroup = {
     title: 'Position',
+    color: 'sky',
     rows: [
       {
         label: 'Latitude',
@@ -126,6 +125,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
 
   const navigation: DetailGroup = {
     title: 'Navigation',
+    color: 'amber',
     rows: [
       { label: 'MCP altitude', value: feet(ac.navAltitudeMcp) },
       { label: 'FMS altitude', value: feet(ac.navAltitudeFms) },
@@ -142,6 +142,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
 
   const environment: DetailGroup = {
     title: 'Environment',
+    color: 'teal',
     rows: [
       { label: 'Wind direction', value: deg(ac.windDirection) },
       { label: 'Wind speed', value: kt(ac.windSpeed) },
@@ -160,6 +161,7 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
 
   const signal: DetailGroup = {
     title: 'Signal quality',
+    color: 'slate',
     rows: [
       {
         label: 'Signal delay',
