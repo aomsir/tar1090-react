@@ -7,6 +7,7 @@ import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
 
 function seed(hex: string, fields: Partial<Aircraft>): void {
@@ -168,5 +169,34 @@ describe('ListPanel', () => {
 
     expect(screen.getByRole('columnheader', { name: 'Registration' })).toBeInTheDocument();
     expect(screen.getByText('B-2033')).toBeInTheDocument();
+  });
+
+  it('selected row has indigo left border highlight', () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+    useSelectionStore.setState({ selectedHex: 'A1' });
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    const row = screen.getByTestId('row-A1');
+    expect(row.className).toContain('border-l-');
+    expect(row.className).toContain('border-indigo');
+  });
+
+  it('military aircraft row shows inline military chip', () => {
+    seed('A1', { flight: 'MIL01', altitude: 35000, isMilitary: true });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    const row = screen.getByTestId('row-A1');
+    expect(row.textContent).toContain('MIL');
+  });
+
+  it('MLAT aircraft row shows inline MLAT chip', () => {
+    seed('A1', { flight: 'MLT01', altitude: 35000, isMlat: true });
+    act(() => useLiveTick.getState().bump());
+
+    render(<ListPanel onSelect={vi.fn()} />);
+    const row = screen.getByTestId('row-A1');
+    expect(row.textContent).toContain('MLAT');
   });
 });

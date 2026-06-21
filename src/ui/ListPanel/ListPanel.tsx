@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Chip } from '@heroui/react';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
@@ -18,11 +19,11 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 
 const EMERGENCY_SQUAWKS = new Set(['7500', '7600', '7700']);
 
-function rowBackground(row: AircraftRow, selected: boolean): string {
-  if (selected) return 'bg-accent/25';
+function rowBackground(row: AircraftRow, selected: boolean, index: number): string {
   if (EMERGENCY_SQUAWKS.has(row.squawk)) return 'bg-red-500/25';
+  if (selected) return 'border-l-[3px] border-indigo-400 bg-indigo-500/12';
   if (row.isMlat) return 'bg-amber-400/10';
-  return '';
+  return index % 2 === 0 ? 'bg-white/[0.03]' : '';
 }
 
 export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
@@ -129,7 +130,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                     aria-sort={
                       isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
                     }
-                    className={`px-1 py-1 font-normal ${align === 'right' ? 'text-right' : 'text-left'}`}
+                    className={`px-2 py-1.5 font-medium ${align === 'right' ? 'text-right' : 'text-left'} ${isActive ? 'border-b-2 border-indigo-500/60' : 'border-b-2 border-white/15'}`}
                   >
                     {sortable ? (
                       <button
@@ -138,7 +139,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                         onClick={() => toggleSort(c.id as SortKey)}
                       >
                         {historyLabel(c)}
-                        {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                        {isActive ? (sortDir === 'asc' ? ' ▴' : ' ▾') : ''}
                       </button>
                     ) : (
                       <span>{c.id === 'flag' ? 'Flag' : historyLabel(c)}</span>
@@ -149,20 +150,20 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {rows.map((r, index) => {
               const selected = r.hex === selectedHex;
               return (
                 <tr
                   key={r.hex}
                   data-testid={`row-${r.hex}`}
                   onClick={() => onSelect(r.hex)}
-                  className={`cursor-pointer hover:bg-white/10 ${rowBackground(r, selected)}`}
+                  className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, index)}`}
                 >
                   {visibleColumns.map((c) => {
                     const align = c.align ?? 'left';
                     if (c.id === 'flag') {
                       return (
-                        <td key={c.id} className="px-1 py-1">
+                        <td key={c.id} className="px-2 py-1.5">
                           <span className="flex w-4 shrink-0 items-center justify-center">
                             {r.flagPath ? (
                               <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
@@ -177,13 +178,32 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                       );
                     }
                     const value = c.format(r);
+                    const isNumeric = c.align === 'right';
+                    const cellClass = [
+                      'px-2 py-1.5 truncate',
+                      align === 'right' ? 'text-right' : 'text-left',
+                      isNumeric ? 'font-mono text-xs' : '',
+                      c.id === 'flight' ? 'font-medium' : '',
+                      !value || value === '—' ? 'text-slate-500' : '',
+                    ].filter(Boolean).join(' ');
+
                     return (
                       <td
                         key={c.id}
-                        className={`px-1 py-1 truncate ${align === 'right' ? 'text-right' : 'text-left'}`}
+                        className={cellClass}
                         {...(value ? { title: value } : {})}
                       >
-                        {value || '—'}
+                        {c.id === 'aircraft_type' && value && value !== '—' ? (
+                          <span className="rounded bg-white/[0.08] px-1.5 text-xs">{value}</span>
+                        ) : (
+                          value || '—'
+                        )}
+                        {c.id === 'flight' && r.isMilitary ? (
+                          <Chip size="sm" color="danger" variant="flat" className="ml-1 scale-75">MIL</Chip>
+                        ) : null}
+                        {c.id === 'flight' && r.isMlat ? (
+                          <Chip size="sm" color="warning" variant="flat" className="ml-1 scale-75">MLAT</Chip>
+                        ) : null}
                       </td>
                     );
                   })}
