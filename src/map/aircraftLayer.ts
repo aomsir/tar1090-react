@@ -20,6 +20,7 @@ export interface AircraftLayerHandle {
 
 export function createAircraftLayer(): AircraftLayerHandle {
   const source = new VectorSource();
+  const handle: AircraftLayerHandle = { layer: null as unknown as VectorLayer<VectorSource>, source };
   const layer = new VectorLayer({
     source,
     style: (feature) =>
@@ -27,9 +28,11 @@ export function createAircraftLayer(): AircraftLayerHandle {
         feature.get('aircraft') as Aircraft,
         feature.get('selected') === true,
         Number(feature.get('zoom') ?? 0),
+        handle.labelConfig,
       ),
   });
-  return { layer, source };
+  handle.layer = layer;
+  return handle;
 }
 
 export function syncFeatures(

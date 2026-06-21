@@ -61,4 +61,35 @@ describe('trackLayer', () => {
     expect(coords[0][0]).not.toBe(180);
     expect(coords[0][0]).toBeGreaterThan(2e7);
   });
+
+  it('stores label on feature when segment has label', () => {
+    const source = new VectorSource();
+    syncTrack(source, [seg({ label: '32000 ft' })]);
+    expect(source.getFeatures()[0].get('label')).toBe('32000 ft');
+  });
+
+  it('renders no text when trackLabels is false', () => {
+    const handle = createTrackLayer();
+    handle.labelConfig = { enabled: true, extended: 0, trackLabels: false };
+    const source = handle.source;
+    syncTrack(source, [seg({ label: '32000 ft' })]);
+    const feature = source.getFeatures()[0];
+    const styleFn = handle.layer.getStyleFunction()!;
+    const style = styleFn(feature, 1);
+    const styles = Array.isArray(style) ? style : [style];
+    const textVal = styles[0]?.getText?.()?.getText?.();
+    expect(textVal == null || textVal === '').toBe(true);
+  });
+
+  it('renders segment label when trackLabels is true', () => {
+    const handle = createTrackLayer();
+    handle.labelConfig = { enabled: true, extended: 0, trackLabels: true };
+    const source = handle.source;
+    syncTrack(source, [seg({ label: '32000 ft' })]);
+    const feature = source.getFeatures()[0];
+    const styleFn = handle.layer.getStyleFunction()!;
+    const style = styleFn(feature, 1);
+    const styles = Array.isArray(style) ? style : [style];
+    expect(styles[0]?.getText?.()?.getText?.()).toBe('32000 ft');
+  });
 });

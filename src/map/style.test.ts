@@ -57,7 +57,7 @@ describe('aircraftStyle', () => {
   it('renders the marker label as style text', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
-    expect(aircraftStyle(ac, false).getText()?.getText()).toBe('CCA101');
+    expect(aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false }).getText()?.getText()).toBe('CCA101');
   });
 
   it('uses an svg icon image instead of a triangle', () => {
@@ -100,9 +100,36 @@ describe('aircraftStyle', () => {
   it('moves label offset with enlarged marker size', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101', t: 'A320' }, 1);
-    const small = aircraftStyle(ac, false, 8).getText()?.getOffsetY();
-    const big = aircraftStyle(ac, false, 9).getText()?.getOffsetY();
+    const cfg = { enabled: true, extended: 0, trackLabels: false };
+    const small = aircraftStyle(ac, false, 8, cfg).getText()?.getOffsetY();
+    const big = aircraftStyle(ac, false, 9, cfg).getText()?.getOffsetY();
     expect(Math.abs(big ?? 0)).toBeGreaterThan(Math.abs(small ?? 0));
+  });
+
+  it('hides label when enableLabels is false', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
+    const style = aircraftStyle(ac, false, 0, { enabled: false, extended: 0, trackLabels: false });
+    expect(style.getText()?.getText()).toBe('');
+  });
+
+  it('shows label when enableLabels is true', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
+    const style = aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false });
+    expect(style.getText()?.getText()).toBe('CCA101');
+  });
+
+  it('includes altitude and speed when extendedLabels > 0', () => {
+    const ac = new Aircraft('abc123');
+    ac.update({ hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450 }, 1);
+    const base = aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false });
+    const extended = aircraftStyle(ac, false, 0, { enabled: true, extended: 1, trackLabels: false });
+    expect(base.getText()?.getText()).toBe('CCA101');
+    const extText = extended.getText()?.getText() as string;
+    expect(extText).toContain('CCA101');
+    expect(extText).not.toBe('CCA101');
+    expect(extText).toContain('32000');
   });
 });
 

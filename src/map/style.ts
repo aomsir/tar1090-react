@@ -6,6 +6,7 @@ import Text from 'ol/style/Text';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { Aircraft } from '@/domain/Aircraft';
 import { selectMarker, svgShapeToDataUri } from './markerShapes';
+import type { LabelConfig } from './aircraftLayer';
 
 export const MARKER_ZOOM_DIVIDE = 8.5;
 export const MARKER_SMALL = 1;
@@ -33,7 +34,24 @@ export function markerLabel(ac: Aircraft): string {
   return `hex: ${ac.hex}`;
 }
 
-export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style {
+function extendedLabel(ac: Aircraft): string {
+  const base = markerLabel(ac);
+  const parts = [base];
+  if (ac.altitude != null) {
+    parts.push(ac.altitude === 'ground' ? 'GND' : `${ac.altitude} ft`);
+  }
+  if (ac.speed != null) {
+    parts.push(`${ac.speed} kt`);
+  }
+  return parts.join('\n');
+}
+
+export function aircraftStyle(
+  ac: Aircraft,
+  selected: boolean,
+  zoom = 0,
+  labelConfig?: LabelConfig,
+): Style {
   const { shape, scale } = selectMarker(ac);
   const fill = aircraftFillColor(ac);
   const stroke = selected ? '#ffffff' : '#000000';
@@ -41,6 +59,13 @@ export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style 
   const rotation = shape.noRotate ? 0 : aircraftRotationRad(ac);
   const markerScale =
     BASE_ICON_SCALE * markerZoomScale(zoom) * scale * (selected ? SELECTED_SCALE : 1);
+
+  const labelText =
+    labelConfig?.enabled === false
+      ? ''
+      : (labelConfig?.extended ?? 0) > 0
+        ? extendedLabel(ac)
+        : markerLabel(ac);
 
   return new Style({
     image: new Icon({
@@ -50,7 +75,7 @@ export function aircraftStyle(ac: Aircraft, selected: boolean, zoom = 0): Style 
       rotateWithView: true,
     }),
     text: new Text({
-      text: markerLabel(ac),
+      text: labelText,
       font: 'bold 12px/14px Tahoma, Geneva, sans-serif',
       offsetY: -30 * markerScale,
       fill: new Fill({ color: '#ffffff' }),

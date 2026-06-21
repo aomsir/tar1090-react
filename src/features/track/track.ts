@@ -16,6 +16,7 @@ export interface TrackSegment {
   colorKey: string;
   ground: boolean;
   estimated: boolean;
+  label?: string;
 }
 
 export function extractTrackPoints(frames: AircraftSnapshot[], hex: string): TrackPoint[] {
@@ -74,6 +75,7 @@ export function buildTrackSegments(
         colorKey: key,
         ground: p.ground,
         estimated: false,
+        label: p.ground ? 'GND' : typeof p.alt === 'number' ? `${p.alt} ft` : undefined,
       };
       segs.push(cur);
     }
