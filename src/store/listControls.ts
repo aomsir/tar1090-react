@@ -8,12 +8,10 @@ interface ListControlsState {
   filter: FilterKey;
   sortKey: SortKey;
   sortDir: SortDir;
-  inViewOnly: boolean;
   hiddenColumns: Set<ColumnId>;
   setQuery: (q: string) => void;
   setFilter: (f: FilterKey) => void;
   toggleSort: (key: SortKey) => void;
-  setInViewOnly: (v: boolean) => void;
   toggleColumn: (id: ColumnId) => void;
   resetColumns: () => void;
 }
@@ -23,11 +21,9 @@ export const useListControls = create<ListControlsState>((set) => ({
   filter: 'all',
   sortKey: 'altitude',
   sortDir: 'desc',
-  inViewOnly: false,
   hiddenColumns: new Set(DEFAULT_HIDDEN_COLUMNS),
   setQuery: (query) => set({ query }),
   setFilter: (filter) => set({ filter }),
-  setInViewOnly: (inViewOnly) => set({ inViewOnly }),
   toggleSort: (key) =>
     set((s) =>
       s.sortKey === key

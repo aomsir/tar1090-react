@@ -3,6 +3,7 @@ import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
 import { useSelectionStore } from '@/store/selectionStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRows';
@@ -31,8 +32,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const sortKey = useListControls((s) => s.sortKey);
   const sortDir = useListControls((s) => s.sortDir);
   const toggleSort = useListControls((s) => s.toggleSort);
-  const inViewOnly = useListControls((s) => s.inViewOnly);
-  const setInViewOnly = useListControls((s) => s.setInViewOnly);
+  const inViewOnly = useToolbarStore((s) => s.inViewOnly);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
   const hiddenColumns = useListControls((s) => s.hiddenColumns);
   const toggleColumn = useListControls((s) => s.toggleColumn);
@@ -73,7 +73,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
         <input
           type="checkbox"
           checked={inViewOnly}
-          onChange={(e) => setInViewOnly(e.target.checked)}
+          onChange={() => useToolbarStore.getState().toggle('inViewOnly')}
         />
         Only aircraft in view
       </label>

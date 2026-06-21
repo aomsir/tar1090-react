@@ -5,6 +5,7 @@ import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
 import { usePlaybackStore } from '@/store/playbackStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { historyStore } from '@/store/historyStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { useAircraftRows } from './useAircraftRows';
@@ -26,8 +27,8 @@ describe('useAircraftRows', () => {
       filter: 'all',
       sortKey: 'altitude',
       sortDir: 'desc',
-      inViewOnly: false,
     });
+    useToolbarStore.setState({ inViewOnly: false });
     useMapViewStore.setState({ extent: null });
   });
 

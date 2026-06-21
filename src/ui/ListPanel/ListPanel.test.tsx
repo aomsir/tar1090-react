@@ -6,6 +6,7 @@ import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
 import { usePlaybackStore } from '@/store/playbackStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { Aircraft } from '@/domain/Aircraft';
 
 function seed(hex: string, fields: Partial<Aircraft>): void {
@@ -24,8 +25,8 @@ describe('ListPanel', () => {
       filter: 'all',
       sortKey: 'altitude',
       sortDir: 'desc',
-      inViewOnly: false,
     });
+    useToolbarStore.setState({ inViewOnly: false });
     useListControls.getState().resetColumns();
     useMapViewStore.setState({ extent: null });
   });

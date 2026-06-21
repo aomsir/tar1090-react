@@ -4,6 +4,7 @@ import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';
 import { useMapViewStore } from '@/store/mapViewStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { useReceiverStore } from '@/store/receiverStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { buildRows, type AircraftRow } from './aircraftRows';
@@ -15,7 +16,7 @@ export function useAircraftRows(): AircraftRow[] {
   const filter = useListControls((s) => s.filter);
   const sortKey = useListControls((s) => s.sortKey);
   const sortDir = useListControls((s) => s.sortDir);
-  const inViewOnly = useListControls((s) => s.inViewOnly);
+  const inViewOnly = useToolbarStore((s) => s.inViewOnly);
   const extent = useMapViewStore((s) => s.extent);
   const siteLat = useReceiverStore((s) => s.lat);
   const siteLon = useReceiverStore((s) => s.lon);
