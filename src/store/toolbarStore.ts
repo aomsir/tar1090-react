@@ -94,7 +94,7 @@ export const useToolbarStore = create<ToolbarState>()(
       name: 'toolbar-settings',
       partialize: (state) => {
         // Exclude transient UI state from persistence
-        const { settingsOpen, fullscreen, ...persisted } = state;
+        const { settingsOpen: _sf, fullscreen: _fs, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
         return persisted;
       },
     },

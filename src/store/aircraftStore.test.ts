@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { AircraftStore } from './aircraftStore';
 import { useToolbarStore } from './toolbarStore';
 import type { AircraftSnapshot } from '@/data/types';

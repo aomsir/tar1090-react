@@ -421,7 +421,7 @@ describe('AppShell', () => {
       Date.now(),
     );
     const ac2 = new Aircraft('a00002');
-    (ac2 as any).isMilitary = true;
+    (ac2 as Aircraft).isMilitary = true;
     ac2.update(
       { hex: 'a00002', lat: 30, lon: 40 } as AircraftSnapshot['aircraft'][number],
       Date.now(),
