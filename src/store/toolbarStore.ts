@@ -43,6 +43,7 @@ interface ToolbarState {
   coloredTrails: boolean;
   labelScale: number;
   iconScale: number;
+  detailWidth: number;
 
   // Actions
   toggle: (key: ToggleKey) => void;
@@ -50,6 +51,7 @@ interface ToolbarState {
   setUnits: (u: Units) => void;
   setLabelScale: (v: number) => void;
   setIconScale: (v: number) => void;
+  setDetailWidth: (w: number) => void;
   toggleSettings: () => void;
   resetAll: () => void;
 }
@@ -75,6 +77,7 @@ const DEFAULTS = {
   coloredTrails: true,
   labelScale: 1,
   iconScale: 1,
+  detailWidth: 320,
 };
 
 export const useToolbarStore = create<ToolbarState>()(
@@ -87,6 +90,7 @@ export const useToolbarStore = create<ToolbarState>()(
       setUnits: (units) => set({ units }),
       setLabelScale: (labelScale) => set({ labelScale }),
       setIconScale: (iconScale) => set({ iconScale }),
+      setDetailWidth: (w) => set({ detailWidth: Math.max(280, Math.min(480, w)) }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),

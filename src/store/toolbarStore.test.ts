@@ -92,3 +92,30 @@ describe('toolbarStore', () => {
     expect(stored.state.fullscreen).toBeUndefined();
   });
 });
+
+describe('detailWidth', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useToolbarStore.setState(useToolbarStore.getInitialState());
+  });
+
+  it('defaults to 320', () => {
+    useToolbarStore.getState().resetAll();
+    expect(useToolbarStore.getState().detailWidth).toBe(320);
+  });
+
+  it('setDetailWidth updates the value', () => {
+    useToolbarStore.getState().setDetailWidth(400);
+    expect(useToolbarStore.getState().detailWidth).toBe(400);
+  });
+
+  it('clamps to minimum 280', () => {
+    useToolbarStore.getState().setDetailWidth(100);
+    expect(useToolbarStore.getState().detailWidth).toBe(280);
+  });
+
+  it('clamps to maximum 480', () => {
+    useToolbarStore.getState().setDetailWidth(999);
+    expect(useToolbarStore.getState().detailWidth).toBe(480);
+  });
+});
