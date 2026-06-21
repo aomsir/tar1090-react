@@ -19,6 +19,13 @@ vi.mock('@/data/historyLoader', () => ({
     ensureLoaded: ensureLoadedMock,
     reset: vi.fn(),
   },
+  HISTORY_RANGES: [
+    { key: '1d',        label: '1 day',  seconds: 86400 },
+    { key: '3d',        label: '3 days', seconds: 259200 },
+    { key: '1w',        label: '1 week', seconds: 604800 },
+    { key: '1m',        label: '1 month', seconds: 2592000 },
+    { key: 'unlimited', label: 'All', seconds: Infinity },
+  ],
 }));
 
 function Harness({ onReady }: { onReady: (r: ReturnType<typeof useReplay>) => void }) {
@@ -68,6 +75,55 @@ describe('useReplay', () => {
     });
 
     expect(ensureLoadedMock).not.toHaveBeenCalled();
+  });
+
+  it('skips enterHistory when already in history mode with the same range', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await replay!.enterHistory('1d');
+    });
+
+    expect(ensureLoadedMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await replay!.enterHistory('1d');
+    });
+
+    // Should not call ensureLoaded again — same range in history mode
+    expect(ensureLoadedMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does call enterHistory when range differs even in history mode', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await replay!.enterHistory('1d');
+    });
+
+    expect(ensureLoadedMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await replay!.enterHistory('3d');
+    });
+
+    // Different range — should reload
+    expect(ensureLoadedMock).toHaveBeenCalledTimes(2);
+    expect(ensureLoadedMock).toHaveBeenLastCalledWith(expect.any(Function), '3d');
   });
 
   it('passes range to historyLoader.ensureLoaded', async () => {

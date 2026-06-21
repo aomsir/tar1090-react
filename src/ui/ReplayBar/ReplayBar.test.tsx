@@ -90,6 +90,50 @@ describe('ReplayBar', () => {
     expect(usePlaybackStore.getState().mode).toBe('live');
   });
 
+  it('shows a range selector in history mode replay bar', async () => {
+    render(<ReplayBar />);
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
+    await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
+    const rangeSelect = screen.getByRole('combobox', { name: 'Time range' });
+    expect(rangeSelect).toBeInTheDocument();
+    expect(rangeSelect).toHaveValue('1d');
+  });
+
+  it('switching range select reloads history with new range', async () => {
+    const { historyLoader } = await import('@/data/historyLoader');
+    render(<ReplayBar />);
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
+    await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
+    vi.mocked(historyLoader.reset).mockClear();
+    vi.mocked(historyLoader.ensureLoaded).mockClear();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Time range' }), {
+      target: { value: '1w' },
+    });
+    await waitFor(() => expect(usePlaybackStore.getState().range).toBe('1w'));
+    expect(historyLoader.reset).toHaveBeenCalled();
+    expect(historyLoader.ensureLoaded).toHaveBeenCalledWith(expect.any(Function), '1w');
+    // Still in history mode
+    expect(usePlaybackStore.getState().mode).toBe('history');
+  });
+
+  it('re-selecting same range in history mode does not reload', async () => {
+    const { historyLoader } = await import('@/data/historyLoader');
+    render(<ReplayBar />);
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
+    await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
+    vi.mocked(historyLoader.reset).mockClear();
+    vi.mocked(historyLoader.ensureLoaded).mockClear();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Time range' }), {
+      target: { value: '1d' },
+    });
+    // Same range — guard should prevent reload
+    expect(historyLoader.reset).not.toHaveBeenCalled();
+    expect(historyLoader.ensureLoaded).not.toHaveBeenCalled();
+  });
+
   it('shows a fullscreen loading overlay with progress', () => {
     usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
     render(<ReplayBar />);

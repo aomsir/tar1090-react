@@ -12,6 +12,7 @@ export function useReplay(): {
   const enterHistory = useCallback(async (range: HistoryRange) => {
     const store = usePlaybackStore.getState();
     if (store.loading) return;
+    if (store.mode === 'history' && store.range === range) return;
     store.setLoading(true);
     try {
       store.setRange(range);

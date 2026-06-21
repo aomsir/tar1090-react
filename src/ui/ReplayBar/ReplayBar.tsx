@@ -2,7 +2,7 @@ import { Play, Pause, History, X } from 'lucide-react';
 import { Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReplay } from '@/features/playback/useReplay';
-import { HISTORY_RANGES } from '@/data/historyLoader';
+import { HISTORY_RANGES, type HistoryRange } from '@/data/historyLoader';
 
 const SPEEDS = [1, 2, 4, 8, 16, 64];
 
@@ -80,9 +80,21 @@ export function ReplayBar() {
             </option>
           ))}
         </select>
+        <select
+          aria-label="Speed"
+          value={range}
+          onChange={(e) => void enterHistory(e.target.value as HistoryRange)}
+          className="rounded bg-white/10 px-1 text-xs"
+        >
+          {HISTORY_RANGES.map((r) => (
+            <option key={r.key} value={r.key}>
+              {r.label}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
-          aria-label="Speed"
+          aria-label="Time range"
           onClick={exitToLive}
           className="rounded p-1 hover:bg-white/10"
         >
