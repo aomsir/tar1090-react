@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { AircraftStore } from './aircraftStore';
+import { useToolbarStore } from './toolbarStore';
 import type { AircraftSnapshot } from '@/data/types';
 
 const snap = (now: number, messages: number, hexes: string[]): AircraftSnapshot => ({
@@ -49,5 +50,15 @@ describe('AircraftStore', () => {
     expect(store.map.size).toBe(0);
     const stats = store.applySnapshot(snap(3, 300, ['x']));
     expect(stats.messageRate).toBe(0);
+  });
+
+  it('keeps stale aircraft when persistence is enabled', () => {
+    useToolbarStore.setState({ persistence: true });
+    const store = new AircraftStore();
+    store.applySnapshot(snap(0, 0, ['a', 'b']));
+    store.applySnapshot(snap(120, 0, ['a']));
+    expect(store.map.has('b')).toBe(true);
+    expect(store.map.has('a')).toBe(true);
+    useToolbarStore.setState({ persistence: false });
   });
 });

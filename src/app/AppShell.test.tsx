@@ -32,6 +32,8 @@ const fakeController = {
   requestFullscreen: vi.fn(),
   exitFullscreen: vi.fn(),
   setLabelConfig: vi.fn(),
+  showPTracks: vi.fn(),
+  clearPTracks: vi.fn(),
 };
 
 vi.mock('@/map/MapView', () => ({
@@ -87,6 +89,8 @@ describe('AppShell', () => {
       filterGroundVehicles: false,
       filterBlockedMLAT: false,
       follow: false,
+      persistence: false,
+      allTracks: false,
     });
     historyStore.reset();
     aircraftStore.reset();
@@ -109,6 +113,8 @@ describe('AppShell', () => {
     fakeController.requestFullscreen.mockClear();
     fakeController.exitFullscreen.mockClear();
     fakeController.setLabelConfig.mockClear();
+    fakeController.showPTracks.mockClear();
+    fakeController.clearPTracks.mockClear();
   });
 
   it('renders command bar, list panel, replay bar and map regions', () => {
@@ -423,5 +429,80 @@ describe('AppShell', () => {
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(-120, 55);
+  });
+
+  it('isolation filters to single selected aircraft in single-select mode', () => {
+    const ac1 = new Aircraft('a00001');
+    ac1.update(
+      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    const ac2 = new Aircraft('a00002');
+    ac2.update(
+      { hex: 'a00002', lat: 30, lon: 40 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('a00001', ac1);
+    aircraftStore.map.set('a00002', ac2);
+    useSelectionStore.getState().select('a00001');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.syncAircraft.mockClear();
+
+    act(() => {
+      useToolbarStore.setState({ isolation: true });
+    });
+
+    const lastList = fakeController.syncAircraft.mock.calls.at(-1)![0] as { hex: string }[];
+    expect(lastList.length).toBe(1);
+    expect(lastList[0].hex).toBe('a00001');
+  });
+
+  it('allTracks calls showPTracks with position histories when enabled in live mode', () => {
+    const ac = new Aircraft('a00001');
+    ac.update(
+      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
+      1000,
+    );
+    ac.update(
+      { hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number],
+      1001,
+    );
+    aircraftStore.map.set('a00001', ac);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.showPTracks.mockClear();
+
+    act(() => {
+      useToolbarStore.setState({ allTracks: true });
+    });
+
+    expect(fakeController.showPTracks).toHaveBeenCalled();
+    const tracksMap = fakeController.showPTracks.mock.calls.at(-1)![0] as Map<string, unknown[]>;
+    expect(tracksMap).toBeInstanceOf(Map);
+    expect(tracksMap.has('a00001')).toBe(true);
+    expect(tracksMap.get('a00001')!.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('allTracks clears pTracks when disabled in live mode', () => {
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      useToolbarStore.setState({ allTracks: true });
+    });
+    act(() => {
+      useToolbarStore.setState({ allTracks: false });
+    });
+
+    expect(fakeController.clearPTracks).toHaveBeenCalled();
   });
 });

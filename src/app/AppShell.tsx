@@ -19,6 +19,7 @@ import { aircraftStore } from '@/store/aircraftStore';
 import { historyStore } from '@/store/historyStore';
 import { useSeedVersion } from '@/data/liveHistorySeeder';
 import type { MapController } from '@/map/MapController';
+import type { TrackPoint } from '@/features/track/track';
 
 export function AppShell() {
   const controllerRef = useRef<MapController | null>(null);
@@ -29,6 +30,7 @@ export function AppShell() {
   const filterGroundVehicles = useToolbarStore((s) => s.filterGroundVehicles);
   const filterBlockedMLAT = useToolbarStore((s) => s.filterBlockedMLAT);
   const follow = useToolbarStore((s) => s.follow);
+  const allTracks = useToolbarStore((s) => s.allTracks);
 
   useLiveData(controllerRef);
   useUrlSync();
@@ -99,8 +101,9 @@ export function AppShell() {
     if (mode === 'live') {
       let list = aircraftStore.list();
       if (onlyMilitary) list = list.filter((ac) => ac.isMilitary);
-      if (isolation && selectedHexes.size > 0) {
-        list = list.filter((ac) => selectedHexes.has(ac.hex));
+      if (isolation) {
+        if (selectedHexes.size > 0) list = list.filter((ac) => selectedHexes.has(ac.hex));
+        else if (selectedHex) list = list.filter((ac) => ac.hex === selectedHex);
       }
       if (filterGroundVehicles) list = list.filter((ac) => !ac.category?.startsWith('C'));
       if (filterBlockedMLAT) list = list.filter((ac) => !ac.hex.startsWith('~'));
@@ -132,6 +135,30 @@ export function AppShell() {
   useEffect(() => {
     controllerRef.current?.setSelected(selectedHex);
   }, [selectedHex]);
+
+  useEffect(() => {
+    if (mode !== 'live') return;
+    const c = controllerRef.current;
+    if (!c) return;
+    if (!allTracks) {
+      c.clearPTracks();
+      return;
+    }
+    const tracks = new globalThis.Map<string, TrackPoint[]>();
+    for (const ac of aircraftStore.list()) {
+      if (ac.positionHistory.length < 2) continue;
+      tracks.set(ac.hex, ac.positionHistory.map((p) => ({
+        lon: p.lon,
+        lat: p.lat,
+        alt: p.alt,
+        ts: p.ts,
+        track: p.track,
+        speed: p.speed,
+        ground: p.ground,
+      })));
+    }
+    c.showPTracks(tracks);
+  }, [allTracks, mode]);
 
   const handleSelectFromList = useCallback((hex: string) => {
     useSelectionStore.getState().select(hex);

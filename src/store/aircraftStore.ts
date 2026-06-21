@@ -1,5 +1,6 @@
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
+import { useToolbarStore } from '@/store/toolbarStore';
 
 const STALE_SECONDS = 60;
 
@@ -29,6 +30,7 @@ export class AircraftStore {
     }
     for (const [hex, ac] of this.map) {
       if (!present.has(hex) && snap.now - ac.lastUpdated > STALE_SECONDS) {
+        if (useToolbarStore.getState().persistence) continue;
         this.map.delete(hex);
       }
     }
