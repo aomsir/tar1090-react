@@ -2,6 +2,7 @@ import { Play, Pause, History, X } from 'lucide-react';
 import { Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReplay } from '@/features/playback/useReplay';
+import { HISTORY_RANGES } from '@/data/historyLoader';
 
 const SPEEDS = [1, 2, 4, 8, 16, 64];
 
@@ -18,6 +19,8 @@ export function ReplayBar() {
   const speed = usePlaybackStore((s) => s.speed);
   const cursorTime = usePlaybackStore((s) => s.cursorTime);
   const bounds = usePlaybackStore((s) => s.bounds);
+  const range = usePlaybackStore((s) => s.range);
+  const rangeSelectOpen = usePlaybackStore((s) => s.rangeSelectOpen);
   const { enterHistory, exitToLive } = useReplay();
 
   /* Fullscreen loading overlay */
@@ -89,13 +92,37 @@ export function ReplayBar() {
     );
   }
 
-  /* Live mode: compact floating button */
+  /* Live mode: History button with inline range expansion */
+  if (rangeSelectOpen) {
+    return (
+      <div
+        data-testid="replay-bar"
+        className="glass absolute bottom-3 left-4 flex items-center gap-1 px-2 py-1.5 text-xs text-white"
+      >
+        {HISTORY_RANGES.map((r) => (
+          <button
+            key={r.key}
+            type="button"
+            aria-label={r.label}
+            onClick={() => {
+              usePlaybackStore.getState().setRangeSelectOpen(false);
+              void enterHistory(r.key);
+            }}
+            className={`rounded px-2 py-1 hover:bg-white/10 ${r.key === range ? 'bg-white/20' : ''}`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <button
       data-testid="replay-bar"
       type="button"
       aria-label="History"
-      onClick={() => void enterHistory()}
+      onClick={() => usePlaybackStore.getState().setRangeSelectOpen(true)}
       className="glass absolute bottom-3 left-4 flex items-center gap-1.5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
     >
       <History size={14} /> History

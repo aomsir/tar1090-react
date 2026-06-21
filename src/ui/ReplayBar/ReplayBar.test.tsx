@@ -7,14 +7,22 @@ import type { AircraftSnapshot } from '@/data/types';
 
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: {
-    ensureLoaded: vi.fn(async (onProgress?: (p: { done: number; total: number }) => void) => {
+    ensureLoaded: vi.fn(async (onProgress?: (p: { done: number; total: number }) => void, _range?: string) => {
       historyStore.setFrames([
         { now: 100, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
         { now: 200, messages: 0, aircraft: [] as unknown as AircraftSnapshot['aircraft'] },
       ]);
       onProgress?.({ done: 2, total: 2 });
     }),
+    reset: vi.fn(),
   },
+  HISTORY_RANGES: [
+    { key: '1d',        label: '1 day',  seconds: 86400 },
+    { key: '3d',        label: '3 days', seconds: 259200 },
+    { key: '1w',        label: '1 week', seconds: 604800 },
+    { key: '1m',        label: '1 month', seconds: 2592000 },
+    { key: 'unlimited', label: 'All', seconds: Infinity },
+  ],
 }));
 
 describe('ReplayBar', () => {
@@ -33,9 +41,33 @@ describe('ReplayBar', () => {
     expect(screen.queryByText('All')).not.toBeInTheDocument();
   });
 
-  it('enters history mode on entry click and renders a scrubber', async () => {
+  it('clicking History expands inline range options instead of loading immediately', () => {
     render(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    // Should show range option buttons, not loading overlay
+    expect(screen.getByRole('button', { name: '1 day' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '3 days' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1 week' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1 month' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
+    // Not loading yet
+    expect(usePlaybackStore.getState().loading).toBe(false);
+  });
+
+  it('selecting a range option triggers enterHistory and collapses', async () => {
+    render(<ReplayBar />);
+    // Expand
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
+    await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
+    // Inline options should be gone (now showing replay controls)
+    expect(screen.queryByRole('button', { name: '3 days' })).not.toBeInTheDocument();
+  });
+
+  it('enters history mode after selecting a range', async () => {
+    render(<ReplayBar />);
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
@@ -43,6 +75,7 @@ describe('ReplayBar', () => {
   it('scrubbing the slider updates cursorTime', async () => {
     render(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(screen.queryByRole('slider')).toBeInTheDocument());
     fireEvent.change(screen.getByRole('slider'), { target: { value: '150' } });
     expect(usePlaybackStore.getState().cursorTime).toBe(150);
@@ -51,6 +84,7 @@ describe('ReplayBar', () => {
   it('exits back to live mode', async () => {
     render(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
     fireEvent.click(screen.getByRole('button', { name: /Exit replay/ }));
     expect(usePlaybackStore.getState().mode).toBe('live');
