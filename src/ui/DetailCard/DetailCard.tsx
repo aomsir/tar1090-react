@@ -6,6 +6,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { extractTrackPoints } from '@/features/track/track';
 import { buildTrackKml } from '@/features/track/kml';
 import { historyStore } from '@/store/historyStore';
+import { formatAltitude } from '@/domain/format';
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -46,30 +47,34 @@ export function DetailCard() {
       data-testid="detail-card"
       className="glass absolute bottom-16 left-4 top-16 flex w-64 flex-col p-3 text-white"
     >
-      <div className="flex items-center gap-2">
-        {flagSrc ? <img src={flagSrc} alt={d.country} className="h-4 w-6 rounded-sm" /> : null}
-        <span className="text-base font-semibold">{d.flight || d.hex}</span>
+      <div className="flex items-start gap-2.5">
+        <div className="flex-1">
+          <div className="flex items-center gap-1.5">
+            {flagSrc ? <img src={flagSrc} alt={d.country} className="h-4 w-6 rounded-sm" /> : null}
+            <span className="text-lg font-bold tracking-wide">{d.flight || d.hex}</span>
+          </div>
+          <div data-testid="detail-subtitle" className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+            {d.registration ? <span className="font-mono text-slate-300">{d.registration}</span> : null}
+            {d.registration && d.typeCode ? <span className="text-slate-600">·</span> : null}
+            {d.typeCode ? <span>{d.typeCode}</span> : null}
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {d.isMilitary ? (
+              <Chip color="danger" size="sm" variant="bordered">Military</Chip>
+            ) : null}
+            {d.isMlat ? (
+              <Chip color="warning" size="sm" variant="bordered">MLAT</Chip>
+            ) : null}
+          </div>
+        </div>
         <button
           type="button"
           aria-label="Close details"
           onClick={() => select(null)}
-          className="ml-auto rounded p-1 hover:bg-white/10"
+          className="rounded-md border border-white/10 bg-white/5 p-1 hover:bg-white/10"
         >
           <X size={14} />
         </button>
-      </div>
-
-      <div className="mt-1 flex flex-wrap gap-1">
-        {d.isMilitary ? (
-          <Chip color="danger" size="sm">
-            Military
-          </Chip>
-        ) : null}
-        {d.isMlat ? (
-          <Chip color="warning" size="sm">
-            MLAT
-          </Chip>
-        ) : null}
       </div>
 
       {photoLoading ? (
@@ -90,6 +95,30 @@ export function DetailCard() {
           ) : null}
         </a>
       ) : null}
+
+      <div data-testid="key-stats" className="mt-3 grid grid-cols-3 gap-2">
+        <div className="rounded-lg bg-white/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Altitude</div>
+          <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
+            {d.altitude != null ? formatAltitude(d.altitude).replace(' ft', '') : '—'}
+          </div>
+          <div className="text-[10px] text-slate-500">ft</div>
+        </div>
+        <div className="rounded-lg bg-white/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Speed</div>
+          <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
+            {typeof d.speed === 'number' && Number.isFinite(d.speed) ? Math.round(d.speed) : '—'}
+          </div>
+          <div className="text-[10px] text-slate-500">kt</div>
+        </div>
+        <div className="rounded-lg bg-white/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Track</div>
+          <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
+            {typeof d.track === 'number' && Number.isFinite(d.track) ? `${Math.round(d.track)}°` : '—'}
+          </div>
+          <div className="text-[10px] text-slate-500"></div>
+        </div>
+      </div>
 
       <div className="mt-2 flex-1 overflow-y-auto border-t border-white/10 pt-2">
         {d.groups.map((group) => (

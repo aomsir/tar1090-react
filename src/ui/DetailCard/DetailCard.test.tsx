@@ -34,7 +34,7 @@ describe('DetailCard', () => {
 
     render(<DetailCard />);
     expect(screen.getByText('CCA101')).toBeInTheDocument();
-    expect(screen.getByText('B-2033')).toBeInTheDocument();
+    expect(screen.getAllByText('B-2033').length).toBeGreaterThanOrEqual(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Close details' }));
     expect(useSelectionStore.getState().selectedHex).toBeNull();
@@ -84,6 +84,46 @@ describe('DetailCard', () => {
     const img = screen.getByAltText('China') as HTMLImageElement;
     expect(img.src).toContain('/flags/3x2/CN.svg');
     expect(img.src).not.toContain('//flags');
+  });
+
+  it('renders key flight stats section with altitude, speed, and track', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      registration: 'B-2033',
+      typeCode: 'A320',
+      altitude: 35000,
+      speed: 468,
+      track: 247,
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+
+    const statsSection = screen.getByTestId('key-stats');
+    expect(statsSection).toBeInTheDocument();
+    expect(statsSection.textContent).toContain('35,000');
+    expect(statsSection.textContent).toContain('468');
+    expect(statsSection.textContent).toContain('247°');
+  });
+
+  it('renders registration and type code in subtitle line', () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      registration: 'B-2033',
+      typeCode: 'A320',
+      altitude: 35000,
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    render(<DetailCard />);
+
+    const subtitle = screen.getByTestId('detail-subtitle');
+    expect(subtitle.textContent).toContain('B-2033');
+    expect(subtitle.textContent).toContain('A320');
   });
 
   it('exports a KML download for the selected aircraft track', () => {
