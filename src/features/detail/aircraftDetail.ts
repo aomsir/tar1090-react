@@ -1,5 +1,8 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
+import { routeService } from '@/data/routeService';
+import { normalizeCallsign } from '@/domain/callsign';
+import { useToolbarStore } from '@/store/toolbarStore';
 
 export interface DetailRow {
   label: string;
@@ -79,6 +82,13 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
     identityRows.push({ label: 'Aircraft type', value: ac.typeLong });
   }
   identityRows.push({ label: 'Country', value: dash(ac.country) });
+
+  if (useToolbarStore.getState().routeApiEnabled) {
+    const route = routeService.lookup(normalizeCallsign(ac.flight ?? ''));
+    if (route) {
+      identityRows.push({ label: 'Route', value: route });
+    }
+  }
 
   const identity: DetailGroup = {
     title: 'Identity',

@@ -1,8 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
 import { toRow, buildRows, isInExtent, type RowQuery } from './aircraftRows';
+import { routeService } from '@/data/routeService';
 import { LIST_COLUMNS } from './columns';
 import type { PeakStats } from '@/features/playback/pTracks';
+
+async function seedRoute(callsign: string, route: string) {
+  const [origin, destination] = route.split(' - ');
+  const body = JSON.stringify({
+    response: { flightroute: { origin: { iata_code: origin }, destination: { iata_code: destination } } },
+  });
+  const fetchFn = vi.fn().mockResolvedValue({
+    ok: true,
+    text: () => Promise.resolve(body),
+  }) as unknown as typeof fetch;
+  routeService.enqueue(callsign);
+  await routeService.flush('https://test', fetchFn);
+}
 
 function ac(
   hex: string,
@@ -457,5 +471,52 @@ describe('buildRows with peakStats', () => {
     );
     expect(rows[0].speed).toBe(300);
     expect(rows[0].distance).toBe(50);
+  });
+});
+
+describe('toRow route integration', () => {
+  beforeEach(() => {
+    routeService.clear();
+  });
+
+  it('returns empty route for newly enqueued callsign before flush', async () => {
+    routeService.enqueue('CCA1234', 39.9, 116.4);
+    const a1 = ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4 });
+    const row = toRow(a1, undefined, true);
+    expect(row.route).toBe('');
+  });
+
+  it('returns empty route when routeApiEnabled is false', async () => {
+    await seedRoute('CCA1234', 'PEK - SHA');
+    const a1 = ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4 });
+    const row = toRow(a1, undefined, false);
+    expect(row.route).toBe('');
+  });
+
+  it('returns cached route when routeApiEnabled is true and cache has value', async () => {
+    await seedRoute('CCA1234', 'PEK - SHA');
+    const a1 = ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4 });
+    const row = toRow(a1, undefined, true);
+    expect(row.route).toBe('PEK - SHA');
+  });
+
+  it('returns empty route when routeApiEnabled is true but no cache entry', () => {
+    const a1 = ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4 });
+    const row = toRow(a1, undefined, true);
+    expect(row.route).toBe('');
+  });
+
+  it('normalizes callsign with whitespace and case before lookup', async () => {
+    await seedRoute('CCA1234', 'PEK - SHA');
+    const a1 = ac('abc123', { flight: ' cca1234 ', lat: 39.9, lon: 116.4 });
+    const row = toRow(a1, undefined, true);
+    expect(row.route).toBe('PEK - SHA');
+  });
+
+  it('propagates route to buildRows when routeApiEnabled is true', async () => {
+    await seedRoute('CCA1234', 'PEK - SHA');
+    const fleet = [ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4, altitude: 10000 })];
+    const rows = buildRows(fleet, { ...base, query: '' }, null, true);
+    expect(rows[0].route).toBe('PEK - SHA');
   });
 });

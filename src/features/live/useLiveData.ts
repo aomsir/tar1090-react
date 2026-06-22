@@ -13,6 +13,10 @@ import { enrichAircraft } from '@/domain/enrich';
 import { historyLoader } from '@/data/historyLoader';
 import { loadLiveHistory } from '@/data/liveHistorySeeder';
 import type { AircraftSnapshot } from '@/data/types';
+import { routeService } from '@/data/routeService';
+import { normalizeCallsign } from '@/domain/callsign';
+import { ROUTE_API_URL } from '@/config/api';
+import { useToolbarStore } from '@/store/toolbarStore';
 
 type Source = AircraftDataSource & { setRefresh?: (ms: number) => void };
 
@@ -66,6 +70,17 @@ export function useLiveData(
       setStats(stats);
       controllerRef.current?.syncAircraft(aircraftStore.list());
       enricherRef.current?.enrichPending(aircraftStore.list());
+
+      // Route API: enqueue aircraft with callsign, then flush
+      if (useToolbarStore.getState().routeApiEnabled) {
+        for (const ac of aircraftStore.list()) {
+          if (ac.flight) {
+            routeService.enqueue(normalizeCallsign(ac.flight));
+          }
+        }
+        void routeService.flush(ROUTE_API_URL);
+      }
+
       useLiveTick.getState().bump();
     });
     return unsub;

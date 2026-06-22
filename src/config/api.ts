@@ -12,3 +12,7 @@ export function apiUrl(path: string, base: string = API_BASE): string {
   if (!base) return path;
   return `${base.replace(/\/$/, '')}${path}`;
 }
+
+/** Default Route API base URL (adsbdb). Override via VITE_ROUTE_API_URL. */
+export const ROUTE_API_URL: string =
+  import.meta.env.VITE_ROUTE_API_URL ?? 'https://api.adsbdb.com/v0/callsign';

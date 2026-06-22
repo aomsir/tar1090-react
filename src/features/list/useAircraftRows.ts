@@ -17,6 +17,7 @@ export function useAircraftRows(): AircraftRow[] {
   const sortKey = useListControls((s) => s.sortKey);
   const sortDir = useListControls((s) => s.sortDir);
   const inViewOnly = useToolbarStore((s) => s.inViewOnly);
+  const routeApiEnabled = useToolbarStore((s) => s.routeApiEnabled);
   const extent = useMapViewStore((s) => s.extent);
   const siteLat = useReceiverStore((s) => s.lat);
   const siteLon = useReceiverStore((s) => s.lon);
@@ -29,9 +30,10 @@ export function useAircraftRows(): AircraftRow[] {
         list,
         { query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon },
         peakStats,
+        routeApiEnabled,
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, version, query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon],
+    [mode, version, query, filter, sortKey, sortDir, inViewOnly, routeApiEnabled, extent, siteLat, siteLon],
   );
 }

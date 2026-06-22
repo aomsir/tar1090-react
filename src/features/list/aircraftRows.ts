@@ -4,6 +4,8 @@ import { distanceNm } from '@/domain/distance';
 import type { PeakStats } from '@/features/playback/pTracks';
 import { LIST_COLUMNS } from './columns';
 import type { ColumnId } from './columns';
+import { routeService } from '@/data/routeService';
+import { normalizeCallsign } from '@/domain/callsign';
 
 export type FilterKey = 'all' | 'airborne' | 'ground' | 'military';
 export type SortKey = ColumnId;
@@ -49,11 +51,13 @@ export interface RowQuery {
   siteLon?: number;
 }
 
-export function toRow(ac: Aircraft, distance?: number): AircraftRow {
+export function toRow(ac: Aircraft, distance?: number, routeApiEnabled = false): AircraftRow {
   return {
     hex: ac.hex,
     flight: ac.flight ?? '',
-    route: '',
+    route: routeApiEnabled
+      ? (routeService.lookup(normalizeCallsign(ac.flight ?? '')) ?? '')
+      : '',
     registration: ac.registration ?? '',
     typeCode: ac.typeCode ?? '',
     squawk: ac.squawk ?? '',
@@ -126,10 +130,11 @@ export function buildRows(
   list: Aircraft[],
   q: RowQuery,
   peakStats?: Map<string, PeakStats> | null,
+  routeApiEnabled = false,
 ): AircraftRow[] {
   const rows = list
     .map((ac) => {
-      const row = toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon));
+      const row = toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon), routeApiEnabled);
       if (peakStats) {
         const peak = peakStats.get(ac.hex);
         if (peak) {

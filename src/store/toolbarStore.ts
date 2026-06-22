@@ -45,6 +45,7 @@ interface ToolbarState {
   iconScale: number;
   detailWidth: number;
   listWidth: number;
+  routeApiEnabled: boolean;
 
   // Actions
   toggle: (key: ToggleKey) => void;
@@ -54,6 +55,7 @@ interface ToolbarState {
   setIconScale: (v: number) => void;
   setDetailWidth: (w: number) => void;
   setListWidth: (w: number) => void;
+  setRouteApiEnabled: (enabled: boolean) => void;
   toggleSettings: () => void;
   resetAll: () => void;
 }
@@ -81,6 +83,7 @@ const DEFAULTS = {
   iconScale: 1,
   detailWidth: 320,
   listWidth: 384,
+  routeApiEnabled: false,
 };
 
 export const useToolbarStore = create<ToolbarState>()(
@@ -95,11 +98,19 @@ export const useToolbarStore = create<ToolbarState>()(
       setIconScale: (iconScale) => set({ iconScale }),
       setDetailWidth: (w) => set({ detailWidth: Math.max(280, Math.min(480, w)) }),
       setListWidth: (w) => set({ listWidth: Math.max(300, Math.min(600, w)) }),
+      setRouteApiEnabled: (enabled) => set({ routeApiEnabled: enabled }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),
     {
       name: 'toolbar-settings',
+      version: 3,
+      migrate: (persisted: unknown) => {
+        const s = persisted as Record<string, unknown>;
+        // Clean up legacy routeApiUrl field
+        delete s.routeApiUrl;
+        return s as ReturnType<typeof useToolbarStore.getState>;
+      },
       partialize: (state) => {
         // Exclude transient UI state from persistence
         const { settingsOpen: _sf, fullscreen: _fs, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars

@@ -119,3 +119,27 @@ describe('detailWidth', () => {
     expect(useToolbarStore.getState().detailWidth).toBe(480);
   });
 });
+
+describe('routeApi settings', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useToolbarStore.setState(useToolbarStore.getInitialState());
+  });
+
+  it('defaults routeApiEnabled to false', () => {
+    expect(useToolbarStore.getState().routeApiEnabled).toBe(false);
+  });
+
+  it('setRouteApiEnabled toggles the flag', () => {
+    useToolbarStore.getState().setRouteApiEnabled(true);
+    expect(useToolbarStore.getState().routeApiEnabled).toBe(true);
+    useToolbarStore.getState().setRouteApiEnabled(false);
+    expect(useToolbarStore.getState().routeApiEnabled).toBe(false);
+  });
+
+  it('resetAll restores route defaults', () => {
+    useToolbarStore.getState().setRouteApiEnabled(true);
+    useToolbarStore.getState().resetAll();
+    expect(useToolbarStore.getState().routeApiEnabled).toBe(false);
+  });
+});

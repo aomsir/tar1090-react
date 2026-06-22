@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { withCacheBust, apiUrl } from '@/config/api';
+import { withCacheBust, apiUrl, ROUTE_API_URL } from '@/config/api';
 
 describe('api config', () => {
   it('appends a cache-bust _ param using epoch ms', () => {
@@ -26,5 +26,11 @@ describe('api config', () => {
     expect(apiUrl('/data/x.json', 'https://example.com/')).toBe(
       'https://example.com/data/x.json',
     );
+  });
+});
+
+describe('ROUTE_API_URL', () => {
+  it('defaults to adsbdb callsign endpoint', () => {
+    expect(ROUTE_API_URL).toBe('https://api.adsbdb.com/v0/callsign');
   });
 });
