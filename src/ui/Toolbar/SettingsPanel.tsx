@@ -181,6 +181,7 @@ export function SettingsPanel() {
             Ground vehicles
           </Switch.Content>
         </Switch>
+        <p className="text-[11px] leading-tight text-slate-500">Aircraft display preferences</p>
       </div>
 
       <hr className="my-3 border-white/[0.08]" />
