@@ -208,8 +208,10 @@ export function DetailCard() {
       <div
         data-testid="resize-handle"
         onMouseDown={handleMouseDown}
-        className="absolute right-0 top-1/2 h-10 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-white/15 opacity-0 transition-opacity hover:opacity-100"
-      />
+        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize flex items-center justify-center group"
+      >
+        <div className="h-8 w-1 rounded-full bg-white/20 group-hover:bg-white/50 transition-opacity" />
+      </div>
     </section>
   );
 }

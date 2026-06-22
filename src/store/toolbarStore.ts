@@ -44,6 +44,7 @@ interface ToolbarState {
   labelScale: number;
   iconScale: number;
   detailWidth: number;
+  listWidth: number;
 
   // Actions
   toggle: (key: ToggleKey) => void;
@@ -52,6 +53,7 @@ interface ToolbarState {
   setLabelScale: (v: number) => void;
   setIconScale: (v: number) => void;
   setDetailWidth: (w: number) => void;
+  setListWidth: (w: number) => void;
   toggleSettings: () => void;
   resetAll: () => void;
 }
@@ -78,6 +80,7 @@ const DEFAULTS = {
   labelScale: 1,
   iconScale: 1,
   detailWidth: 320,
+  listWidth: 384,
 };
 
 export const useToolbarStore = create<ToolbarState>()(
@@ -91,6 +94,7 @@ export const useToolbarStore = create<ToolbarState>()(
       setLabelScale: (labelScale) => set({ labelScale }),
       setIconScale: (iconScale) => set({ iconScale }),
       setDetailWidth: (w) => set({ detailWidth: Math.max(280, Math.min(480, w)) }),
+      setListWidth: (w) => set({ listWidth: Math.max(300, Math.min(600, w)) }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),
