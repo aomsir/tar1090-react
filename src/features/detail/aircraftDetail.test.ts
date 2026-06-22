@@ -29,7 +29,7 @@ describe('aircraftDetail', () => {
   it('groups have distinct colors in expected order', () => {
     const detail = toDetail(makeAircraft());
     const colors = detail.groups.map((g) => g.color);
-    expect(colors).toEqual(['indigo', 'emerald', 'sky', 'amber', 'teal', 'slate']);
+    expect(colors).toEqual(['indigo', 'emerald', 'sky', 'slate', 'amber', 'teal']);
   });
 
   it('flightStatus group does not contain altitude, ground speed, or track rows', () => {

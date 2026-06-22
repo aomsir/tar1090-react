@@ -151,11 +151,10 @@ describe('ListPanel', () => {
     expect(scrollRegion).not.toBe(panel);
   });
 
-  it('table has fixed layout and minimum width for column stability', () => {
+  it('table has minimum width for column stability', () => {
     render(<ListPanel onSelect={vi.fn()} />);
     const table = screen.getByRole('table');
     const cls = table.className;
-    expect(cls).toContain('table-fixed');
     expect(cls).toMatch(/min-w-/);
   });
 

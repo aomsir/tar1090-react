@@ -177,5 +177,5 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
     ],
   };
 
-  return [identity, flightStatus, position, navigation, environment, signal];
+  return [identity, flightStatus, position, signal, navigation, environment];
 }
