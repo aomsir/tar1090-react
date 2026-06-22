@@ -4,6 +4,9 @@ import type { TrackPoint } from '@/features/track/track';
 import type { PeakStats } from '@/features/playback/pTracks';
 import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
 import { enrichAircraft } from '@/domain/enrich';
+import { routeService } from '@/data/routeService';
+import { normalizeCallsign } from '@/domain/callsign';
+import { ROUTE_API_URL } from '@/config/api';
 import { useLiveTick } from './liveTick';
 
 export class HistoryStore {
@@ -21,13 +24,26 @@ export class HistoryStore {
     this.clearPTracksData();
   }
 
-  async buildPTracksData(siteLat?: number, siteLon?: number): Promise<void> {
+  async buildPTracksData(siteLat?: number, siteLon?: number, routeApiEnabled = false): Promise<void> {
     this.pTracksData = buildPTracks(this.frames);
     this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
     this.allAircraft = buildAllHistoryAircraft(this.frames);
     // Enrich all aircraft with registration, type, etc. from the client-side
     // database. History frames from the backend don't contain these fields.
     await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
+
+    // Fetch route data for history aircraft with callsigns.
+    // In live mode this happens inside the polling subscribe callback,
+    // but history mode bypasses that path entirely.
+    if (routeApiEnabled) {
+      for (const ac of this.allAircraft) {
+        if (ac.flight) {
+          routeService.enqueue(normalizeCallsign(ac.flight));
+        }
+      }
+      await routeService.flush(ROUTE_API_URL);
+    }
+
     // Bump liveTick so useAircraftRows' useMemo invalidates and picks up
     // the enriched type/registration data.
     useLiveTick.getState().bump();

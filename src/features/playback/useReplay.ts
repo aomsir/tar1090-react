@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReceiverStore } from '@/store/receiverStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 import type { HistoryRange } from '@/data/historyLoader';
@@ -26,7 +27,8 @@ export function useReplay(): {
       if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
       usePlaybackStore.getState().setMode('history');
       const { lat, lon } = useReceiverStore.getState();
-      await historyStore.buildPTracksData(lat, lon);
+      const { routeApiEnabled } = useToolbarStore.getState();
+      await historyStore.buildPTracksData(lat, lon, routeApiEnabled);
     } finally {
       usePlaybackStore.getState().setLoading(false);
     }
