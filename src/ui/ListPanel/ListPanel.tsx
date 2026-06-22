@@ -147,6 +147,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                     onChange={() => toggleColumn(c.id)}
                   />
                   {label}
+                  {c.id === 'route' && <span className="text-slate-500">(reference only)</span>}
                 </label>
               );
             })}

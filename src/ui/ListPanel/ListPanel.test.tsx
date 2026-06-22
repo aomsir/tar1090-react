@@ -88,7 +88,7 @@ describe('ListPanel', () => {
 
     expect(screen.getByRole('columnheader', { name: 'Flag' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Callsign' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Route' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Route' })).not.toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Type' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Squawk' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Alt\. \(ft\)/ })).toBeInTheDocument();

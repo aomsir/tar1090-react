@@ -44,11 +44,11 @@ describe('tar1090 list columns', () => {
       'wd',
       'ws',
       'last_seen',
+      'route',
     ]);
     expect(visibleColumnIds(new Set(DEFAULT_HIDDEN_COLUMNS))).toEqual([
       'flag',
       'flight',
-      'route',
       'aircraft_type',
       'squawk',
       'altitude',

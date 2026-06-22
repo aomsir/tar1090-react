@@ -101,6 +101,7 @@ export const DEFAULT_HIDDEN_COLUMNS: ColumnId[] = [
   'wd',
   'ws',
   'last_seen',
+  'route',
 ];
 
 export const LIST_COLUMNS: ListColumn[] = [

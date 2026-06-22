@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { DEFAULT_HIDDEN_COLUMNS } from '@/features/list/columns';
 import type { ColumnId } from '@/features/list/columns';
 import type { FilterKey, SortDir, SortKey } from '@/features/list/aircraftRows';
+import { useToolbarStore } from '@/store/toolbarStore';
 
 interface ListControlsState {
   query: string;
@@ -35,7 +36,13 @@ export const useListControls = create<ListControlsState>((set) => ({
       const hiddenColumns = new Set(s.hiddenColumns);
       if (hiddenColumns.has(id)) hiddenColumns.delete(id);
       else hiddenColumns.add(id);
+      if (id === 'route') {
+        useToolbarStore.getState().setRouteApiEnabled(!hiddenColumns.has('route'));
+      }
       return { hiddenColumns };
     }),
-  resetColumns: () => set({ hiddenColumns: new Set(DEFAULT_HIDDEN_COLUMNS) }),
+  resetColumns: () => {
+    useToolbarStore.getState().setRouteApiEnabled(false);
+    set({ hiddenColumns: new Set(DEFAULT_HIDDEN_COLUMNS) });
+  },
 }));

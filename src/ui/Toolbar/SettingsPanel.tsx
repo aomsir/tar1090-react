@@ -31,8 +31,7 @@ export function SettingsPanel() {
     toggle,
     toggleSettings,
     resetAll,
-    routeApiEnabled,
-    setRouteApiEnabled,
+
   } = useToolbarStore();
 
   return (
@@ -164,24 +163,6 @@ export function SettingsPanel() {
             Colored tracks
           </Switch.Content>
         </Switch>
-      </div>
-
-      <hr className="my-3 border-white/[0.08]" />
-
-      <SectionLabel>Units</SectionLabel>
-      <div className="mb-3 space-y-2">
-        <Switch
-          isSelected={routeApiEnabled}
-          onChange={() => setRouteApiEnabled(!routeApiEnabled)}
-        >
-          <Switch.Content>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-            Ground vehicles
-          </Switch.Content>
-        </Switch>
-        <p className="text-[11px] leading-tight text-slate-500">Aircraft display preferences</p>
       </div>
 
       <hr className="my-3 border-white/[0.08]" />
