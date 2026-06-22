@@ -35,3 +35,4 @@ docs/
 .playwright-mcp/
 .sisyphus/
 .superpowers/
+.worktrees/
