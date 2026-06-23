@@ -1,11 +1,33 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartCard } from './ChartCard';
+import { CHART_COLORS } from './chartColors';
 
 interface SourceChartProps {
   data: { name: string; count: number }[];
 }
 
-const COLORS = ['#475569', '#64748b', '#94a3b8', '#cbd5e1', '#334155', '#1e293b'];
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  if (percent < 0.05) return null;
+  
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text 
+      x={x} 
+      y={y} 
+      fill="white" 
+      textAnchor={x > cx ? 'start' : 'end'} 
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={500}
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { value: number; name: string }[] }) => {
   if (!active || !payload?.length) return null;
@@ -21,14 +43,26 @@ export function SourceChart({ data }: SourceChartProps) {
     <ChartCard title="Data Source">
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
-          <Pie data={data} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={70} strokeWidth={0}>
+          <Pie 
+            data={data} 
+            dataKey="count" 
+            nameKey="name" 
+            cx="50%" 
+            cy="50%" 
+            outerRadius={70} 
+            strokeWidth={0}
+            label={renderCustomLabel}
+            labelLine={false}
+          >
             {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
           <Legend
-            formatter={(value: string) => <span className="text-xs text-slate-400">{value}</span>}
+            wrapperStyle={{ fontSize: '12px' }}
+            iconType="circle"
+            formatter={(value: string) => <span className="text-slate-300">{value}</span>}
           />
         </PieChart>
       </ResponsiveContainer>
