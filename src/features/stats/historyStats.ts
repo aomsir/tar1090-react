@@ -24,10 +24,7 @@ function topN(map: Map<string, number>, n: number): { name: string; count: numbe
   const entries = Array.from(map.entries())
     .filter(([name]) => name !== '')
     .sort((a, b) => b[1] - a[1]);
-  const top = entries.slice(0, n).map(([name, count]) => ({ name, count }));
-  const rest = entries.slice(n).reduce((s, [, c]) => s + c, 0);
-  if (rest > 0) top.push({ name: 'Other', count: rest });
-  return top;
+  return entries.map(([name, count]) => ({ name, count }));
 }
 
 function extractAirlineCode(flight: string): string | null {
