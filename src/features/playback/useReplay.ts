@@ -39,6 +39,9 @@ export function useReplay(): {
     store.pause();
     store.setMode('live');
     historyStore.clearPTracksData();
+    if (useToolbarStore.getState().statsDashboardOpen) {
+      useToolbarStore.setState({ statsDashboardOpen: false });
+    }
   }, []);
 
   return { enterHistory, exitToLive };

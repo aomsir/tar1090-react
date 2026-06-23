@@ -16,9 +16,12 @@ import {
   LocateFixed,
   Shuffle,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { SettingsPanel } from './SettingsPanel';
 
 interface ToolbarProps {
@@ -38,6 +41,8 @@ function GroupLabel({ children, color }: { children: string; color: string }) {
 
 export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
   const state = useToolbarStore();
+  const isHistory = usePlaybackStore((s) => s.mode) === 'history';
+  const hasStats = useHistoryStatsStore((s) => s.stats !== null);
 
   return (
     <div data-testid="toolbar-shell" className="relative">
@@ -143,6 +148,19 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
         {/* SYSTEM group */}
         <GroupLabel color="text-slate-300">SYSTEM</GroupLabel>
         <ToolbarButton icon={Settings} tooltip="Open settings panel" onPress={() => state.toggleSettings()} type="action" />
+
+        {isHistory && hasStats && (
+          <>
+            <Separator />
+            <GroupLabel color="text-slate-300">STATS</GroupLabel>
+            <ToolbarButton
+              icon={BarChart3}
+              tooltip="Statistics dashboard"
+              onPress={() => state.toggleStatsDashboard()}
+              type="action"
+            />
+          </>
+        )}
       </nav>
 
       {state.settingsOpen && <SettingsPanel />}

@@ -5,6 +5,7 @@ import { DetailCard } from '@/ui/DetailCard/DetailCard';
 import { ReplayBar } from '@/ui/ReplayBar/ReplayBar';
 import { AltitudeLegend } from '@/ui/AltitudeLegend/AltitudeLegend';
 import { Toolbar } from '@/ui/Toolbar/Toolbar';
+import { StatsDashboard } from '@/ui/StatsDashboard/StatsDashboard';
 import { MapView } from '@/map/MapView';
 import { useLiveData } from '@/features/live/useLiveData';
 import { useUrlSync } from '@/app/useUrlSync';
@@ -40,6 +41,7 @@ export function AppShell() {
   const trackSegments = useSelectedTrack();
   const mode = usePlaybackStore((s) => s.mode);
   const seedLoading = useSeedVersion((s) => s.loading);
+  const statsDashboardOpen = useToolbarStore((s) => s.statsDashboardOpen);
 
   const handleResetView = useCallback(() => {
     controllerRef.current?.resetView();
@@ -230,6 +232,7 @@ export function AppShell() {
           </div>
         </div>
       )}
+      {statsDashboardOpen && <StatsDashboard />}
     </div>
   );
 }

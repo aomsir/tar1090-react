@@ -1,6 +1,7 @@
-import { Play, Pause, History, X } from 'lucide-react';
+import { Play, Pause, History, X, BarChart3 } from 'lucide-react';
 import { Spinner } from '@heroui/react';
 import { usePlaybackStore } from '@/store/playbackStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import { useReplay } from '@/features/playback/useReplay';
 import { HISTORY_RANGES, type HistoryRange } from '@/data/historyLoader';
 
@@ -57,9 +58,17 @@ export function ReplayBar() {
         >
           {isPlaying ? <Pause size={16} /> : <Play size={16} />}
         </button>
+        <button
+          type="button"
+          aria-label="Statistics panel"
+          onClick={() => useToolbarStore.getState().toggleStatsDashboard()}
+          className="rounded p-1 hover:bg-white/10"
+        >
+          <BarChart3 size={16} />
+        </button>
         <input
           type="range"
-          aria-label="Statistics panel"
+          aria-label="Timeline"
           min={bounds?.min ?? 0}
           max={bounds?.max ?? 0}
           value={cursorTime}
@@ -69,7 +78,7 @@ export function ReplayBar() {
         />
         <span className="w-20 text-xs tabular-nums text-slate-300">{formatClock(cursorTime)}</span>
         <select
-          aria-label="Timeline"
+          aria-label="Speed"
           value={speed}
           onChange={(e) => usePlaybackStore.getState().setSpeed(Number(e.target.value))}
           className="rounded bg-white/10 px-1 text-xs"
@@ -81,7 +90,7 @@ export function ReplayBar() {
           ))}
         </select>
         <select
-          aria-label="Speed"
+          aria-label="Time range"
           value={range}
           onChange={(e) => void enterHistory(e.target.value as HistoryRange)}
           className="rounded bg-white/10 px-1 text-xs"
@@ -94,7 +103,7 @@ export function ReplayBar() {
         </select>
         <button
           type="button"
-          aria-label="Time range"
+          aria-label="Exit replay"
           onClick={exitToLive}
           className="rounded p-1 hover:bg-white/10"
         >
