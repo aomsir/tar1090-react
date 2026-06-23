@@ -8,6 +8,8 @@ import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
 import { ROUTE_API_URL } from '@/config/api';
 import { useLiveTick } from './liveTick';
+import { computeHistoryStats } from '@/features/stats/historyStats';
+import { useHistoryStatsStore } from './historyStatsStore';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
@@ -47,12 +49,16 @@ export class HistoryStore {
     // Bump liveTick so useAircraftRows' useMemo invalidates and picks up
     // the enriched type/registration data.
     useLiveTick.getState().bump();
+
+    const historyStats = computeHistoryStats(this.frames, this.allAircraft, this.peakStats);
+    useHistoryStatsStore.getState().setStats(historyStats);
   }
 
   clearPTracksData(): void {
     this.pTracksData = null;
     this.peakStats = null;
     this.allAircraft = [];
+    useHistoryStatsStore.getState().clear();
   }
 
   /** Median interval between consecutive frames (seconds). */
