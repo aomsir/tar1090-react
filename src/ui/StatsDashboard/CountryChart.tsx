@@ -18,10 +18,10 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { valu
 export function CountryChart({ data }: CountryChartProps) {
   return (
     <ChartCard title="Country / Region Distribution">
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height={Math.max(200, data.length * 28)}>
         <BarChart data={data} layout="vertical" margin={{ left: 60, right: 12 }}>
           <XAxis type="number" tick={{ fill: AXIS_COLOR, fontSize: 12 }} />
-          <YAxis type="category" dataKey="name" tick={{ fill: AXIS_COLOR, fontSize: 12 }} width={50} />
+          <YAxis type="category" dataKey="name" tick={{ fill: AXIS_COLOR, fontSize: 12 }} width={50} interval={0} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(31, 119, 180, 0.1)' }} />
           <Bar dataKey="count" radius={[0, 3, 3, 0]}>
             {data.map((_, index) => (

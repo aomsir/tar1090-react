@@ -31,7 +31,7 @@ export function StatsDashboard() {
       data-testid="stats-dashboard"
       className="fixed inset-0 z-50 overflow-auto bg-[#0f1622]/95 backdrop-blur"
     >
-      <div className="mx-auto max-w-6xl px-6 py-6">
+      <div className="mx-auto max-w-[1600px] px-6 py-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-200">History Statistics</h2>
           <button
