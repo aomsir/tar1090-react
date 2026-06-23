@@ -52,12 +52,6 @@ export function StatsDashboard() {
         />
 
         <div className="mt-4 grid grid-cols-3 gap-3">
-          <TypeChart data={stats.typeDistribution} />
-          <AirlineChart data={stats.airlineDistribution} />
-          <SourceChart data={stats.sourceDistribution} />
-        </div>
-
-        <div className="mt-3 grid grid-cols-3 gap-3">
           <TrafficTimeline data={stats.trafficTimeline} />
           <AltitudeChart data={stats.altitudeBins} />
           <CountryChart data={stats.countryDistribution} />
@@ -66,6 +60,12 @@ export function StatsDashboard() {
         <div className="mt-3 grid grid-cols-2 gap-3">
           <SpeedChart data={stats.speedBins} />
           <DistanceChart data={stats.distanceBins} />
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <TypeChart data={stats.typeDistribution} />
+          <AirlineChart data={stats.airlineDistribution} />
+          <SourceChart data={stats.sourceDistribution} />
         </div>
       </div>
     </div>
