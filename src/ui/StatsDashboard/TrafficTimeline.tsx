@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartCard } from './ChartCard';
+import { PRIMARY_COLOR, PRIMARY_FILL, AXIS_COLOR } from './chartColors';
 
 interface TrafficTimelineProps {
   data: { time: number; count: number }[];
@@ -24,10 +25,10 @@ export function TrafficTimeline({ data }: TrafficTimelineProps) {
     <ChartCard title="Traffic Over Time">
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ left: 0, right: 12 }}>
-          <XAxis dataKey="time" tickFormatter={formatTime} tick={{ fill: '#64748b', fontSize: 10 }} />
-          <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#475569' }} />
-          <Area type="monotone" dataKey="count" stroke="#94a3b8" fill="rgba(148,163,184,0.15)" />
+          <XAxis dataKey="time" tickFormatter={formatTime} tick={{ fill: AXIS_COLOR, fontSize: 12 }} />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 12 }} label={{ value: 'Aircraft', angle: -90, position: 'insideLeft', style: { fill: AXIS_COLOR } }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: PRIMARY_COLOR }} />
+          <Area type="monotone" dataKey="count" stroke={PRIMARY_COLOR} fill={PRIMARY_FILL} />
         </AreaChart>
       </ResponsiveContainer>
     </ChartCard>
