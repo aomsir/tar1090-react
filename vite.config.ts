@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
-    server: { proxy },
+    server: { host: '0.0.0.0', proxy },
+    preview: { host: '0.0.0.0' },
   }
 })
