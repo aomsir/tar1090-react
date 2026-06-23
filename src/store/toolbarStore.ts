@@ -57,6 +57,8 @@ interface ToolbarState {
   setListWidth: (w: number) => void;
   setRouteApiEnabled: (enabled: boolean) => void;
   toggleSettings: () => void;
+  statsDashboardOpen: boolean;
+  toggleStatsDashboard: () => void;
   resetAll: () => void;
 }
 
@@ -74,6 +76,7 @@ const DEFAULTS = {
   onlyMilitary: false,
   follow: false,
   settingsOpen: false,
+  statsDashboardOpen: false,
   units: 'nautical' as Units,
   filterGroundVehicles: false,
   filterBlockedMLAT: false,
@@ -100,6 +103,7 @@ export const useToolbarStore = create<ToolbarState>()(
       setListWidth: (w) => set({ listWidth: Math.max(300, Math.min(600, w)) }),
       setRouteApiEnabled: (enabled) => set({ routeApiEnabled: enabled }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+      toggleStatsDashboard: () => set((s) => ({ statsDashboardOpen: !s.statsDashboardOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),
     {
@@ -113,7 +117,7 @@ export const useToolbarStore = create<ToolbarState>()(
       },
       partialize: (state) => {
         // Exclude transient UI state from persistence
-        const { settingsOpen: _sf, fullscreen: _fs, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
+        const { settingsOpen: _sf, fullscreen: _fs, statsDashboardOpen: _sd, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
         return persisted;
       },
     },
