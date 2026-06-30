@@ -26,7 +26,11 @@ export class HistoryStore {
     this.clearPTracksData();
   }
 
-  async buildPTracksData(siteLat?: number, siteLon?: number, routeApiEnabled = false): Promise<void> {
+  async buildPTracksData(
+    siteLat?: number,
+    siteLon?: number,
+    routeApiEnabled = false,
+  ): Promise<void> {
     this.pTracksData = buildPTracks(this.frames);
     this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
     this.allAircraft = buildAllHistoryAircraft(this.frames);

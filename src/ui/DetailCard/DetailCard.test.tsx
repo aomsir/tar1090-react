@@ -142,7 +142,9 @@ describe('DetailCard', () => {
 
     await renderWithI18n(<DetailCard />);
 
-    const groups = screen.getByTestId('detail-card').querySelectorAll('section[data-testid^="group-"]');
+    const groups = screen
+      .getByTestId('detail-card')
+      .querySelectorAll('section[data-testid^="group-"]');
     expect(groups.length).toBe(6);
     for (const group of groups) {
       const bar = group.querySelector('[data-testid="group-bar"]');

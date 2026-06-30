@@ -42,18 +42,12 @@ export interface AircraftDetail {
 
 const dash = (v: string | undefined) => (v && v !== '' ? v : '\u2014');
 const feet = (v: number | undefined, language: string | undefined) =>
-  typeof v === 'number' && Number.isFinite(v)
-    ? `${formatInteger(v, language)} ft`
-    : '\u2014';
+  typeof v === 'number' && Number.isFinite(v) ? `${formatInteger(v, language)} ft` : '\u2014';
 const kt = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)} kt` : '\u2014';
 const deg = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)}\u00b0` : '\u2014';
-export function toDetail(
-  ac: Aircraft,
-  t: TFunction,
-  language: string | undefined,
-): AircraftDetail {
+export function toDetail(ac: Aircraft, t: TFunction, language: string | undefined): AircraftDetail {
   return {
     hex: ac.hex,
     flight: ac.flight ?? '',
@@ -78,11 +72,7 @@ export function toDetail(
   };
 }
 
-function buildGroups(
-  ac: Aircraft,
-  t: TFunction,
-  language: string | undefined,
-): DetailGroup[] {
+function buildGroups(ac: Aircraft, t: TFunction, language: string | undefined): DetailGroup[] {
   const registration = dash(ac.registration);
 
   const identityRows: { label: string; value: string }[] = [

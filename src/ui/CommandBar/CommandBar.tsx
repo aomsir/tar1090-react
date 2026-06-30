@@ -25,10 +25,7 @@ export function CommandBar() {
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input
-            className="w-64"
-            placeholder={t('commandBar.searchPlaceholder')}
-          />
+          <SearchField.Input className="w-64" placeholder={t('commandBar.searchPlaceholder')} />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>

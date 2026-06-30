@@ -36,10 +36,42 @@ const frames: AircraftSnapshot[] = [
 ];
 
 const allAircraft: Aircraft[] = [
-  makeAircraft({ hex: 'a1', flight: 'CCA101', typeCode: 'A333', altitude: 36000, country: 'China', addrType: 'adsb_icao', isMilitary: false }),
-  makeAircraft({ hex: 'a2', flight: 'CSN202', typeCode: 'B738', altitude: 8000, country: 'China', addrType: 'adsb_icao', isMilitary: false }),
-  makeAircraft({ hex: 'a3', flight: 'CCA303', typeCode: 'A333', altitude: 'ground', country: 'China', addrType: 'mlat', isMilitary: false }),
-  makeAircraft({ hex: 'a4', flight: 'DLH400', typeCode: 'A359', altitude: 40000, country: 'Germany', addrType: 'adsb_icao', isMilitary: true }),
+  makeAircraft({
+    hex: 'a1',
+    flight: 'CCA101',
+    typeCode: 'A333',
+    altitude: 36000,
+    country: 'China',
+    addrType: 'adsb_icao',
+    isMilitary: false,
+  }),
+  makeAircraft({
+    hex: 'a2',
+    flight: 'CSN202',
+    typeCode: 'B738',
+    altitude: 8000,
+    country: 'China',
+    addrType: 'adsb_icao',
+    isMilitary: false,
+  }),
+  makeAircraft({
+    hex: 'a3',
+    flight: 'CCA303',
+    typeCode: 'A333',
+    altitude: 'ground',
+    country: 'China',
+    addrType: 'mlat',
+    isMilitary: false,
+  }),
+  makeAircraft({
+    hex: 'a4',
+    flight: 'DLH400',
+    typeCode: 'A359',
+    altitude: 40000,
+    country: 'Germany',
+    addrType: 'adsb_icao',
+    isMilitary: true,
+  }),
 ];
 
 const peakStats = new Map<string, PeakStats>([

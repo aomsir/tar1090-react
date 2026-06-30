@@ -23,9 +23,7 @@ describe('api config', () => {
   });
 
   it('apiUrl strips a trailing slash from base', () => {
-    expect(apiUrl('/data/x.json', 'https://example.com/')).toBe(
-      'https://example.com/data/x.json',
-    );
+    expect(apiUrl('/data/x.json', 'https://example.com/')).toBe('https://example.com/data/x.json');
   });
 });
 

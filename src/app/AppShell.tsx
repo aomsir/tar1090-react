@@ -153,15 +153,18 @@ export function AppShell() {
     const tracks = new globalThis.Map<string, TrackPoint[]>();
     for (const ac of aircraftStore.list()) {
       if (ac.positionHistory.length < 2) continue;
-      tracks.set(ac.hex, ac.positionHistory.map((p) => ({
-        lon: p.lon,
-        lat: p.lat,
-        alt: p.alt,
-        ts: p.ts,
-        track: p.track,
-        speed: p.speed,
-        ground: p.ground,
-      })));
+      tracks.set(
+        ac.hex,
+        ac.positionHistory.map((p) => ({
+          lon: p.lon,
+          lat: p.lat,
+          alt: p.alt,
+          ts: p.ts,
+          track: p.track,
+          speed: p.speed,
+          ground: p.ground,
+        })),
+      );
     }
     c.showPTracks(tracks);
   }, [allTracks, mode, liveVersion]);

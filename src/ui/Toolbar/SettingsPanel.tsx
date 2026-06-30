@@ -8,9 +8,7 @@ import { LANGUAGE_OPTIONS } from '@/i18n/types';
 import type { SupportedLanguage } from '@/i18n/types';
 
 function SectionLabel({ children }: { children: string }) {
-  return (
-    <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-400">{children}</div>
-  );
+  return <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-400">{children}</div>;
 }
 
 export function SettingsPanel() {
@@ -47,9 +45,7 @@ export function SettingsPanel() {
   // format is `lang-<languageId>`, so on selection we strip the prefix and
   // cast the remainder to SupportedLanguage.
   const langButtonId = (lang: SupportedLanguage): string => `lang-${lang}`;
-  const selectedLanguage: SupportedLanguage = i18n.language?.startsWith('zh')
-    ? 'zh-CN'
-    : 'en';
+  const selectedLanguage: SupportedLanguage = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en';
 
   return (
     <div
@@ -152,10 +148,7 @@ export function SettingsPanel() {
 
       <SectionLabel>{t('settings.filters.title')}</SectionLabel>
       <div className="mb-3 space-y-2">
-        <Switch
-          isSelected={filterGroundVehicles}
-          onChange={() => toggle('filterGroundVehicles')}
-        >
+        <Switch isSelected={filterGroundVehicles} onChange={() => toggle('filterGroundVehicles')}>
           <Switch.Content>
             <Switch.Control>
               <Switch.Thumb />
@@ -163,10 +156,7 @@ export function SettingsPanel() {
             {t('settings.filters.groundVehicles')}
           </Switch.Content>
         </Switch>
-        <Switch
-          isSelected={filterBlockedMLAT}
-          onChange={() => toggle('filterBlockedMLAT')}
-        >
+        <Switch isSelected={filterBlockedMLAT} onChange={() => toggle('filterBlockedMLAT')}>
           <Switch.Content>
             <Switch.Control>
               <Switch.Thumb />
@@ -180,10 +170,7 @@ export function SettingsPanel() {
 
       <SectionLabel>{t('settings.display.title')}</SectionLabel>
       <div className="mb-3 space-y-2">
-        <Switch
-          isSelected={coloredPlanes}
-          onChange={() => toggle('coloredPlanes')}
-        >
+        <Switch isSelected={coloredPlanes} onChange={() => toggle('coloredPlanes')}>
           <Switch.Content>
             <Switch.Control>
               <Switch.Thumb />
@@ -191,10 +178,7 @@ export function SettingsPanel() {
             {t('settings.display.coloredAircraft')}
           </Switch.Content>
         </Switch>
-        <Switch
-          isSelected={coloredTrails}
-          onChange={() => toggle('coloredTrails')}
-        >
+        <Switch isSelected={coloredTrails} onChange={() => toggle('coloredTrails')}>
           <Switch.Content>
             <Switch.Control>
               <Switch.Thumb />

@@ -109,12 +109,16 @@ export function useSelectedTrack(): TrackSegment[] {
   return useMemo(() => {
     if (!hex) return [];
     const tracePts = traceByHex[hex];
-    const basePts = mode === 'history'
-      ? extractTrackPoints(historyStore.frames, hex)
-      : (tracePts && tracePts.length > 0 ? tracePts : getHistorySeed(hex) ?? []);
+    const basePts =
+      mode === 'history'
+        ? extractTrackPoints(historyStore.frames, hex)
+        : tracePts && tracePts.length > 0
+          ? tracePts
+          : (getHistorySeed(hex) ?? []);
     const tailPts = tailByHex[hex] ?? [];
     const merged = mergeTracePoints([...basePts, ...tailPts]);
-    const gapThresholdSec = mode === 'history' && bounds ? historyStore.frameInterval() * 3 : undefined;
+    const gapThresholdSec =
+      mode === 'history' && bounds ? historyStore.frameInterval() * 3 : undefined;
     return buildTrackSegments(merged, { gapThresholdSec });
     // seedVersion is intentionally in deps to re-evaluate when history seed becomes available
     // eslint-disable-next-line react-hooks/exhaustive-deps

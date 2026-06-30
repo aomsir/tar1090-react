@@ -59,11 +59,7 @@ describe('aircraftDetail i18n', () => {
 
   it('formats MCP/FMS altitude values using the zh-CN locale', async () => {
     await i18n.changeLanguage('zh-CN');
-    const detail = toDetail(
-      makeAircraft({ navAltitudeMcp: 35000 }),
-      i18n.t,
-      i18n.language,
-    );
+    const detail = toDetail(makeAircraft({ navAltitudeMcp: 35000 }), i18n.t, i18n.language);
     const navGroup = detail.groups.find((g) => g.title === '导航');
     expect(navGroup).toBeDefined();
     const mcpRow = navGroup!.rows.find((r) => r.label === 'MCP 高度');

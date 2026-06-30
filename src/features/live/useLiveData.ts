@@ -58,7 +58,9 @@ export function useLiveData(
     const src = sourceRef.current;
     if (src && 'getHistoryFrame' in src && receiver.history > 0) {
       const getFrame = (n: number) =>
-        (src as unknown as { getHistoryFrame: (n: number) => Promise<AircraftSnapshot> }).getHistoryFrame(n);
+        (
+          src as unknown as { getHistoryFrame: (n: number) => Promise<AircraftSnapshot> }
+        ).getHistoryFrame(n);
       void loadLiveHistory(getFrame, receiver.history, 60);
     }
   }, [receiver]);

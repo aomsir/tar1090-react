@@ -37,7 +37,9 @@ describe('HistoryLoader', () => {
   it('defaults concurrency to HISTORY_LOAD_CONCURRENCY when not specified', async () => {
     const { HISTORY_LOAD_CONCURRENCY } = await import('@/config/history');
     const loader = new HistoryLoader(makeSource(1));
-    expect((loader as HistoryLoader & { concurrency: number }).concurrency).toBe(HISTORY_LOAD_CONCURRENCY);
+    expect((loader as unknown as { concurrency: number }).concurrency).toBe(
+      HISTORY_LOAD_CONCURRENCY,
+    );
   });
 
   it('loads all frames into historyStore and reports progress', async () => {

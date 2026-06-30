@@ -11,10 +11,7 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint, TrackSegment } from './track';
 import { historyLoader } from '@/data/historyLoader';
 import { loadAircraftTrace } from './aircraftTrace';
-import {
-  loadLiveHistory,
-  clearHistorySeedForTest,
-} from '@/data/liveHistorySeeder';
+import { loadLiveHistory, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
 
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: { ensureLoaded: vi.fn(async () => undefined) },
@@ -186,7 +183,9 @@ describe('useSelectedTrack', () => {
     aircraftStore.applySnapshot({
       now: 200,
       messages: 0,
-      aircraft: [{ hex: 'abc123', lat: 5, lon: 6, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc123', lat: 5, lon: 6, altitude: 1000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
 
     render(<Harness />);
@@ -208,7 +207,9 @@ describe('useSelectedTrack', () => {
     aircraftStore.applySnapshot({
       now: 200,
       messages: 0,
-      aircraft: [{ hex: 'abc123', lat: 5, lon: 6, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc123', lat: 5, lon: 6, altitude: 1000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
 
     render(<Harness />);
@@ -228,7 +229,9 @@ describe('useSelectedTrack', () => {
       {
         now: 100,
         messages: 0,
-        aircraft: [{ hex: 'abc123', lat: 1, lon: 2, altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+        aircraft: [
+          { hex: 'abc123', lat: 1, lon: 2, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
 
@@ -255,7 +258,9 @@ describe('useSelectedTrack', () => {
     aircraftStore.applySnapshot({
       now: 200,
       messages: 1,
-      aircraft: [{ hex: 'abc123', lat: 33, lon: 123, altitude: 5000 }] as unknown as AircraftSnapshot['aircraft'],
+      aircraft: [
+        { hex: 'abc123', lat: 33, lon: 123, altitude: 5000 },
+      ] as unknown as AircraftSnapshot['aircraft'],
     });
 
     render(<Harness />);

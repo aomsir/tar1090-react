@@ -35,9 +35,7 @@ function Separator() {
 }
 
 function GroupLabel({ children, color }: { children: string; color: string }) {
-  return (
-    <span className={`mt-1 text-[9px] tracking-wider ${color}`}>{children}</span>
-  );
+  return <span className={`mt-1 text-[9px] tracking-wider ${color}`}>{children}</span>;
 }
 
 export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
@@ -48,13 +46,15 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
 
   return (
     <div data-testid="toolbar-shell" className="relative">
-      <nav
-        data-testid="toolbar"
-        className="glass flex flex-col items-center gap-0.5 p-2"
-      >
+      <nav data-testid="toolbar" className="glass flex flex-col items-center gap-0.5 p-2">
         {/* MAP group */}
         <GroupLabel color="text-emerald-300">{t('toolbar.groups.map')}</GroupLabel>
-        <ToolbarButton icon={Home} tooltip={t('toolbar.resetMapView')} onPress={onResetView} type="action" />
+        <ToolbarButton
+          icon={Home}
+          tooltip={t('toolbar.resetMapView')}
+          onPress={onResetView}
+          type="action"
+        />
         <ToolbarButton
           icon={state.mapDim ? Moon : Sun}
           tooltip={t('toolbar.mapBrightness')}
@@ -143,13 +143,23 @@ export function Toolbar({ onResetView, onRandomPlane }: ToolbarProps) {
           isActive={state.follow}
           onPress={() => state.toggle('follow')}
         />
-        <ToolbarButton icon={Shuffle} tooltip={t('toolbar.randomAircraft')} onPress={onRandomPlane} type="action" />
+        <ToolbarButton
+          icon={Shuffle}
+          tooltip={t('toolbar.randomAircraft')}
+          onPress={onRandomPlane}
+          type="action"
+        />
 
         <Separator />
 
         {/* SYSTEM group */}
         <GroupLabel color="text-slate-300">{t('toolbar.groups.system')}</GroupLabel>
-        <ToolbarButton icon={Settings} tooltip={t('toolbar.openSettingsPanel')} onPress={() => state.toggleSettings()} type="action" />
+        <ToolbarButton
+          icon={Settings}
+          tooltip={t('toolbar.openSettingsPanel')}
+          onPress={() => state.toggleSettings()}
+          type="action"
+        />
 
         {isHistory && hasStats && (
           <>

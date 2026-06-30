@@ -108,7 +108,11 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
       >
         <div className="h-8 w-1 rounded-full bg-white/20 group-hover:bg-white/50 transition-opacity" />
       </div>
-      <div className="flex gap-1 rounded-md bg-white/5 p-0.5" role="tablist" aria-label={t('list.filters.ariaLabel')}>
+      <div
+        className="flex gap-1 rounded-md bg-white/5 p-0.5"
+        role="tablist"
+        aria-label={t('list.filters.ariaLabel')}
+      >
         {filters.map((f) => (
           <button
             key={f.id}
@@ -152,7 +156,9 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                     onChange={() => toggleColumn(c.id)}
                   />
                   {label}
-                  {c.id === 'route' && <span className="text-slate-500">{t('list.referenceOnly')}</span>}
+                  {c.id === 'route' && (
+                    <span className="text-slate-500">{t('list.referenceOnly')}</span>
+                  )}
                 </label>
               );
             })}
@@ -241,24 +247,26 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                       isNumeric ? 'font-mono text-xs' : '',
                       c.id === 'flight' ? 'font-medium' : '',
                       !value || value === '—' ? 'text-slate-500' : '',
-                    ].filter(Boolean).join(' ');
+                    ]
+                      .filter(Boolean)
+                      .join(' ');
 
                     return (
-                      <td
-                        key={c.id}
-                        className={cellClass}
-                        {...(value ? { title: value } : {})}
-                      >
+                      <td key={c.id} className={cellClass} {...(value ? { title: value } : {})}>
                         {c.id === 'aircraft_type' && value && value !== '—' ? (
                           <span className="rounded bg-white/[0.08] px-1.5 text-xs">{value}</span>
                         ) : (
                           value || '—'
                         )}
                         {c.id === 'flight' && r.isMilitary ? (
-                          <Chip size="sm" color="danger" variant="soft" className="ml-1 scale-75">MIL</Chip>
+                          <Chip size="sm" color="danger" variant="soft" className="ml-1 scale-75">
+                            MIL
+                          </Chip>
                         ) : null}
                         {c.id === 'flight' && r.isMlat ? (
-                          <Chip size="sm" color="warning" variant="soft" className="ml-1 scale-75">MLAT</Chip>
+                          <Chip size="sm" color="warning" variant="soft" className="ml-1 scale-75">
+                            MLAT
+                          </Chip>
                         ) : null}
                       </td>
                     );

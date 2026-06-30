@@ -48,11 +48,7 @@ export class RouteService {
     this.inFlight = false;
   }
 
-  private async fetchOne(
-    apiBase: string,
-    callsign: string,
-    fetchFn: typeof fetch,
-  ): Promise<void> {
+  private async fetchOne(apiBase: string, callsign: string, fetchFn: typeof fetch): Promise<void> {
     try {
       const url = `${apiBase.replace(/\/$/, '')}/${encodeURIComponent(callsign)}`;
       const res = await fetchFn(url);

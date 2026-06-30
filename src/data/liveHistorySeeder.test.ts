@@ -41,26 +41,34 @@ describe('liveHistorySeeder', () => {
       0: {
         now: 100,
         messages: 0,
-        aircraft: [
-          { hex: 'abc', lat: 10, lon: 20, altitude: 5000, track: 90, speed: 400 },
-        ],
+        aircraft: [{ hex: 'abc', lat: 10, lon: 20, altitude: 5000, track: 90, speed: 400 }],
       },
       1: {
         now: 130,
         messages: 0,
-        aircraft: [
-          { hex: 'abc', lat: 11, lon: 21, altitude: 6000, track: 95, speed: 410 },
-        ],
+        aircraft: [{ hex: 'abc', lat: 11, lon: 21, altitude: 6000, track: 95, speed: 410 }],
       },
     };
     await loadLiveHistory(makeGetFrame(frames), 2, 2000);
     const pts = getHistorySeed('abc');
     expect(pts).toHaveLength(2);
     expect(pts![0]).toEqual({
-      lon: 20, lat: 10, alt: 5000, ts: 100, track: 90, speed: 400, ground: false,
+      lon: 20,
+      lat: 10,
+      alt: 5000,
+      ts: 100,
+      track: 90,
+      speed: 400,
+      ground: false,
     });
     expect(pts![1]).toEqual({
-      lon: 21, lat: 11, alt: 6000, ts: 130, track: 95, speed: 410, ground: false,
+      lon: 21,
+      lat: 11,
+      alt: 6000,
+      ts: 130,
+      track: 95,
+      speed: 410,
+      ground: false,
     });
   });
 
@@ -96,7 +104,8 @@ describe('liveHistorySeeder', () => {
   it('handles ground altitude correctly', async () => {
     const frames: Record<number, AircraftSnapshot> = {
       0: {
-        now: 100, messages: 0,
+        now: 100,
+        messages: 0,
         aircraft: [{ hex: 'g', lat: 1, lon: 2, altitude: 'ground' as const }],
       },
     };
@@ -125,9 +134,13 @@ describe('liveHistorySeeder', () => {
 
   it('bumps seed version after loading', async () => {
     expect(useSeedVersion.getState().version).toBe(0);
-    await loadLiveHistory(makeGetFrame({
-      0: { now: 100, messages: 0, aircraft: [] },
-    }), 1, 2000);
+    await loadLiveHistory(
+      makeGetFrame({
+        0: { now: 100, messages: 0, aircraft: [] },
+      }),
+      1,
+      2000,
+    );
     expect(useSeedVersion.getState().version).toBeGreaterThan(0);
   });
 

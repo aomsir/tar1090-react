@@ -54,14 +54,20 @@ describe('aircraftTrace', () => {
   it('loads full and recent traces, tolerating one failed request', async () => {
     const fetchFn = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse({ timestamp: 1000, trace: [[0, 1, 2, 1000, 200, 90, 0]] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ timestamp: 1000, trace: [[0, 1, 2, 1000, 200, 90, 0]] }),
+      )
       .mockResolvedValueOnce(jsonResponse({}, false));
 
     const points = await loadAircraftTrace('ABC123', fetchFn);
 
     expect(fetchFn).toHaveBeenCalledTimes(2);
-    expect(String(fetchFn.mock.calls[0]![0])).toContain('/data/traces/23/trace_full_abc123.json?_=');
-    expect(String(fetchFn.mock.calls[1]![0])).toContain('/data/traces/23/trace_recent_abc123.json?_=');
+    expect(String(fetchFn.mock.calls[0]![0])).toContain(
+      '/data/traces/23/trace_full_abc123.json?_=',
+    );
+    expect(String(fetchFn.mock.calls[1]![0])).toContain(
+      '/data/traces/23/trace_recent_abc123.json?_=',
+    );
     expect(points.map((p) => [p.ts, p.lon, p.lat])).toEqual([[1000, 2, 1]]);
   });
 

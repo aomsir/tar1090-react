@@ -104,9 +104,10 @@ export class Aircraft {
     if (dto.wd !== undefined) this.windDirection = dto.wd;
     if (dto.ws !== undefined) this.windSpeed = dto.ws;
     const rawType = dto.type ?? dto.addrtype;
-    const sourceType = Array.isArray(dto.mlat) && dto.mlat.includes('lat')
-      ? 'mlat'
-      : rawType ?? (dto.lat != null && dto.lon != null ? 'adsb' : undefined);
+    const sourceType =
+      Array.isArray(dto.mlat) && dto.mlat.includes('lat')
+        ? 'mlat'
+        : (rawType ?? (dto.lat != null && dto.lon != null ? 'adsb' : undefined));
     if (sourceType !== undefined) this.addrType = sourceType;
     if (dto.version !== undefined) this.version = dto.version;
     if (dto.emergency !== undefined) this.emergency = dto.emergency;

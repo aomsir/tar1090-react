@@ -7,7 +7,13 @@ interface AltitudeChartProps {
   data: { range: string; count: number }[];
 }
 
-const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { value: number; payload: { range: string } }[] }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { value: number; payload: { range: string } }[];
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded bg-zinc-900 px-2 py-1 text-xs text-white shadow">
@@ -27,10 +33,21 @@ export function AltitudeChart({ data }: AltitudeChartProps) {
     <ChartCard title={t('stats.charts.altitudeDistribution')}>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={localizedData} margin={{ left: 0, right: 12 }}>
-          <XAxis dataKey="range" tick={{ fill: AXIS_COLOR, fontSize: 12 }} angle={-30} textAnchor="end" height={40} />
+          <XAxis
+            dataKey="range"
+            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            angle={-30}
+            textAnchor="end"
+            height={40}
+          />
           <YAxis
             tick={{ fill: AXIS_COLOR, fontSize: 12 }}
-            label={{ value: t('stats.count'), angle: -90, position: 'insideLeft', style: { fill: AXIS_COLOR } }}
+            label={{
+              value: t('stats.count'),
+              angle: -90,
+              position: 'insideLeft',
+              style: { fill: AXIS_COLOR },
+            }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(31, 119, 180, 0.1)' }} />
           <Bar dataKey="count" fill={PRIMARY_COLOR} radius={[3, 3, 0, 0]}>

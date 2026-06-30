@@ -34,6 +34,18 @@ export function useAircraftRows(): AircraftRow[] {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, version, query, filter, sortKey, sortDir, inViewOnly, routeApiEnabled, extent, siteLat, siteLon],
+    [
+      mode,
+      version,
+      query,
+      filter,
+      sortKey,
+      sortDir,
+      inViewOnly,
+      routeApiEnabled,
+      extent,
+      siteLat,
+      siteLon,
+    ],
   );
 }

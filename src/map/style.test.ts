@@ -57,7 +57,11 @@ describe('aircraftStyle', () => {
   it('renders the marker label as style text', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
-    expect(aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false }).getText()?.getText()).toBe('CCA101');
+    expect(
+      aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false })
+        .getText()
+        ?.getText(),
+    ).toBe('CCA101');
   });
 
   it('uses an svg icon image instead of a triangle', () => {
@@ -124,7 +128,11 @@ describe('aircraftStyle', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450 }, 1);
     const base = aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false });
-    const extended = aircraftStyle(ac, false, 0, { enabled: true, extended: 1, trackLabels: false });
+    const extended = aircraftStyle(ac, false, 0, {
+      enabled: true,
+      extended: 1,
+      trackLabels: false,
+    });
     expect(base.getText()?.getText()).toBe('CCA101');
     const extText = extended.getText()?.getText() as string;
     expect(extText).toContain('CCA101');

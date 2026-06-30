@@ -49,7 +49,12 @@ describe('enrichAircraft', () => {
   it('sets country and flagPath before the db lookup resolves', async () => {
     let resolveLookup!: (v: null) => void;
     const slowDeps = {
-      lookup: vi.fn(() => new Promise<null>((r) => { resolveLookup = r; })),
+      lookup: vi.fn(
+        () =>
+          new Promise<null>((r) => {
+            resolveLookup = r;
+          }),
+      ),
       registrationFromHexId: () => null,
     };
     const ac = new Aircraft('A00001'); // US range

@@ -28,20 +28,39 @@ function topN(map: Map<string, number>, n: number): { name: string; count: numbe
 }
 
 function extractAirlineCode(flight: string): string | null {
-  const match = flight.trim().toUpperCase().match(/^([A-Z]+)/);
+  const match = flight
+    .trim()
+    .toUpperCase()
+    .match(/^([A-Z]+)/);
   return match ? match[1] : null;
 }
 
 function classifySource(addrType: string | undefined): string {
   switch (addrType) {
-    case 'uat': return 'UAT';
-    case 'mlat': return 'MLAT';
-    case 'adsb': case 'adsb_icao': case 'adsb_other': return 'ADS-B';
-    case 'adsb_icao_nt': return 'ADS-B';
-    case 'adsr': case 'adsr_icao': case 'adsr_other': return 'ADS-R';
-    case 'tisb_icao': case 'tisb_trackfile': case 'tisb_other': case 'tisb': return 'TIS-B';
-    case 'modeS': case 'mode_s': return 'Mode S';
-    default: return 'Other';
+    case 'uat':
+      return 'UAT';
+    case 'mlat':
+      return 'MLAT';
+    case 'adsb':
+    case 'adsb_icao':
+    case 'adsb_other':
+      return 'ADS-B';
+    case 'adsb_icao_nt':
+      return 'ADS-B';
+    case 'adsr':
+    case 'adsr_icao':
+    case 'adsr_other':
+      return 'ADS-R';
+    case 'tisb_icao':
+    case 'tisb_trackfile':
+    case 'tisb_other':
+    case 'tisb':
+      return 'TIS-B';
+    case 'modeS':
+    case 'mode_s':
+      return 'Mode S';
+    default:
+      return 'Other';
   }
 }
 
@@ -55,11 +74,26 @@ function altitudeBinLabel(alt: number | 'ground' | undefined): string | null {
   return `${lower}-${upper}k`;
 }
 
-const ALTITUDE_BIN_ORDER = ['Ground', '0-5k', '5-10k', '10-15k', '15-20k', '20-25k', '25-30k', '30-35k', '35-40k', '40k+'];
+const ALTITUDE_BIN_ORDER = [
+  'Ground',
+  '0-5k',
+  '5-10k',
+  '10-15k',
+  '15-20k',
+  '20-25k',
+  '25-30k',
+  '30-35k',
+  '35-40k',
+  '40k+',
+];
 const SPEED_BINS = [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 const DISTANCE_BINS = [0, 25, 50, 75, 100, 125, 150, 175, 200];
 
-function buildHistogram(values: number[], edges: number[], suffix: string): { range: string; count: number }[] {
+function buildHistogram(
+  values: number[],
+  edges: number[],
+  suffix: string,
+): { range: string; count: number }[] {
   const counts = new Array(edges.length).fill(0);
   for (const v of values) {
     let placed = false;
@@ -72,12 +106,12 @@ function buildHistogram(values: number[], edges: number[], suffix: string): { ra
     }
     if (!placed) counts[0]++;
   }
-  return edges.map((e, i) => {
-    const label = i === edges.length - 1
-      ? `${e}${suffix}+`
-      : `${e}-${edges[i + 1]}${suffix}`;
-    return { range: label, count: counts[i] };
-  }).filter((b) => b.count > 0);
+  return edges
+    .map((e, i) => {
+      const label = i === edges.length - 1 ? `${e}${suffix}+` : `${e}-${edges[i + 1]}${suffix}`;
+      return { range: label, count: counts[i] };
+    })
+    .filter((b) => b.count > 0);
 }
 
 export function computeHistoryStats(
@@ -121,9 +155,10 @@ export function computeHistoryStats(
     }
   }
 
-  const altitudeBins = ALTITUDE_BIN_ORDER
-    .filter((label) => altBinMap.has(label))
-    .map((label) => ({ range: label, count: altBinMap.get(label)! }));
+  const altitudeBins = ALTITUDE_BIN_ORDER.filter((label) => altBinMap.has(label)).map((label) => ({
+    range: label,
+    count: altBinMap.get(label)!,
+  }));
 
   const speeds: number[] = [];
   const distances: number[] = [];

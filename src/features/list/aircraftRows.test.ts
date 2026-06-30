@@ -8,7 +8,9 @@ import type { PeakStats } from '@/features/playback/pTracks';
 async function seedRoute(callsign: string, route: string) {
   const [origin, destination] = route.split(' - ');
   const body = JSON.stringify({
-    response: { flightroute: { origin: { iata_code: origin }, destination: { iata_code: destination } } },
+    response: {
+      flightroute: { origin: { iata_code: origin }, destination: { iata_code: destination } },
+    },
   });
   const fetchFn = vi.fn().mockResolvedValue({
     ok: true,
@@ -293,7 +295,7 @@ it('formats original tar1090 columns from row data', () => {
 it('formats data source values like original tar1090', () => {
   const col = LIST_COLUMNS.find((c) => c.id === 'data_source');
   expect(col).toBeDefined();
-  
+
   const baseRow = {
     hex: 'abc',
     flight: '',
@@ -480,7 +482,7 @@ describe('toRow route integration', () => {
   });
 
   it('returns empty route for newly enqueued callsign before flush', async () => {
-    routeService.enqueue('CCA1234', 39.9, 116.4);
+    routeService.enqueue('CCA1234');
     const a1 = ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4 });
     const row = toRow(a1, undefined, true);
     expect(row.route).toBe('');

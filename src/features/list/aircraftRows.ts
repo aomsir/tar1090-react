@@ -55,9 +55,7 @@ export function toRow(ac: Aircraft, distance?: number, routeApiEnabled = false):
   return {
     hex: ac.hex,
     flight: ac.flight ?? '',
-    route: routeApiEnabled
-      ? (routeService.lookup(normalizeCallsign(ac.flight ?? '')) ?? '')
-      : '',
+    route: routeApiEnabled ? (routeService.lookup(normalizeCallsign(ac.flight ?? '')) ?? '') : '',
     registration: ac.registration ?? '',
     typeCode: ac.typeCode ?? '',
     squawk: ac.squawk ?? '',

@@ -501,14 +501,8 @@ describe('AppShell', () => {
 
   it('allTracks calls showPTracks with position histories when enabled in live mode', () => {
     const ac = new Aircraft('a00001');
-    ac.update(
-      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
-      1000,
-    );
-    ac.update(
-      { hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number],
-      1001,
-    );
+    ac.update({ hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number], 1000);
+    ac.update({ hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number], 1001);
     aircraftStore.map.set('a00001', ac);
 
     render(<AppShell />);
@@ -530,14 +524,8 @@ describe('AppShell', () => {
 
   it('allTracks refreshes pTracks on new live ticks', () => {
     const ac = new Aircraft('a00001');
-    ac.update(
-      { hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number],
-      1000,
-    );
-    ac.update(
-      { hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number],
-      1001,
-    );
+    ac.update({ hex: 'a00001', lat: 10, lon: 20 } as AircraftSnapshot['aircraft'][number], 1000);
+    ac.update({ hex: 'a00001', lat: 11, lon: 21 } as AircraftSnapshot['aircraft'][number], 1001);
     aircraftStore.map.set('a00001', ac);
 
     render(<AppShell />);
@@ -551,10 +539,7 @@ describe('AppShell', () => {
     fakeController.showPTracks.mockClear();
 
     act(() => {
-      ac.update(
-        { hex: 'a00001', lat: 12, lon: 22 } as AircraftSnapshot['aircraft'][number],
-        1002,
-      );
+      ac.update({ hex: 'a00001', lat: 12, lon: 22 } as AircraftSnapshot['aircraft'][number], 1002);
       useLiveTick.getState().bump();
     });
 

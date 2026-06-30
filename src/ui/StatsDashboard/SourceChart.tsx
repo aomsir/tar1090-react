@@ -1,4 +1,12 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  type PieLabelRenderProps,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { ChartCard } from './ChartCard';
 import { CHART_COLORS } from './chartColors';
@@ -7,13 +15,20 @@ interface SourceChartProps {
   data: { name: string; count: number }[];
 }
 
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  if (percent < 0.05) return null;
+const renderCustomLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+}: PieLabelRenderProps) => {
+  if (!percent || percent < 0.05) return null;
 
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const radius = (innerRadius ?? 0) + ((outerRadius ?? 0) - (innerRadius ?? 0)) * 0.5;
+  const x = (cx ?? 0) + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
+  const y = (cy ?? 0) + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
 
   return (
     <text
@@ -30,7 +45,13 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   );
 };
 
-const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { value: number; name: string }[] }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { value: number; name: string }[];
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded bg-zinc-900 px-2 py-1 text-xs text-white shadow">

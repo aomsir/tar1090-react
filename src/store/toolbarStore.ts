@@ -94,8 +94,7 @@ export const useToolbarStore = create<ToolbarState>()(
     (set) => ({
       ...DEFAULTS,
       toggle: (key) => set((s) => ({ [key]: !s[key] })),
-      cycleExtendedLabels: () =>
-        set((s) => ({ extendedLabels: (s.extendedLabels + 1) % 3 })),
+      cycleExtendedLabels: () => set((s) => ({ extendedLabels: (s.extendedLabels + 1) % 3 })),
       setUnits: (units) => set({ units }),
       setLabelScale: (labelScale) => set({ labelScale }),
       setIconScale: (iconScale) => set({ iconScale }),
@@ -109,11 +108,11 @@ export const useToolbarStore = create<ToolbarState>()(
     {
       name: 'toolbar-settings',
       version: 3,
-      migrate: (persisted: unknown) => {
+      migrate: (persisted: unknown): ToolbarState => {
         const s = persisted as Record<string, unknown>;
         // Clean up legacy routeApiUrl field
         delete s.routeApiUrl;
-        return s as ReturnType<typeof useToolbarStore.getState>;
+        return s as unknown as ToolbarState;
       },
       partialize: (state) => {
         // Exclude transient UI state from persistence
