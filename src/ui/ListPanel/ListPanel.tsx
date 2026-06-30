@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Chip } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
-import { LIST_COLUMNS } from '@/features/list/columns';
+import { createListColumns } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
@@ -9,13 +10,6 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRows';
 import type { ListColumn } from '@/features/list/columns';
-
-const FILTERS: { id: FilterKey; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'airborne', label: 'Airborne' },
-  { id: 'ground', label: 'Ground' },
-  { id: 'military', label: 'Military' },
-];
 
 const EMERGENCY_SQUAWKS = new Set(['7500', '7600', '7700']);
 
@@ -27,6 +21,7 @@ function rowBackground(row: AircraftRow, selected: boolean, index: number): stri
 }
 
 export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
+  const { t } = useTranslation();
   const rows = useAircraftRows();
   const filter = useListControls((s) => s.filter);
   const setFilter = useListControls((s) => s.setFilter);
@@ -42,7 +37,17 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const setListWidth = useToolbarStore((s) => s.setListWidth);
   const isDragging = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
-  const visibleColumns = LIST_COLUMNS.filter((c) => !hiddenColumns.has(c.id));
+  const columns = useMemo(() => createListColumns(t), [t]);
+  const filters = useMemo<{ id: FilterKey; label: string }[]>(
+    () => [
+      { id: 'all', label: t('list.filters.all') },
+      { id: 'airborne', label: t('list.filters.airborne') },
+      { id: 'ground', label: t('list.filters.ground') },
+      { id: 'military', label: t('list.filters.military') },
+    ],
+    [t],
+  );
+  const visibleColumns = columns.filter((c) => !hiddenColumns.has(c.id));
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
 
   const handleMouseDown = useCallback(
@@ -85,8 +90,8 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
 
   const historyLabel = (col: ListColumn): string => {
     if (!isHistory) return col.label;
-    if (col.id === 'speed') return 'Max. Spd. (kt)';
-    if (col.id === 'distance') return 'Max. Dist. (nmi)';
+    if (col.id === 'speed') return t('list.history.maxSpeed');
+    if (col.id === 'distance') return t('list.history.maxDistance');
     return col.label;
   };
 
@@ -103,8 +108,8 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
       >
         <div className="h-8 w-1 rounded-full bg-white/20 group-hover:bg-white/50 transition-opacity" />
       </div>
-      <div className="flex gap-1 rounded-md bg-white/5 p-0.5" role="tablist" aria-label="Aircraft filters">
-        {FILTERS.map((f) => (
+      <div className="flex gap-1 rounded-md bg-white/5 p-0.5" role="tablist" aria-label={t('list.filters.ariaLabel')}>
+        {filters.map((f) => (
           <button
             key={f.id}
             type="button"
@@ -126,18 +131,18 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           checked={inViewOnly}
           onChange={() => useToolbarStore.getState().toggle('inViewOnly')}
         />
-        Only aircraft in view
+        {t('list.inViewOnly')}
       </label>
 
       <div className="mt-2">
         <details ref={columnOptionsRef}>
           <summary className="cursor-pointer text-xs text-slate-400 hover:text-white">
-            Column options
+            {t('list.columnOptions')}
           </summary>
           <div className="mt-1 flex flex-wrap gap-1">
-            {LIST_COLUMNS.map((c) => {
+            {columns.map((c) => {
               const checked = !hiddenColumns.has(c.id);
-              const label = c.id === 'flag' ? 'Flag' : historyLabel(c);
+              const label = c.id === 'flag' ? t('list.flag') : historyLabel(c);
               return (
                 <label key={c.id} className="flex items-center gap-1 text-[11px] text-slate-300">
                   <input
@@ -147,7 +152,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                     onChange={() => toggleColumn(c.id)}
                   />
                   {label}
-                  {c.id === 'route' && <span className="text-slate-500">(reference only)</span>}
+                  {c.id === 'route' && <span className="text-slate-500">{t('list.referenceOnly')}</span>}
                 </label>
               );
             })}
@@ -155,14 +160,14 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
         </details>
         <button
           type="button"
-          aria-label="Columns"
+          aria-label={t('list.columns')}
           className="sr-only"
           onClick={() => {
             if (columnOptionsRef.current)
               columnOptionsRef.current.open = !columnOptionsRef.current.open;
           }}
         >
-          Columns
+          {t('list.columns')}
         </button>
       </div>
 
@@ -193,7 +198,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
                         {isActive ? (sortDir === 'asc' ? ' ▴' : ' ▾') : ''}
                       </button>
                     ) : (
-                      <span>{c.id === 'flag' ? 'Flag' : historyLabel(c)}</span>
+                      <span>{c.id === 'flag' ? t('list.flag') : historyLabel(c)}</span>
                     )}
                   </th>
                 );
@@ -264,7 +269,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           </tbody>
         </table>
         {rows.length === 0 ? (
-          <div className="text-muted px-1 py-2 text-[13px]">No matching aircraft</div>
+          <div className="text-muted px-1 py-2 text-[13px]">{t('list.emptyState')}</div>
         ) : null}
       </div>
     </aside>

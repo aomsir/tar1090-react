@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { SummaryCards } from './SummaryCards';
@@ -13,6 +14,7 @@ import { TrafficTimeline } from './TrafficTimeline';
 import { SourceChart } from './SourceChart';
 
 export function StatsDashboard() {
+  const { t } = useTranslation();
   const stats = useHistoryStatsStore((s) => s.stats);
   const toggle = useToolbarStore((s) => s.toggleStatsDashboard);
 
@@ -33,10 +35,10 @@ export function StatsDashboard() {
     >
       <div className="mx-auto max-w-[1600px] px-6 py-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-200">History Statistics</h2>
+          <h2 className="text-lg font-semibold text-slate-200">{t('stats.title')}</h2>
           <button
             type="button"
-            aria-label="Close statistics"
+            aria-label={t('stats.close')}
             onClick={toggle}
             className="rounded p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
           >

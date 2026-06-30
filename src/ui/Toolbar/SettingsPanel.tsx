@@ -1,14 +1,11 @@
 import { Button, ToggleButtonGroup, ToggleButton, Slider, Switch, Label } from '@heroui/react';
 import type { Key } from '@heroui/react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useToolbarStore } from '@/store/toolbarStore';
 import type { Units } from '@/store/toolbarStore';
-
-const UNIT_OPTIONS: { id: Units; label: string }[] = [
-  { id: 'nautical', label: 'Aviation' },
-  { id: 'metric', label: 'Metric' },
-  { id: 'imperial', label: 'Imperial' },
-];
+import { LANGUAGE_OPTIONS } from '@/i18n/types';
+import type { SupportedLanguage } from '@/i18n/types';
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -17,6 +14,7 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 export function SettingsPanel() {
+  const { t, i18n } = useTranslation();
   const {
     units,
     setUnits,
@@ -31,8 +29,27 @@ export function SettingsPanel() {
     toggle,
     toggleSettings,
     resetAll,
-
   } = useToolbarStore();
+
+  const unitOptions: { id: Units; label: string }[] = [
+    { id: 'nautical', label: t('settings.units.aviation') },
+    { id: 'metric', label: t('settings.units.metric') },
+    { id: 'imperial', label: t('settings.units.imperial') },
+  ];
+
+  const languageLabels: Record<SupportedLanguage, string> = {
+    en: t('settings.language.english'),
+    'zh-CN': t('settings.language.chinese'),
+  };
+
+  // Namespace language ToggleButton ids to avoid generic DOM id collisions
+  // while preserving the language id as the selection key payload: the key
+  // format is `lang-<languageId>`, so on selection we strip the prefix and
+  // cast the remainder to SupportedLanguage.
+  const langButtonId = (lang: SupportedLanguage): string => `lang-${lang}`;
+  const selectedLanguage: SupportedLanguage = i18n.language?.startsWith('zh')
+    ? 'zh-CN'
+    : 'en';
 
   return (
     <div
@@ -40,12 +57,12 @@ export function SettingsPanel() {
       className="glass absolute right-14 top-0 z-20 w-[300px] p-4 text-sm text-slate-200"
     >
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-[15px] font-semibold">Settings</span>
+        <span className="text-[15px] font-semibold">{t('settings.title')}</span>
         <Button
           isIconOnly
           size="sm"
           variant="ghost"
-          aria-label="Close settings"
+          aria-label={t('settings.close')}
           onPress={() => toggleSettings()}
           className="h-7 w-7 min-w-0 rounded-md border-none bg-white/[0.08] text-slate-400"
         >
@@ -53,7 +70,31 @@ export function SettingsPanel() {
         </Button>
       </div>
 
-      <SectionLabel>Units</SectionLabel>
+      <SectionLabel>{t('settings.language.title')}</SectionLabel>
+      <ToggleButtonGroup
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={new Set<Key>([langButtonId(selectedLanguage)])}
+        onSelectionChange={(keys) => {
+          const key = [...keys][0] as string | undefined;
+          if (!key) return;
+          const selected = key.replace(/^lang-/, '') as SupportedLanguage;
+          if (selected) void i18n.changeLanguage(selected);
+        }}
+        size="sm"
+        className="mb-3"
+      >
+        {LANGUAGE_OPTIONS.map((opt, i) => (
+          <ToggleButton key={langButtonId(opt.id)} id={langButtonId(opt.id)}>
+            {i > 0 && <ToggleButtonGroup.Separator />}
+            {languageLabels[opt.id]}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+
+      <hr className="my-3 border-white/[0.08]" />
+
+      <SectionLabel>{t('settings.units.title')}</SectionLabel>
       <ToggleButtonGroup
         selectionMode="single"
         disallowEmptySelection
@@ -65,7 +106,7 @@ export function SettingsPanel() {
         size="sm"
         className="mb-3"
       >
-        {UNIT_OPTIONS.map((opt, i) => (
+        {unitOptions.map((opt, i) => (
           <ToggleButton key={opt.id} id={opt.id}>
             {i > 0 && <ToggleButtonGroup.Separator />}
             {opt.label}
@@ -75,7 +116,7 @@ export function SettingsPanel() {
 
       <hr className="my-3 border-white/[0.08]" />
 
-      <SectionLabel>Scale</SectionLabel>
+      <SectionLabel>{t('settings.scale.title')}</SectionLabel>
       <div className="mb-3 space-y-3">
         <Slider
           value={labelScale}
@@ -83,9 +124,8 @@ export function SettingsPanel() {
           minValue={0.5}
           maxValue={3}
           step={0.1}
-          aria-label="Label scale"
         >
-          <Label>Label scale</Label>
+          <Label>{t('settings.scale.labelScale')}</Label>
           <Slider.Output />
           <Slider.Track>
             <Slider.Fill />
@@ -98,9 +138,8 @@ export function SettingsPanel() {
           minValue={0.1}
           maxValue={3}
           step={0.1}
-          aria-label="Icon scale"
         >
-          <Label>Icon scale</Label>
+          <Label>{t('settings.scale.iconScale')}</Label>
           <Slider.Output />
           <Slider.Track>
             <Slider.Fill />
@@ -111,7 +150,7 @@ export function SettingsPanel() {
 
       <hr className="my-3 border-white/[0.08]" />
 
-      <SectionLabel>Filters</SectionLabel>
+      <SectionLabel>{t('settings.filters.title')}</SectionLabel>
       <div className="mb-3 space-y-2">
         <Switch
           isSelected={filterGroundVehicles}
@@ -121,7 +160,7 @@ export function SettingsPanel() {
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            Ground vehicles
+            {t('settings.filters.groundVehicles')}
           </Switch.Content>
         </Switch>
         <Switch
@@ -132,14 +171,14 @@ export function SettingsPanel() {
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            Non-ICAO targets
+            {t('settings.filters.nonIcaoTargets')}
           </Switch.Content>
         </Switch>
       </div>
 
       <hr className="my-3 border-white/[0.08]" />
 
-      <SectionLabel>Display</SectionLabel>
+      <SectionLabel>{t('settings.display.title')}</SectionLabel>
       <div className="mb-3 space-y-2">
         <Switch
           isSelected={coloredPlanes}
@@ -149,7 +188,7 @@ export function SettingsPanel() {
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            Colored aircraft
+            {t('settings.display.coloredAircraft')}
           </Switch.Content>
         </Switch>
         <Switch
@@ -160,7 +199,7 @@ export function SettingsPanel() {
             <Switch.Control>
               <Switch.Thumb />
             </Switch.Control>
-            Colored tracks
+            {t('settings.display.coloredTracks')}
           </Switch.Content>
         </Switch>
       </div>
@@ -174,7 +213,7 @@ export function SettingsPanel() {
           onPress={() => resetAll()}
           className="text-red-400 hover:bg-red-500/15"
         >
-          Reset all settings
+          {t('settings.resetAll')}
         </Button>
       </div>
     </div>

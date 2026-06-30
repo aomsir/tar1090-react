@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Chip } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
 import { useAircraftPhoto } from '@/features/detail/useAircraftPhoto';
@@ -29,6 +30,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function DetailCard() {
+  const { t, i18n } = useTranslation();
   const d = useSelectedAircraft();
   const select = useSelectionStore((s) => s.select);
   const { photo, loading: photoLoading } = useAircraftPhoto(
@@ -115,7 +117,7 @@ export function DetailCard() {
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {d.isMilitary ? (
-              <Chip color="danger" size="sm" variant="secondary">Military</Chip>
+              <Chip color="danger" size="sm" variant="secondary">{t('detail.military')}</Chip>
             ) : null}
             {d.isMlat ? (
               <Chip color="warning" size="sm" variant="secondary">MLAT</Chip>
@@ -124,7 +126,7 @@ export function DetailCard() {
         </div>
         <button
           type="button"
-          aria-label="Close details"
+          aria-label={t('detail.close')}
           onClick={() => select(null)}
           className="rounded-md border border-white/10 bg-white/5 p-1 hover:bg-white/10"
         >
@@ -134,7 +136,7 @@ export function DetailCard() {
 
       {photoLoading ? (
         <div className="mt-2 flex h-24 items-center justify-center text-xs text-slate-400">
-          Loading image...
+          {t('detail.loadingImage')}
         </div>
       ) : photo ? (
         <a href={photo.link} target="_blank" rel="noopener noreferrer" className="mt-2 block">
@@ -153,21 +155,25 @@ export function DetailCard() {
 
       <div data-testid="key-stats" className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg bg-white/5 p-2 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Altitude</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('detail.stats.altitude')}</div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
-            {d.altitude != null ? formatAltitude(d.altitude).replace(' ft', '') : '—'}
+            {(() => {
+              if (d.altitude == null) return '—';
+              if (d.altitude === 'ground') return t('list.ground');
+              return formatAltitude(d.altitude, i18n.language).replace(' ft', '');
+            })()}
           </div>
           <div className="text-[10px] text-slate-500">ft</div>
         </div>
         <div className="rounded-lg bg-white/5 p-2 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Speed</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('detail.stats.speed')}</div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
             {typeof d.speed === 'number' && Number.isFinite(d.speed) ? Math.round(d.speed) : '—'}
           </div>
           <div className="text-[10px] text-slate-500">kt</div>
         </div>
         <div className="rounded-lg bg-white/5 p-2 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Track</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('detail.stats.track')}</div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
             {typeof d.track === 'number' && Number.isFinite(d.track) ? `${Math.round(d.track)}°` : '—'}
           </div>
@@ -203,7 +209,7 @@ export function DetailCard() {
         onClick={handleExportKml}
         className="mt-3 w-full rounded-lg border border-indigo-500/25 bg-indigo-500/12 py-2 text-xs font-medium text-indigo-300 transition-colors hover:bg-indigo-500/20"
       >
-        Export KML
+        {t('detail.exportKml')}
       </button>
       <div
         data-testid="resize-handle"

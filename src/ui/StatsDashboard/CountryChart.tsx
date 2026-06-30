@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Legend, Cell } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { ChartCard } from './ChartCard';
 import { CHART_COLORS, AXIS_COLOR, LABEL_COLOR } from './chartColors';
 
@@ -16,8 +17,9 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { valu
 };
 
 export function CountryChart({ data }: CountryChartProps) {
+  const { t } = useTranslation();
   return (
-    <ChartCard title="Country / Region Distribution">
+    <ChartCard title={t('stats.charts.countryDistribution')}>
       <ResponsiveContainer width="100%" height={Math.max(200, data.length * 28)}>
         <BarChart data={data} layout="vertical" margin={{ left: 60, right: 12 }}>
           <XAxis type="number" tick={{ fill: AXIS_COLOR, fontSize: 12 }} />

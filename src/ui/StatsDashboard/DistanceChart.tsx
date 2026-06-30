@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { ChartCard } from './ChartCard';
 import { PRIMARY_COLOR, AXIS_COLOR, LABEL_COLOR } from './chartColors';
 
@@ -16,8 +17,10 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { valu
 };
 
 export function DistanceChart({ data }: DistanceChartProps) {
+  const { t } = useTranslation();
+
   return (
-    <ChartCard title="Distance Distribution (nmi)">
+    <ChartCard title={t('stats.charts.distanceDistribution')}>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ left: 0, right: 12 }}>
           <XAxis
@@ -26,9 +29,9 @@ export function DistanceChart({ data }: DistanceChartProps) {
             angle={-30}
             textAnchor="end"
             height={40}
-            label={{ value: 'Distance (nm)', position: 'insideBottom', offset: -5, style: { fill: AXIS_COLOR } }}
+            label={{ value: t('stats.axes.distanceNmi'), position: 'insideBottom', offset: -5, style: { fill: AXIS_COLOR } }}
           />
-          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 12 }} label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fill: AXIS_COLOR } }} />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 12 }} label={{ value: t('stats.count'), angle: -90, position: 'insideLeft', style: { fill: AXIS_COLOR } }} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(31, 119, 180, 0.1)' }} />
           <Bar dataKey="count" fill={PRIMARY_COLOR} radius={[3, 3, 0, 0]}>
             <LabelList

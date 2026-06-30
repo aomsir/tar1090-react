@@ -1,4 +1,4 @@
-import { formatAltitude } from '@/domain/format';
+import { formatAltitude, ALTITUDE_GROUND } from '@/domain/format';
 import {
   formatAge,
   formatCoordinate,
@@ -8,6 +8,7 @@ import {
   formatTimestamp,
   formatVerticalRate,
 } from '@/domain/units';
+import type { TFunction } from 'i18next';
 import type { AircraftRow } from './aircraftRows';
 
 export type ColumnId =
@@ -243,4 +244,69 @@ export const LIST_COLUMNS: ListColumn[] = [
 
 export function visibleColumnIds(hidden: Set<ColumnId>): ColumnId[] {
   return LIST_COLUMNS.filter((c) => !hidden.has(c.id)).map((c) => c.id);
+}
+
+const COLUMN_HEADER_KEYS: Record<ColumnId, string> = {
+  icao: 'icao',
+  flag: '',
+  flight: 'callsign',
+  route: 'route',
+  registration: 'registration',
+  aircraft_type: 'type',
+  squawk: 'squawk',
+  altitude: 'altitude',
+  speed: 'speed',
+  vert_rate: 'verticalRate',
+  distance: 'distance',
+  track: 'track',
+  msgs: 'messages',
+  seen: 'seen',
+  rssi: 'rssi',
+  lat: 'latitude',
+  lon: 'longitude',
+  data_source: 'source',
+  military: 'military',
+  wd: 'windDirection',
+  ws: 'wind',
+  last_seen: 'lastSeen',
+};
+
+export function createListColumns(t: TFunction): ListColumn[] {
+  return LIST_COLUMNS.map((col) => {
+    const headerKey = COLUMN_HEADER_KEYS[col.id];
+    const label = headerKey ? t(`list.columnHeaders.${headerKey}`) : '';
+    if (col.id === 'military') {
+      return {
+        ...col,
+        label,
+        format: (r: AircraftRow) => (r.isMilitary ? t('list.values.yes') : t('list.values.no')),
+      };
+    }
+    if (col.id === 'data_source') {
+      return {
+        ...col,
+        label,
+        format: (r: AircraftRow) => translateDataSource(r.dataSource, t),
+      };
+    }
+    if (col.id === 'altitude') {
+      return {
+        ...col,
+        label,
+        format: (r: AircraftRow) => {
+          if (r.altitude === 'ground') return t('list.ground');
+          const formatted = formatAltitude(r.altitude);
+          return formatted === ALTITUDE_GROUND ? t('list.ground') : formatted.replace(' ft', '');
+        },
+      };
+    }
+    return { ...col, label };
+  });
+}
+
+function translateDataSource(source: string, t: TFunction): string {
+  const raw = formatDataSource(source);
+  if (raw === 'Other') return t('list.dataSources.other');
+  if (raw === 'Unknown') return t('list.dataSources.unknown');
+  return raw;
 }

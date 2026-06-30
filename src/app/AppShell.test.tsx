@@ -5,6 +5,7 @@ import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSeedVersion, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
+import { setTestLanguage } from '@/i18n/testUtils';
 
 vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
@@ -67,11 +68,11 @@ vi.mock('@/data/historyLoader', () => ({
     }),
   },
   HISTORY_RANGES: [
-    { key: '1d',        label: '1 day',  seconds: 86400 },
-    { key: '3d',        label: '3 days', seconds: 259200 },
-    { key: '1w',        label: '1 week', seconds: 604800 },
-    { key: '1m',        label: '1 month', seconds: 2592000 },
-    { key: 'unlimited', label: 'All', seconds: Infinity },
+    { key: '1d', seconds: 86400 },
+    { key: '3d', seconds: 259200 },
+    { key: '1w', seconds: 604800 },
+    { key: '1m', seconds: 2592000 },
+    { key: 'unlimited', seconds: Infinity },
   ],
 }));
 vi.mock('@/ui/ListPanel/ListPanel', () => ({
@@ -88,7 +89,8 @@ import { aircraftStore } from '@/store/aircraftStore';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('AppShell', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await setTestLanguage('en');
     useSelectionStore.setState({ selectedHex: null, selectedHexes: new Set() });
     useToolbarStore.setState({
       onlyMilitary: false,
@@ -380,11 +382,11 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
   });
 
-  it('shows a loading overlay when live history seed is loading', () => {
+  it('shows a loading overlay when live history seed is loading', async () => {
     useSeedVersion.setState({ loading: true });
     render(<AppShell />);
     expect(screen.getByTestId('seed-loading-overlay')).toBeInTheDocument();
-    expect(screen.getByText(/Loading/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Loading|加载/)).toBeInTheDocument());
   });
 
   it('hides the loading overlay when seed loading completes', () => {

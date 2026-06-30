@@ -20,11 +20,11 @@ vi.mock('@/data/historyLoader', () => ({
     reset: vi.fn(),
   },
   HISTORY_RANGES: [
-    { key: '1d',        label: '1 day',  seconds: 86400 },
-    { key: '3d',        label: '3 days', seconds: 259200 },
-    { key: '1w',        label: '1 week', seconds: 604800 },
-    { key: '1m',        label: '1 month', seconds: 2592000 },
-    { key: 'unlimited', label: 'All', seconds: Infinity },
+    { key: '1d', seconds: 86400 },
+    { key: '3d', seconds: 259200 },
+    { key: '1w', seconds: 604800 },
+    { key: '1m', seconds: 2592000 },
+    { key: 'unlimited', seconds: Infinity },
   ],
 }));
 

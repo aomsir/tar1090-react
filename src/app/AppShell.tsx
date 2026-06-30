@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CommandBar } from '@/ui/CommandBar/CommandBar';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
 import { DetailCard } from '@/ui/DetailCard/DetailCard';
@@ -24,6 +25,7 @@ import type { MapController } from '@/map/MapController';
 import type { TrackPoint } from '@/features/track/track';
 
 export function AppShell() {
+  const { t } = useTranslation();
   const controllerRef = useRef<MapController | null>(null);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
   const selectedHexes = useSelectionStore((s) => s.selectedHexes);
@@ -223,12 +225,12 @@ export function AppShell() {
         <div
           data-testid="seed-loading-overlay"
           role="status"
-          aria-label="Loading live history data"
+          aria-label={t('app.loadingLiveHistory')}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
         >
           <div className="flex flex-col items-center gap-3 text-white">
             <Spinner size="lg" color="current" />
-            <span className="text-sm">Loading…</span>
+            <span className="text-sm">{t('app.loading')}</span>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithI18n } from '@/i18n/testUtils';
 import { ReplayBar } from './ReplayBar';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
@@ -17,11 +18,11 @@ vi.mock('@/data/historyLoader', () => ({
     reset: vi.fn(),
   },
   HISTORY_RANGES: [
-    { key: '1d',        label: '1 day',  seconds: 86400 },
-    { key: '3d',        label: '3 days', seconds: 259200 },
-    { key: '1w',        label: '1 week', seconds: 604800 },
-    { key: '1m',        label: '1 month', seconds: 2592000 },
-    { key: 'unlimited', label: 'All', seconds: Infinity },
+    { key: '1d', seconds: 86400 },
+    { key: '3d', seconds: 259200 },
+    { key: '1w', seconds: 604800 },
+    { key: '1m', seconds: 2592000 },
+    { key: 'unlimited', seconds: Infinity },
   ],
 }));
 
@@ -31,8 +32,8 @@ describe('ReplayBar', () => {
     historyStore.reset();
   });
 
-  it('shows a compact history entry button in live mode without a full-width bar', () => {
-    render(<ReplayBar />);
+  it('shows a compact history entry button in live mode without a full-width bar', async () => {
+    await renderWithI18n(<ReplayBar />);
     const btn = screen.getByRole('button', { name: /history/i });
     expect(btn).toBeInTheDocument();
     // Button itself is the replay-bar root — not wrapped in a full-width footer
@@ -41,8 +42,8 @@ describe('ReplayBar', () => {
     expect(screen.queryByText('All')).not.toBeInTheDocument();
   });
 
-  it('clicking History expands inline range options instead of loading immediately', () => {
-    render(<ReplayBar />);
+  it('clicking History expands inline range options instead of loading immediately', async () => {
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     // Should show range option buttons, not loading overlay
     expect(screen.getByRole('button', { name: '1 day' })).toBeInTheDocument();
@@ -55,7 +56,7 @@ describe('ReplayBar', () => {
   });
 
   it('selecting a range option triggers enterHistory and collapses', async () => {
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     // Expand
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
@@ -65,7 +66,7 @@ describe('ReplayBar', () => {
   });
 
   it('enters history mode after selecting a range', async () => {
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
@@ -73,7 +74,7 @@ describe('ReplayBar', () => {
   });
 
   it('scrubbing the slider updates cursorTime', async () => {
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(screen.queryByRole('slider')).toBeInTheDocument());
@@ -82,7 +83,7 @@ describe('ReplayBar', () => {
   });
 
   it('exits back to live mode', async () => {
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
@@ -91,7 +92,7 @@ describe('ReplayBar', () => {
   });
 
   it('shows a range selector in history mode replay bar', async () => {
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
@@ -102,7 +103,7 @@ describe('ReplayBar', () => {
 
   it('switching range select reloads history with new range', async () => {
     const { historyLoader } = await import('@/data/historyLoader');
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
@@ -120,7 +121,7 @@ describe('ReplayBar', () => {
 
   it('re-selecting same range in history mode does not reload', async () => {
     const { historyLoader } = await import('@/data/historyLoader');
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));
     fireEvent.click(screen.getByRole('button', { name: '1 day' }));
     await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
@@ -134,14 +135,46 @@ describe('ReplayBar', () => {
     expect(historyLoader.ensureLoaded).not.toHaveBeenCalled();
   });
 
-  it('shows a fullscreen loading overlay with progress', () => {
+  it('shows a fullscreen loading overlay with progress', async () => {
     usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
-    render(<ReplayBar />);
+    await renderWithI18n(<ReplayBar />);
     const overlay = screen.getByTestId('replay-bar');
     // Overlay uses fixed positioning (fullscreen)
     expect(overlay.className).toMatch(/fixed/);
     expect(overlay.className).toMatch(/inset-0/);
     expect(screen.getByText(/42\/100/)).toBeInTheDocument();
     expect(screen.getByText(/Loading History/)).toBeInTheDocument();
+  });
+
+  it('renders translated replay UI text in zh-CN', async () => {
+    await renderWithI18n(<ReplayBar />, { language: 'zh-CN' });
+
+    // Live mode: History entry button uses translated aria-label
+    expect(screen.getByRole('button', { name: '历史回放' })).toBeInTheDocument();
+
+    // Expand inline range options — labels are translated
+    fireEvent.click(screen.getByRole('button', { name: '历史回放' }));
+    expect(screen.getByRole('button', { name: '1 天' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '3 天' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1 周' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1 个月' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '全部' })).toBeInTheDocument();
+
+    // Enter history mode — controls use translated aria-labels
+    fireEvent.click(screen.getByRole('button', { name: '1 天' }));
+    await waitFor(() => expect(usePlaybackStore.getState().mode).toBe('history'));
+    expect(screen.getByRole('button', { name: '播放' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '统计面板' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: '时间轴' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '速度' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '时间范围' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '退出回放' })).toBeInTheDocument();
+  });
+
+  it('renders a translated loading overlay in zh-CN', async () => {
+    usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
+    await renderWithI18n(<ReplayBar />, { language: 'zh-CN' });
+    expect(screen.getByText(/正在加载历史/)).toBeInTheDocument();
+    expect(screen.getByText(/42\/100/)).toBeInTheDocument();
   });
 });

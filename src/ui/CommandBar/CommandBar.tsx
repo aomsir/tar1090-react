@@ -1,8 +1,10 @@
 import { SearchField } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import { useStatsStore } from '@/store/statsStore';
 import { useListControls } from '@/store/listControls';
 
 export function CommandBar() {
+  const { t } = useTranslation();
   const count = useStatsStore((s) => s.count);
   const rate = useStatsStore((s) => s.messageRate);
   const query = useListControls((s) => s.query);
@@ -13,9 +15,9 @@ export function CommandBar() {
       data-testid="command-bar"
       className="glass absolute left-4 right-4 top-3 flex h-11 items-center gap-3 px-4 text-white"
     >
-      <span className="font-semibold">Live Traffic</span>
+      <span className="font-semibold">{t('commandBar.brand')}</span>
       <SearchField
-        aria-label="Search aircraft"
+        aria-label={t('commandBar.searchAircraft')}
         value={query}
         onChange={setQuery}
         variant="secondary"
@@ -23,12 +25,15 @@ export function CommandBar() {
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input className="w-64" placeholder="Flight / registration / ICAO" />
+          <SearchField.Input
+            className="w-64"
+            placeholder={t('commandBar.searchPlaceholder')}
+          />
           <SearchField.ClearButton />
         </SearchField.Group>
       </SearchField>
       <span className="ml-auto text-sm text-slate-400">
-        Aircraft {count} · {Math.round(rate)} msg/s
+        {t('commandBar.aircraftCount')} {count} · {Math.round(rate)} {t('commandBar.msgRate')}
       </span>
     </header>
   );

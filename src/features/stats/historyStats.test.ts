@@ -126,4 +126,19 @@ describe('computeHistoryStats', () => {
     expect(s.uniqueCallsigns).toBe(0);
     expect(s.airlineDistribution).toEqual([]);
   });
+
+  it('truncates distributions to their top-N limits', () => {
+    const many: Aircraft[] = Array.from({ length: 16 }, (_, i) =>
+      makeAircraft({
+        hex: `c${i}`,
+        flight: `ABC${i}`,
+        typeCode: `T${i}`,
+        country: `Country${i}`,
+        addrType: 'adsb_icao',
+        isMilitary: false,
+      }),
+    );
+    const s = computeHistoryStats([], many, null);
+    expect(s.countryDistribution).toHaveLength(15);
+  });
 });

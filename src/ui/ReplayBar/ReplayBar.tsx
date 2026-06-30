@@ -1,18 +1,16 @@
 import { Play, Pause, History, X, BarChart3 } from 'lucide-react';
 import { Spinner } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { useReplay } from '@/features/playback/useReplay';
 import { HISTORY_RANGES, type HistoryRange } from '@/data/historyLoader';
+import { formatTimeOfDay } from '@/i18n/format';
 
 const SPEEDS = [1, 2, 4, 8, 16, 64];
 
-function formatClock(tsSec: number): string {
-  if (!tsSec) return '--:--:--';
-  return new Date(tsSec * 1000).toLocaleTimeString('zh-CN', { hour12: false });
-}
-
 export function ReplayBar() {
+  const { t, i18n } = useTranslation();
   const mode = usePlaybackStore((s) => s.mode);
   const loading = usePlaybackStore((s) => s.loading);
   const progress = usePlaybackStore((s) => s.progress);
@@ -34,7 +32,7 @@ export function ReplayBar() {
         <div className="flex flex-col items-center gap-3 text-white">
           <Spinner size="lg" color="current" />
           <span className="text-sm tabular-nums">
-            Loading History… {progress.done}/{progress.total}
+            {t('replay.loadingHistory')} {progress.done}/{progress.total}
           </span>
         </div>
       </div>
@@ -50,7 +48,7 @@ export function ReplayBar() {
       >
         <button
           type="button"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? t('replay.pause') : t('replay.play')}
           onClick={() =>
             isPlaying ? usePlaybackStore.getState().pause() : usePlaybackStore.getState().play()
           }
@@ -60,7 +58,7 @@ export function ReplayBar() {
         </button>
         <button
           type="button"
-          aria-label="Statistics panel"
+          aria-label={t('replay.statisticsPanel')}
           onClick={() => useToolbarStore.getState().toggleStatsDashboard()}
           className="rounded p-1 hover:bg-white/10"
         >
@@ -68,7 +66,7 @@ export function ReplayBar() {
         </button>
         <input
           type="range"
-          aria-label="Timeline"
+          aria-label={t('replay.timeline')}
           min={bounds?.min ?? 0}
           max={bounds?.max ?? 0}
           value={cursorTime}
@@ -76,9 +74,11 @@ export function ReplayBar() {
           onChange={(e) => usePlaybackStore.getState().setCursor(Number(e.target.value))}
           className="flex-1 accent-sky-400"
         />
-        <span className="w-20 text-xs tabular-nums text-slate-300">{formatClock(cursorTime)}</span>
+        <span className="w-20 text-xs tabular-nums text-slate-300">
+          {formatTimeOfDay(cursorTime, i18n.language)}
+        </span>
         <select
-          aria-label="Speed"
+          aria-label={t('replay.speed')}
           value={speed}
           onChange={(e) => usePlaybackStore.getState().setSpeed(Number(e.target.value))}
           className="rounded bg-white/10 px-1 text-xs"
@@ -90,20 +90,20 @@ export function ReplayBar() {
           ))}
         </select>
         <select
-          aria-label="Time range"
+          aria-label={t('replay.timeRange')}
           value={range}
           onChange={(e) => void enterHistory(e.target.value as HistoryRange)}
           className="rounded bg-white/10 px-1 text-xs"
         >
           {HISTORY_RANGES.map((r) => (
             <option key={r.key} value={r.key}>
-              {r.label}
+              {t(`replay.ranges.${r.key}`)}
             </option>
           ))}
         </select>
         <button
           type="button"
-          aria-label="Exit replay"
+          aria-label={t('replay.exitReplay')}
           onClick={exitToLive}
           className="rounded p-1 hover:bg-white/10"
         >
@@ -120,20 +120,23 @@ export function ReplayBar() {
         data-testid="replay-bar"
         className="glass absolute bottom-3 left-4 flex items-center gap-1 px-2 py-1.5 text-xs text-white"
       >
-        {HISTORY_RANGES.map((r) => (
-          <button
-            key={r.key}
-            type="button"
-            aria-label={r.label}
-            onClick={() => {
-              usePlaybackStore.getState().setRangeSelectOpen(false);
-              void enterHistory(r.key);
-            }}
-            className={`rounded px-2 py-1 hover:bg-white/10 ${r.key === range ? 'bg-white/20' : ''}`}
-          >
-            {r.label}
-          </button>
-        ))}
+        {HISTORY_RANGES.map((r) => {
+          const label = t(`replay.ranges.${r.key}`);
+          return (
+            <button
+              key={r.key}
+              type="button"
+              aria-label={label}
+              onClick={() => {
+                usePlaybackStore.getState().setRangeSelectOpen(false);
+                void enterHistory(r.key);
+              }}
+              className={`rounded px-2 py-1 hover:bg-white/10 ${r.key === range ? 'bg-white/20' : ''}`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     );
   }
@@ -142,11 +145,11 @@ export function ReplayBar() {
     <button
       data-testid="replay-bar"
       type="button"
-      aria-label="History"
+      aria-label={t('replay.history')}
       onClick={() => usePlaybackStore.getState().setRangeSelectOpen(true)}
       className="glass absolute bottom-3 left-4 flex items-center gap-1.5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
     >
-      <History size={14} /> History
+      <History size={14} /> {t('replay.history')}
     </button>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithI18n } from '@/i18n/testUtils';
 import { DetailCard } from './DetailCard';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
@@ -17,12 +18,12 @@ describe('DetailCard', () => {
     useToolbarStore.setState(useToolbarStore.getInitialState());
   });
 
-  it('renders nothing when no aircraft is selected', () => {
-    const { container } = render(<DetailCard />);
+  it('renders nothing when no aircraft is selected', async () => {
+    const { container } = await renderWithI18n(<DetailCard />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows selected aircraft fields and closes on button', () => {
+  it('shows selected aircraft fields and closes on button', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -34,7 +35,7 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
     expect(screen.getByText('CCA101')).toBeInTheDocument();
     expect(screen.getAllByText('B-2033').length).toBeGreaterThanOrEqual(1);
 
@@ -42,7 +43,7 @@ describe('DetailCard', () => {
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
-  it('renders grouped original-style details and missing values', () => {
+  it('renders grouped original-style details and missing values', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -61,7 +62,7 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
 
     expect(screen.getByText('Flight status')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
@@ -72,7 +73,7 @@ describe('DetailCard', () => {
     expect(screen.getByText('32,000 ft')).toBeInTheDocument();
   });
 
-  it('renders flag image with absolute path from flagPath', () => {
+  it('renders flag image with absolute path from flagPath', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -82,13 +83,13 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
     const img = screen.getByAltText('China') as HTMLImageElement;
     expect(img.src).toContain('/flags/3x2/CN.svg');
     expect(img.src).not.toContain('//flags');
   });
 
-  it('renders key flight stats section with altitude, speed, and track', () => {
+  it('renders key flight stats section with altitude, speed, and track', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -101,7 +102,7 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
 
     const statsSection = screen.getByTestId('key-stats');
     expect(statsSection).toBeInTheDocument();
@@ -110,7 +111,7 @@ describe('DetailCard', () => {
     expect(statsSection.textContent).toContain('247°');
   });
 
-  it('renders registration and type code in subtitle line', () => {
+  it('renders registration and type code in subtitle line', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -121,14 +122,14 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
 
     const subtitle = screen.getByTestId('detail-subtitle');
     expect(subtitle.textContent).toContain('B-2033');
     expect(subtitle.textContent).toContain('A320');
   });
 
-  it('each detail group has a colored accent bar', () => {
+  it('each detail group has a colored accent bar', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
       flight: 'CCA101',
@@ -139,7 +140,7 @@ describe('DetailCard', () => {
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
 
     const groups = screen.getByTestId('detail-card').querySelectorAll('section[data-testid^="group-"]');
     expect(groups.length).toBe(6);
@@ -149,7 +150,7 @@ describe('DetailCard', () => {
     }
   });
 
-  it('exports a KML download for the selected aircraft track', () => {
+  it('exports a KML download for the selected aircraft track', async () => {
     aircraftStore.reset();
     aircraftStore.applySnapshot({
       now: 200,
@@ -181,7 +182,7 @@ describe('DetailCard', () => {
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
     fireEvent.click(screen.getByRole('button', { name: /Export KML/ }));
 
     expect(createSpy).toHaveBeenCalledTimes(1);
@@ -189,25 +190,45 @@ describe('DetailCard', () => {
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('renders a resize handle on the right edge', () => {
+  it('renders a resize handle on the right edge', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, { flight: 'CCA101', altitude: 35000 });
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
     expect(screen.getByTestId('resize-handle')).toBeInTheDocument();
   });
 
-  it('panel width reflects detailWidth from store', () => {
+  it('panel width reflects detailWidth from store', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, { flight: 'CCA101', altitude: 35000 });
     aircraftStore.map.set('780ABC', a);
     useSelectionStore.setState({ selectedHex: '780ABC' });
     useToolbarStore.setState({ detailWidth: 400 });
 
-    render(<DetailCard />);
+    await renderWithI18n(<DetailCard />);
     const panel = screen.getByTestId('detail-card');
     expect(panel.style.width).toBe('400px');
+  });
+
+  it('renders translated UI text in zh-CN', async () => {
+    const a = new Aircraft('780ABC');
+    Object.assign(a, {
+      flight: 'CCA101',
+      registration: 'B-2033',
+      typeCode: 'A320',
+      altitude: 35000,
+      isMilitary: true,
+    });
+    aircraftStore.map.set('780ABC', a);
+    useSelectionStore.setState({ selectedHex: '780ABC' });
+
+    await renderWithI18n(<DetailCard />, { language: 'zh-CN' });
+
+    expect(screen.getByRole('button', { name: '关闭详情' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '导出 KML' })).toBeInTheDocument();
+    expect(screen.getByText('军机')).toBeInTheDocument();
+    expect(screen.getByText('高度')).toBeInTheDocument();
   });
 });

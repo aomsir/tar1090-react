@@ -1,8 +1,10 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
+import type { TFunction } from 'i18next';
 import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { formatInteger } from '@/i18n/format';
 
 export interface DetailRow {
   label: string;
@@ -39,13 +41,19 @@ export interface AircraftDetail {
 }
 
 const dash = (v: string | undefined) => (v && v !== '' ? v : '\u2014');
-const feet = (v: number | undefined) =>
-  typeof v === 'number' && Number.isFinite(v) ? `${v.toLocaleString('en-US')} ft` : '\u2014';
+const feet = (v: number | undefined, language: string | undefined) =>
+  typeof v === 'number' && Number.isFinite(v)
+    ? `${formatInteger(v, language)} ft`
+    : '\u2014';
 const kt = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)} kt` : '\u2014';
 const deg = (v: number | undefined) =>
   typeof v === 'number' && Number.isFinite(v) ? `${Math.round(v)}\u00b0` : '\u2014';
-export function toDetail(ac: Aircraft): AircraftDetail {
+export function toDetail(
+  ac: Aircraft,
+  t: TFunction,
+  language: string | undefined,
+): AircraftDetail {
   return {
     hex: ac.hex,
     flight: ac.flight ?? '',
@@ -66,103 +74,107 @@ export function toDetail(ac: Aircraft): AircraftDetail {
     lat: ac.lat,
     lon: ac.lon,
     hasPosition: ac.hasPosition(),
-    groups: buildGroups(ac),
+    groups: buildGroups(ac, t, language),
   };
 }
 
-function buildGroups(ac: Aircraft): DetailGroup[] {
+function buildGroups(
+  ac: Aircraft,
+  t: TFunction,
+  language: string | undefined,
+): DetailGroup[] {
   const registration = dash(ac.registration);
 
   const identityRows: { label: string; value: string }[] = [
-    { label: 'ICAO', value: ac.hex },
-    { label: 'Registration', value: registration },
-    { label: 'Type code', value: ac.typeCode || '\u2014' },
+    { label: t('detail.fields.icao'), value: ac.hex },
+    { label: t('detail.fields.registration'), value: registration },
+    { label: t('detail.fields.typeCode'), value: ac.typeCode || '\u2014' },
   ];
   if (ac.typeLong) {
-    identityRows.push({ label: 'Aircraft type', value: ac.typeLong });
+    identityRows.push({ label: t('detail.fields.aircraftType'), value: ac.typeLong });
   }
-  identityRows.push({ label: 'Country', value: dash(ac.country) });
+  identityRows.push({ label: t('detail.fields.country'), value: dash(ac.country) });
 
   if (useToolbarStore.getState().routeApiEnabled) {
     const route = routeService.lookup(normalizeCallsign(ac.flight ?? ''));
     if (route) {
-      identityRows.push({ label: 'Route', value: route });
+      identityRows.push({ label: t('detail.fields.route'), value: route });
     }
   }
 
   const identity: DetailGroup = {
-    title: 'Identity',
+    title: t('detail.groups.identity'),
     color: 'indigo',
     rows: identityRows,
   };
 
   const flightStatus: DetailGroup = {
-    title: 'Flight status',
+    title: t('detail.groups.flightStatus'),
     color: 'emerald',
     rows: [
-      { label: 'IAS', value: kt(ac.ias) },
-      { label: 'TAS', value: kt(ac.tas) },
+      { label: t('detail.fields.ias'), value: kt(ac.ias) },
+      { label: t('detail.fields.tas'), value: kt(ac.tas) },
       {
-        label: 'Mach',
+        label: t('detail.fields.mach'),
         value: typeof ac.mach === 'number' && Number.isFinite(ac.mach) ? `${ac.mach}` : '\u2014',
       },
       {
-        label: 'Vertical rate',
+        label: t('detail.fields.verticalRate'),
         value:
           typeof ac.vertRate === 'number' && Number.isFinite(ac.vertRate)
             ? `${ac.vertRate} ft/min`
             : '\u2014',
       },
-      { label: 'Squawk', value: dash(ac.squawk) },
+      { label: t('detail.fields.squawk'), value: dash(ac.squawk) },
     ],
   };
 
   const position: DetailGroup = {
-    title: 'Position',
+    title: t('detail.groups.position'),
     color: 'sky',
     rows: [
       {
-        label: 'Latitude',
+        label: t('detail.fields.latitude'),
         value: typeof ac.lat === 'number' ? `${ac.lat.toFixed(4)}\u00b0` : '\u2014',
       },
       {
-        label: 'Longitude',
+        label: t('detail.fields.longitude'),
         value: typeof ac.lon === 'number' ? `${ac.lon.toFixed(4)}\u00b0` : '\u2014',
       },
-      { label: 'Messages', value: ac.messages.toLocaleString('en-US') },
+      { label: t('detail.fields.messages'), value: formatInteger(ac.messages, language) },
     ],
   };
 
   const navigation: DetailGroup = {
-    title: 'Navigation',
+    title: t('detail.groups.navigation'),
     color: 'amber',
     rows: [
-      { label: 'MCP altitude', value: feet(ac.navAltitudeMcp) },
-      { label: 'FMS altitude', value: feet(ac.navAltitudeFms) },
+      { label: t('detail.fields.mcpAltitude'), value: feet(ac.navAltitudeMcp, language) },
+      { label: t('detail.fields.fmsAltitude'), value: feet(ac.navAltitudeFms, language) },
       {
-        label: 'QNH',
+        label: t('detail.fields.qnh'),
         value:
           typeof ac.navQnh === 'number' && Number.isFinite(ac.navQnh)
             ? `${ac.navQnh} hPa`
             : '\u2014',
       },
-      { label: 'Navigation heading', value: deg(ac.navHeading) },
+      { label: t('detail.fields.navigationHeading'), value: deg(ac.navHeading) },
     ],
   };
 
   const environment: DetailGroup = {
-    title: 'Environment',
+    title: t('detail.groups.environment'),
     color: 'teal',
     rows: [
-      { label: 'Wind direction', value: deg(ac.windDirection) },
-      { label: 'Wind speed', value: kt(ac.windSpeed) },
+      { label: t('detail.fields.windDirection'), value: deg(ac.windDirection) },
+      { label: t('detail.fields.windSpeed'), value: kt(ac.windSpeed) },
       {
-        label: 'TAT',
+        label: t('detail.fields.tat'),
         value:
           typeof ac.tat === 'number' && Number.isFinite(ac.tat) ? `${ac.tat}\u00b0C` : '\u2014',
       },
       {
-        label: 'OAT',
+        label: t('detail.fields.oat'),
         value:
           typeof ac.oat === 'number' && Number.isFinite(ac.oat) ? `${ac.oat}\u00b0C` : '\u2014',
       },
@@ -170,15 +182,15 @@ function buildGroups(ac: Aircraft): DetailGroup[] {
   };
 
   const signal: DetailGroup = {
-    title: 'Signal quality',
+    title: t('detail.groups.signalQuality'),
     color: 'slate',
     rows: [
       {
-        label: 'Signal delay',
+        label: t('detail.fields.signalDelay'),
         value: Number.isFinite(ac.seen) ? `${ac.seen.toFixed(1)} s` : '\u2014',
       },
       {
-        label: 'RSSI',
+        label: t('detail.fields.rssi'),
         value:
           typeof ac.rssi === 'number' && Number.isFinite(ac.rssi)
             ? `${ac.rssi.toFixed(1)} dBFS`

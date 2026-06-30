@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithI18n } from '@/i18n/testUtils';
 import { StatsDashboard } from './StatsDashboard';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { useToolbarStore } from '@/store/toolbarStore';
@@ -36,33 +37,39 @@ describe('StatsDashboard', () => {
     useHistoryStatsStore.getState().setStats(mockStats);
   });
 
-  it('renders summary cards with correct values', () => {
-    render(<StatsDashboard />);
+  it('renders summary cards with correct values', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByText('42')).toBeInTheDocument();
     expect(screen.getByText('35')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('20')).toBeInTheDocument();
   });
 
-  it('renders chart titles', () => {
-    render(<StatsDashboard />);
-    expect(screen.getByText('Aircraft Type Distribution')).toBeInTheDocument();
-    expect(screen.getByText('Airline Distribution')).toBeInTheDocument();
+  it('renders chart titles', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText('Aircraft Type')).toBeInTheDocument();
+    expect(screen.getByText('Airline')).toBeInTheDocument();
     expect(screen.getByText('Traffic Over Time')).toBeInTheDocument();
     expect(screen.getByText('Data Source')).toBeInTheDocument();
   });
 
   it('calls toggleStatsDashboard on close button click', async () => {
     useToolbarStore.setState({ statsDashboardOpen: true });
-    render(<StatsDashboard />);
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
     const closeButton = screen.getByLabelText('Close statistics');
     await userEvent.click(closeButton);
     expect(useToolbarStore.getState().statsDashboardOpen).toBe(false);
   });
 
-  it('renders nothing when stats is null', () => {
+  it('renders nothing when stats is null', async () => {
     useHistoryStatsStore.getState().clear();
-    const { container } = render(<StatsDashboard />);
+    const { container } = await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(container.firstChild).toBeNull();
+  });
+
+  it('renders translated dashboard text in Chinese', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'zh-CN' });
+    expect(screen.getByText('历史统计')).toBeInTheDocument();
+    expect(screen.getByText('飞机总数')).toBeInTheDocument();
   });
 });

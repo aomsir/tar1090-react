@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
+import { renderWithI18n } from '@/i18n/testUtils';
 import { ListPanel } from './ListPanel';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
@@ -32,48 +33,48 @@ describe('ListPanel', () => {
     useMapViewStore.setState({ extent: null });
   });
 
-  it('renders rows from the store and calls onSelect on row click', () => {
+  it('renders rows from the store and calls onSelect on row click', async () => {
     seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 35000 });
     act(() => useLiveTick.getState().bump());
 
     const onSelect = vi.fn();
-    render(<ListPanel onSelect={onSelect} />);
+    await renderWithI18n(<ListPanel onSelect={onSelect} />);
 
     expect(screen.getByText('CCA101')).toBeInTheDocument();
     fireEvent.click(screen.getByText('CCA101'));
     expect(onSelect).toHaveBeenCalledWith('A1');
   });
 
-  it('switches filter via tab and re-filters rows', () => {
+  it('switches filter via tab and re-filters rows', async () => {
     seed('A1', { flight: 'AIR1', altitude: 30000 });
     seed('A2', { flight: 'GND1', altitude: 'ground' });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     act(() => useListControls.getState().setFilter('ground'));
 
     expect(screen.queryByText('AIR1')).not.toBeInTheDocument();
     expect(screen.getByText('GND1')).toBeInTheDocument();
   });
 
-  it('shows the squawk and type code columns', () => {
+  it('shows the squawk and type code columns', async () => {
     seed('A1', { flight: 'CCA101', typeCode: 'B738', squawk: '2000', altitude: 30000 });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     expect(screen.getByText('B738')).toBeInTheDocument();
     expect(screen.getByText('2000')).toBeInTheDocument();
   });
 
-  it('marks emergency squawk rows', () => {
+  it('marks emergency squawk rows', async () => {
     seed('A1', { flight: 'HELP1', squawk: '7700', altitude: 30000 });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     expect(screen.getByTestId('row-A1').className).toContain('bg-red');
   });
 
-  it('renders all default visible tar1090 columns', () => {
+  it('renders all default visible tar1090 columns', async () => {
     seed('A1', {
       flight: 'CCA101',
       typeCode: 'B738',
@@ -84,7 +85,7 @@ describe('ListPanel', () => {
     });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     expect(screen.getByRole('columnheader', { name: 'Flag' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Callsign' })).toBeInTheDocument();
@@ -98,10 +99,10 @@ describe('ListPanel', () => {
     expect(screen.queryByRole('columnheader', { name: 'Hex ID' })).not.toBeInTheDocument();
   });
 
-  it('uses max speed and distance headers in history mode', () => {
+  it('uses max speed and distance headers in history mode', async () => {
     act(() => usePlaybackStore.getState().setMode('history'));
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     expect(screen.getByRole('columnheader', { name: 'Max. Spd. (kt)' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Max. Dist. (nmi)' })).toBeInTheDocument();
@@ -109,21 +110,21 @@ describe('ListPanel', () => {
     expect(screen.queryByRole('columnheader', { name: 'Dist. (nmi)' })).not.toBeInTheDocument();
   });
 
-  it('truncated cells expose full value via title attribute', () => {
+  it('truncated cells expose full value via title attribute', async () => {
     seed('A1', { flight: 'LONGCALLSIGN', altitude: 30000 });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     const cell = screen.getByText('LONGCALLSIGN');
     expect(cell.closest('td')?.getAttribute('title')).toBe('LONGCALLSIGN');
   });
 
-  it('missing value cells do not have title', () => {
+  it('missing value cells do not have title', async () => {
     seed('A1', { flight: 'CCA101', altitude: 30000 });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     const dashCells = screen.getAllByText('—');
     for (const el of dashCells) {
@@ -131,8 +132,8 @@ describe('ListPanel', () => {
     }
   });
 
-  it('uses parent-managed dock sizing instead of viewport absolute positioning', () => {
-    render(<ListPanel onSelect={vi.fn()} />);
+  it('uses parent-managed dock sizing instead of viewport absolute positioning', async () => {
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     const panel = screen.getByTestId('list-panel');
     expect(panel.className).toContain('h-full');
@@ -142,8 +143,8 @@ describe('ListPanel', () => {
     expect(panel.className).not.toContain('right-4');
   });
 
-  it('panel has a dedicated scroll region wrapping the table', () => {
-    render(<ListPanel onSelect={vi.fn()} />);
+  it('panel has a dedicated scroll region wrapping the table', async () => {
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const panel = screen.getByTestId('list-panel');
     const table = screen.getByRole('table');
     const scrollRegion = table.parentElement;
@@ -151,18 +152,18 @@ describe('ListPanel', () => {
     expect(scrollRegion).not.toBe(panel);
   });
 
-  it('table has minimum width for column stability', () => {
-    render(<ListPanel onSelect={vi.fn()} />);
+  it('table has minimum width for column stability', async () => {
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const table = screen.getByRole('table');
     const cls = table.className;
     expect(cls).toMatch(/min-w-/);
   });
 
-  it('can show a hidden original column through column options', () => {
+  it('can show a hidden original column through column options', async () => {
     seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 30000 });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Columns' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Registration' }));
 
@@ -170,32 +171,47 @@ describe('ListPanel', () => {
     expect(screen.getByText('B-2033')).toBeInTheDocument();
   });
 
-  it('selected row has indigo left border highlight', () => {
+  it('selected row has indigo left border highlight', async () => {
     seed('A1', { flight: 'CCA101', altitude: 35000 });
     act(() => useLiveTick.getState().bump());
     useSelectionStore.setState({ selectedHex: 'A1' });
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const row = screen.getByTestId('row-A1');
     expect(row.className).toContain('border-l-');
     expect(row.className).toContain('border-indigo');
   });
 
-  it('military aircraft row shows inline military chip', () => {
+  it('military aircraft row shows inline military chip', async () => {
     seed('A1', { flight: 'MIL01', altitude: 35000, isMilitary: true });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const row = screen.getByTestId('row-A1');
     expect(row.textContent).toContain('MIL');
   });
 
-  it('MLAT aircraft row shows inline MLAT chip', () => {
+  it('MLAT aircraft row shows inline MLAT chip', async () => {
     seed('A1', { flight: 'MLT01', altitude: 35000, isMlat: true });
     act(() => useLiveTick.getState().bump());
 
-    render(<ListPanel onSelect={vi.fn()} />);
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const row = screen.getByTestId('row-A1');
     expect(row.textContent).toContain('MLAT');
+  });
+
+  it('renders Simplified Chinese column headers and filters', async () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />, { language: 'zh-CN' });
+
+    expect(screen.getByRole('columnheader', { name: '呼号' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '全部' })).toBeInTheDocument();
+  });
+
+  it('renders translated empty state when there are no rows', async () => {
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />, { language: 'zh-CN' });
+    expect(screen.getByText('无匹配飞机')).toBeInTheDocument();
   });
 });
