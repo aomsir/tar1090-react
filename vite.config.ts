@@ -18,6 +18,26 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
+    build: {
+      rolldownOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+              return 'vendor-react'
+            }
+            if (id.includes('node_modules/ol/')) {
+              return 'vendor-ol'
+            }
+            if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
+              return 'vendor-recharts'
+            }
+            if (id.includes('node_modules/@heroui/')) {
+              return 'vendor-heroui'
+            }
+          },
+        },
+      },
+    },
     server: { host: '0.0.0.0', proxy },
     preview: { host: '0.0.0.0' },
   }
