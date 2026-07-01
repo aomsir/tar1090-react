@@ -8,7 +8,7 @@ export type ShardData = {
 
 export type ShardFetcher = (bkey: string) => Promise<ShardData | null>;
 
-const DEFAULT_DATABASE_FOLDER = 'db-0c1185b';
+const DEFAULT_DATABASE_FOLDER = 'db';
 
 function databaseFolder(): string {
   return import.meta.env.VITE_DB_FOLDER || DEFAULT_DATABASE_FOLDER;

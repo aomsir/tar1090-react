@@ -34,7 +34,7 @@ mkdir -p "$DST"
 count=0
 for f in "$TMPDIR/tar1090-db/db"/*.js; do
   key="$(basename "$f" .js)"
-  cp "$f" "$DST/$key.gz"
+  cp "$f" "$DST/$key.js"
   count=$((count + 1))
 done
 

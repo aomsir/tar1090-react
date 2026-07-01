@@ -12,7 +12,7 @@ describe('DbLoader', () => {
     vi.unstubAllEnvs();
   });
 
-  it('fetches default tar1090 JS database shards from db-0c1185b', async () => {
+  it('fetches default tar1090 JS database shards from db/', async () => {
     const fetchFn = vi.fn(
       async () =>
         new Response(JSON.stringify({ '802E7': ['B-1234', 'B738', '00', 'BOEING 737-800'] }), {
@@ -29,7 +29,7 @@ describe('DbLoader', () => {
       'BOEING 737-800',
     ]);
 
-    expect(fetchFn).toHaveBeenCalledWith('/db-0c1185b/7.js');
+    expect(fetchFn).toHaveBeenCalledWith('/db/7.js');
   });
 
   it('allows overriding the tar1090 database folder via VITE_DB_FOLDER', async () => {
