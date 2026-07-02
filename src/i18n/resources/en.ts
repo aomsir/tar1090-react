@@ -114,6 +114,7 @@ const en: TranslationResource = {
     loadingImage: 'Loading image...',
     military: 'Military',
     exportKml: 'Export KML',
+    dragHandle: 'Drag to expand or collapse',
     stats: {
       altitude: 'Altitude',
       speed: 'Speed',

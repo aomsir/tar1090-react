@@ -114,6 +114,7 @@ const zhCN: TranslationResource = {
     loadingImage: '正在加载图片...',
     military: '军机',
     exportKml: '导出 KML',
+    dragHandle: '拖动展开或收起',
     stats: {
       altitude: '高度',
       speed: '速度',

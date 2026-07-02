@@ -133,6 +133,7 @@ export interface DetailResource {
   loadingImage: string;
   military: string;
   exportKml: string;
+  dragHandle: string;
   stats: {
     altitude: string;
     speed: string;
