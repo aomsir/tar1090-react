@@ -44,6 +44,12 @@ export function MobileTopBar() {
               className="min-w-0 flex-1"
               placeholder={t('commandBar.searchPlaceholder')}
               onFocus={() => setFocused(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && showList) {
+                  setFocused(false);
+                  setQuery('');
+                }
+              }}
             />
             <SearchField.ClearButton />
           </SearchField.Group>

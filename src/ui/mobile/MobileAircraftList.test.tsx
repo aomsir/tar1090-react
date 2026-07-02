@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MobileAircraftList } from './MobileAircraftList';
+import { setTestLanguage } from '@/i18n/testUtils';
 import type { AircraftRow } from '@/features/list/aircraftRows';
 
 vi.mock('@/features/list/useAircraftRows', () => ({
@@ -40,7 +41,8 @@ function row(overrides: Partial<AircraftRow>): AircraftRow {
 }
 
 describe('MobileAircraftList', () => {
-  it('renders compact aircraft rows with flight, hex, altitude, and speed', () => {
+  it('renders compact aircraft rows with flight, hex, altitude, and speed', async () => {
+    await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([
       row({ hex: 'abc123', flight: 'CCA123', altitude: 12000, speed: 430 }),
     ]);
@@ -51,42 +53,65 @@ describe('MobileAircraftList', () => {
     expect(screen.getByText('430 kt')).toBeInTheDocument();
   });
 
-  it('renders a visible focus indicator on row buttons', () => {
+  it('renders a visible focus indicator on row options', async () => {
+    await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([
       row({ hex: 'abc123', flight: 'CCA123' }),
     ]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
-    const button = screen.getByRole('button', { name: /CCA123/i });
-    expect(button.className).toContain('focus-visible:ring-2');
-    expect(button.className).toContain('focus-visible:ring-white/50');
+    const option = screen.getByRole('option', { name: /CCA123/i });
+    expect(option.className).toContain('focus-visible:ring-2');
+    expect(option.className).toContain('focus-visible:ring-white/50');
   });
 
-  it('renders nothing when there are no rows', () => {
+  it('renders nothing when there are no rows', async () => {
+    await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 
-  it('falls back to hex when flight is empty', () => {
+  it('falls back to hex when flight is empty', async () => {
+    await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'def456', flight: '' })]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getByText('def456')).toBeInTheDocument();
   });
 
-  it('limits the mobile list to eight rows', () => {
+  it('limits the mobile list to eight rows', async () => {
+    await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue(
       Array.from({ length: 10 }, (_, index) => row({ hex: `hex${index}`, flight: `FLT${index}` })),
     );
     render(<MobileAircraftList onSelect={vi.fn()} />);
-    expect(screen.getAllByRole('button')).toHaveLength(8);
+    expect(screen.getAllByRole('option')).toHaveLength(8);
     expect(screen.queryByText('FLT8')).not.toBeInTheDocument();
   });
 
-  it('selects the tapped aircraft', () => {
+  it('selects the tapped aircraft', async () => {
+    await setTestLanguage('en');
     const onSelect = vi.fn();
     vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
     render(<MobileAircraftList onSelect={onSelect} />);
-    fireEvent.click(screen.getByRole('button', { name: /CCA123/i }));
+    fireEvent.click(screen.getByRole('option', { name: /CCA123/i }));
     expect(onSelect).toHaveBeenCalledWith('abc123');
+  });
+
+  it('exposes listbox semantics with an accessible label', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByRole('listbox', { name: 'Aircraft list' })).toBeInTheDocument();
+  });
+
+  it('renders rows with option semantics', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByRole('option', { name: /CCA123/i })).toBeInTheDocument();
   });
 });

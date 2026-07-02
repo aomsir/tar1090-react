@@ -252,6 +252,7 @@ export interface CommandBarResource {
   searchAircraft: string;
   searchPlaceholder: string;
   aircraftCount: string;
+  aircraftList: string;
   msgRate: string;
 }
 

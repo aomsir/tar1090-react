@@ -213,6 +213,7 @@ const en: TranslationResource = {
     searchAircraft: 'Search aircraft',
     searchPlaceholder: 'Flight / registration / ICAO',
     aircraftCount: 'Aircraft',
+    aircraftList: 'Aircraft list',
     msgRate: 'msg/s',
   },
   altitudeLegend: {

@@ -213,6 +213,7 @@ const zhCN: TranslationResource = {
     searchAircraft: '搜索飞机',
     searchPlaceholder: '呼号 / 注册号 / ICAO',
     aircraftCount: '飞机',
+    aircraftList: '飞机列表',
     msgRate: '报文/秒',
   },
   altitudeLegend: {

@@ -67,4 +67,26 @@ describe('MobileTopBar', () => {
     expect(useSelectionStore.getState().selectedHex).toBe('abc123');
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
+
+  it('closes the lightweight list when Escape is pressed', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'CCA' } });
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(useListControls.getState().query).toBe('');
+  });
+
+  it('closes the lightweight list on Escape when opened by focus without a query', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    fireEvent.focus(input);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
 });

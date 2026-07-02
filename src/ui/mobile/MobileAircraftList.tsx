@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import { formatAltitude } from '@/domain/format';
@@ -10,12 +11,15 @@ function formatSpeed(speed: AircraftRow['speed']): string {
 }
 
 export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => void }) {
+  const { t } = useTranslation();
   const rows = useAircraftRows().slice(0, MAX_MOBILE_ROWS);
 
   if (rows.length === 0) return null;
 
   return (
     <div
+      role="listbox"
+      aria-label={t('commandBar.aircraftList')}
       data-testid="mobile-aircraft-list"
       className="glass absolute left-0 right-0 top-12 max-h-[45dvh] overflow-auto rounded-2xl p-1 text-white shadow-xl"
     >
@@ -25,6 +29,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
           <button
             key={row.hex}
             type="button"
+            role="option"
             className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(row.hex)}
