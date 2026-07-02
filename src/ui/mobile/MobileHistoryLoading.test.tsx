@@ -22,4 +22,12 @@ describe('MobileHistoryLoading', () => {
     expect(screen.getByText(/Loading History/)).toBeInTheDocument();
     expect(screen.getByText(/3\/24/)).toBeInTheDocument();
   });
+
+  it('announces loading status accessibly', () => {
+    usePlaybackStore.setState({ loading: true, progress: { done: 3, total: 24 } });
+    render(<MobileHistoryLoading />);
+    const overlay = screen.getByTestId('mobile-history-loading');
+    expect(overlay).toHaveAttribute('role', 'status');
+    expect(overlay).toHaveAttribute('aria-live', 'polite');
+  });
 });
