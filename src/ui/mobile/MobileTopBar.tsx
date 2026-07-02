@@ -65,7 +65,14 @@ export function MobileTopBar() {
           aria-label={t('commandBar.showAircraftList')}
           aria-expanded={showList}
           className="h-11 w-11 shrink-0 text-slate-100"
-          onPress={() => setListPinned((open) => !open)}
+          onPress={() => {
+            if (showList) {
+              setListPinned(false);
+              setFocused(false);
+            } else {
+              setListPinned(true);
+            }
+          }}
         >
           <List size={18} />
         </Button>

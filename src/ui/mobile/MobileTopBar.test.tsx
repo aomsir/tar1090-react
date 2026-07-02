@@ -76,22 +76,26 @@ describe('MobileTopBar', () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);
     const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'CCA' } });
     expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
     expect(useListControls.getState().query).toBe('');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('closes the lightweight list on Escape when opened by focus without a query', async () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);
     const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
     fireEvent.focus(input);
     expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('opens the lightweight list from the explicit aircraft list button', async () => {
@@ -123,12 +127,27 @@ describe('MobileTopBar', () => {
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('keeps search-driven list visible when the explicit aircraft list button is toggled off', async () => {
+  it('dismisses the focus-driven list when the explicit aircraft list button is clicked', async () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);
     const input = screen.getByPlaceholderText('Flight / registration / ICAO');
     const button = screen.getByRole('button', { name: 'Show aircraft list' });
     fireEvent.focus(input);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(button);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps the query-driven list visible when the explicit aircraft list button is clicked', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'CCA' } });
+    fireEvent.blur(input);
     expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
     fireEvent.click(button);
     expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
