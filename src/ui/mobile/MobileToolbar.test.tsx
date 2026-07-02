@@ -33,4 +33,15 @@ describe('MobileToolbar', () => {
     fireEvent.click(btn);
     expect(useToolbarStore.getState().follow).toBe(false);
   });
+
+  it('keeps the toolbar vertical on the right but lower on mobile', () => {
+    render(<MobileToolbar onResetView={() => {}} />);
+    const toolbar = screen.getByTestId('mobile-toolbar');
+    expect(toolbar).toHaveClass('right-3');
+    expect(toolbar).toHaveClass('top-28');
+    expect(toolbar).toHaveClass('flex-col');
+    expect(toolbar).not.toHaveClass('top-16');
+    expect(toolbar).not.toHaveClass('bottom-3');
+    expect(toolbar).not.toHaveClass('flex-row');
+  });
 });

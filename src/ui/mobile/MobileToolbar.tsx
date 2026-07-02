@@ -18,7 +18,7 @@ export function MobileToolbar({ onResetView }: MobileToolbarProps) {
   return (
     <nav
       data-testid="mobile-toolbar"
-      className="glass absolute right-3 top-16 z-10 flex flex-col gap-1 p-1"
+      className="glass absolute right-3 top-28 z-10 flex flex-col gap-1 p-1"
     >
       <button
         type="button"
