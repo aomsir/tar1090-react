@@ -64,7 +64,7 @@ export function MobileTopBar() {
           variant="secondary"
           aria-label={t('commandBar.showAircraftList')}
           aria-expanded={showList}
-          className="h-9 w-9 shrink-0 text-slate-100"
+          className="h-11 w-11 shrink-0 text-slate-100"
           onPress={() => setListPinned((open) => !open)}
         >
           <List size={18} />

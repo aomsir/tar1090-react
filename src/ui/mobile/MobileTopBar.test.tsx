@@ -104,6 +104,14 @@ describe('MobileTopBar', () => {
     expect(button).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('uses a 44px touch target for the explicit aircraft list button', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    expect(button).toHaveClass('h-11');
+    expect(button).toHaveClass('w-11');
+  });
+
   it('closes the lightweight list from the explicit aircraft list button when search is inactive', async () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);
