@@ -29,7 +29,10 @@ const detail: AircraftDetail = {
 const useSelectedAircraftMock = vi.fn<() => AircraftDetail | null>(() => detail);
 
 vi.mock('@/features/detail/useSelectedAircraft', () => ({
-  useSelectedAircraft: () => useSelectedAircraftMock(),
+  useSelectedAircraft: () => {
+    const selectedHex = useSelectionStore((s) => s.selectedHex);
+    return selectedHex ? useSelectedAircraftMock() : null;
+  },
 }));
 vi.mock('@/features/detail/useAircraftPhoto', () => ({
   useAircraftPhoto: () => ({ photo: null, loading: false }),
@@ -87,6 +90,7 @@ describe('MobileDetailSheet', () => {
     dragHandle(300, 420); // expanded -> peek
     dragHandle(300, 420); // peek -> close
     expect(useSelectionStore.getState().selectedHex).toBeNull();
+    expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
 
   it('closes when close button pressed', () => {
