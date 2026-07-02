@@ -50,7 +50,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
             )}
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1">
-                <span className="truncate text-sm font-semibold">{label}</span>
+                <span className="min-w-0 truncate text-sm font-semibold">{label}</span>
                 {row.isMilitary ? (
                   <Chip size="sm" color="danger" variant="soft" className="shrink-0 scale-75">
                     MIL

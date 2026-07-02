@@ -179,6 +179,17 @@ describe('MobileAircraftList', () => {
     expect(screen.queryByText('MIL')).not.toBeInTheDocument();
   });
 
+  it('keeps the label truncatable inside the flex row', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'VERYLONGCALLSIGN123' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const label = screen.getByText('VERYLONGCALLSIGN123');
+    expect(label.className).toContain('truncate');
+    expect(label.className).toContain('min-w-0');
+  });
+
   it('selects the tapped aircraft', async () => {
     await setTestLanguage('en');
     const onSelect = vi.fn();
