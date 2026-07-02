@@ -41,16 +41,74 @@ function row(overrides: Partial<AircraftRow>): AircraftRow {
 }
 
 describe('MobileAircraftList', () => {
-  it('renders compact aircraft rows with flight, hex, altitude, and speed', async () => {
+  it('renders compact aircraft rows with flight, identity, altitude, and speed', async () => {
     await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([
-      row({ hex: 'abc123', flight: 'CCA123', altitude: 12000, speed: 430 }),
+      row({
+        hex: 'abc123',
+        flight: 'CCA123',
+        registration: 'B-1234',
+        typeCode: 'A359',
+        altitude: 12000,
+        speed: 430,
+      }),
     ]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getByText('CCA123')).toBeInTheDocument();
-    expect(screen.getByText('abc123')).toBeInTheDocument();
+    expect(screen.getByText('B-1234 · A359')).toBeInTheDocument();
     expect(screen.getByText('12,000 ft')).toBeInTheDocument();
     expect(screen.getByText('430 kt')).toBeInTheDocument();
+  });
+
+  it('renders flag, registration, and type code when available', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({
+        hex: 'abc123',
+        flight: 'CCA123',
+        registration: 'B-1234',
+        typeCode: 'A359',
+        country: 'China',
+        flagPath: '/flags/cn.svg',
+      }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByRole('img', { name: 'China' })).toHaveAttribute('src', '/flags/cn.svg');
+    expect(screen.getByText('B-1234 · A359')).toBeInTheDocument();
+  });
+
+  it('falls back to an altitude color dot when flag is unavailable', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123', altitude: 12000, flagPath: null }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByTestId('mobile-aircraft-altitude-dot')).toBeInTheDocument();
+  });
+
+  it('uses hex as secondary text when registration and type code are unavailable', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'def456', flight: 'DAL456' })]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByText('def456')).toBeInTheDocument();
+  });
+
+  it('shows only registration when type code is unavailable', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123', registration: 'B-1234', typeCode: '' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByText('B-1234')).toBeInTheDocument();
+  });
+
+  it('shows only type code when registration is unavailable', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123', registration: '', typeCode: 'A359' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByText('A359')).toBeInTheDocument();
   });
 
   it('renders a visible focus indicator on row options', async () => {

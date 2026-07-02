@@ -25,6 +25,8 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
     >
       {rows.map((row) => {
         const label = row.flight || row.hex;
+        const identityParts = [row.registration, row.typeCode].filter(Boolean);
+        const secondary = identityParts.length > 0 ? identityParts.join(' · ') : row.hex;
         return (
           <button
             key={row.hex}
@@ -34,15 +36,24 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(row.hex)}
           >
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: hslString(altitudeColor(row.altitude)) }}
-            />
+            {row.flagPath ? (
+              <img
+                src={row.flagPath}
+                alt={row.country || row.hex}
+                className="h-4 w-6 shrink-0 rounded-sm"
+              />
+            ) : (
+              <span
+                data-testid="mobile-aircraft-altitude-dot"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: hslString(altitudeColor(row.altitude)) }}
+              />
+            )}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold">{label}</span>
-              {row.flight && (
+              {secondary !== label && (
                 <span className="block truncate font-mono text-[11px] text-slate-400">
-                  {row.hex}
+                  {secondary}
                 </span>
               )}
             </span>
