@@ -4,9 +4,7 @@ export const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
 /** Non-reactive check, safe in environments without matchMedia (e.g. jsdom). */
 export function isMobileViewport(): boolean {
-  return (
-    typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_MEDIA_QUERY).matches
-  );
+  return typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_MEDIA_QUERY).matches;
 }
 
 function subscribe(onStoreChange: () => void): () => void {

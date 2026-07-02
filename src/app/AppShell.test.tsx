@@ -639,7 +639,13 @@ describe('AppShell mobile layout', () => {
   it('renders the detail sheet when an aircraft with data is selected', () => {
     const ac = new Aircraft('abc123');
     ac.update(
-      { hex: 'abc123', flight: 'CES2345', lat: 30, lon: 120, altitude: 36000 } as AircraftSnapshot['aircraft'][number],
+      {
+        hex: 'abc123',
+        flight: 'CES2345',
+        lat: 30,
+        lon: 120,
+        altitude: 36000,
+      } as AircraftSnapshot['aircraft'][number],
       Date.now(),
     );
     aircraftStore.map.set('abc123', ac);
