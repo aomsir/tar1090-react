@@ -130,9 +130,7 @@ describe('MobileAircraftList', () => {
 
   it('renders a visible focus indicator on row options', async () => {
     await setTestLanguage('en');
-    vi.mocked(useAircraftRows).mockReturnValue([
-      row({ hex: 'abc123', flight: 'CCA123' }),
-    ]);
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     const option = screen.getByRole('option', { name: /CCA123/i });
     expect(option.className).toContain('focus-visible:ring-2');
@@ -174,18 +172,14 @@ describe('MobileAircraftList', () => {
 
   it('exposes listbox semantics with an accessible label', async () => {
     await setTestLanguage('en');
-    vi.mocked(useAircraftRows).mockReturnValue([
-      row({ hex: 'abc123', flight: 'CCA123' }),
-    ]);
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getByRole('listbox', { name: 'Aircraft list' })).toBeInTheDocument();
   });
 
   it('renders rows with option semantics', async () => {
     await setTestLanguage('en');
-    vi.mocked(useAircraftRows).mockReturnValue([
-      row({ hex: 'abc123', flight: 'CCA123' }),
-    ]);
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getByRole('option', { name: /CCA123/i })).toBeInTheDocument();
   });
