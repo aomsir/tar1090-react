@@ -17,4 +17,12 @@ describe('AltitudeLegend', () => {
     render(<AltitudeLegend />);
     expect(screen.getByText('地面')).toBeInTheDocument();
   });
+
+  it('sits closer to the bottom edge', async () => {
+    await setTestLanguage('en');
+    render(<AltitudeLegend />);
+    const legend = screen.getByTestId('altitude-legend');
+    expect(legend).toHaveClass('bottom-8');
+    expect(legend).not.toHaveClass('bottom-16');
+  });
 });
