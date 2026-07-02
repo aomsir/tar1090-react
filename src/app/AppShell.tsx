@@ -7,9 +7,13 @@ import { ReplayBar } from '@/ui/ReplayBar/ReplayBar';
 import { AltitudeLegend } from '@/ui/AltitudeLegend/AltitudeLegend';
 import { Toolbar } from '@/ui/Toolbar/Toolbar';
 import { StatsDashboard } from '@/ui/StatsDashboard/StatsDashboard';
+import { MobileTopBar } from '@/ui/mobile/MobileTopBar';
+import { MobileToolbar } from '@/ui/mobile/MobileToolbar';
+import { MobileDetailSheet } from '@/ui/mobile/MobileDetailSheet';
 import { MapView } from '@/map/MapView';
 import { useLiveData } from '@/features/live/useLiveData';
 import { useUrlSync } from '@/app/useUrlSync';
+import { useIsMobile } from '@/app/useIsMobile';
 import { usePlayback } from '@/features/playback/usePlayback';
 import { useSelectedTrack } from '@/features/track/useSelectedTrack';
 import { useSelectionStore } from '@/store/selectionStore';
@@ -36,6 +40,7 @@ export function AppShell() {
   const follow = useToolbarStore((s) => s.follow);
   const allTracks = useToolbarStore((s) => s.allTracks);
   const liveVersion = useLiveTick((s) => s.version);
+  const isMobile = useIsMobile();
 
   useLiveData(controllerRef);
   useUrlSync();
@@ -209,21 +214,32 @@ export function AppShell() {
           pushExtent();
         }}
       />
-      <CommandBar />
-      <DetailCard />
-      <div
-        data-testid="right-dock"
-        className="pointer-events-none absolute bottom-16 right-4 top-16 z-10 flex items-center gap-3"
-      >
-        <div data-testid="toolbar-dock-slot" className="pointer-events-auto">
-          <Toolbar onResetView={handleResetView} onRandomPlane={handleRandomPlane} />
-        </div>
-        <div data-testid="list-dock-slot" className="pointer-events-auto h-full">
-          <ListPanel onSelect={handleSelectFromList} />
-        </div>
-      </div>
-      <AltitudeLegend />
-      <ReplayBar />
+      {isMobile ? (
+        <>
+          <MobileTopBar />
+          <MobileToolbar onResetView={handleResetView} />
+          <MobileDetailSheet />
+          {!selectedHex && <AltitudeLegend />}
+        </>
+      ) : (
+        <>
+          <CommandBar />
+          <DetailCard />
+          <div
+            data-testid="right-dock"
+            className="pointer-events-none absolute bottom-16 right-4 top-16 z-10 flex items-center gap-3"
+          >
+            <div data-testid="toolbar-dock-slot" className="pointer-events-auto">
+              <Toolbar onResetView={handleResetView} onRandomPlane={handleRandomPlane} />
+            </div>
+            <div data-testid="list-dock-slot" className="pointer-events-auto h-full">
+              <ListPanel onSelect={handleSelectFromList} />
+            </div>
+          </div>
+          <AltitudeLegend />
+          <ReplayBar />
+        </>
+      )}
       {seedLoading && mode === 'live' && (
         <div
           data-testid="seed-loading-overlay"
@@ -237,7 +253,7 @@ export function AppShell() {
           </div>
         </div>
       )}
-      {statsDashboardOpen && <StatsDashboard />}
+      {!isMobile && statsDashboardOpen && <StatsDashboard />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import type { AircraftSnapshot } from '@/data/types';
 import { historyStore } from '@/store/historyStore';
@@ -562,5 +562,89 @@ describe('AppShell', () => {
     });
 
     expect(fakeController.clearPTracks).toHaveBeenCalled();
+  });
+});
+
+describe('AppShell mobile layout', () => {
+  function stubMobileViewport() {
+    const mql = {
+      matches: true,
+      media: '(max-width: 767px)',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(mql));
+  }
+
+  beforeEach(async () => {
+    await setTestLanguage('en');
+    useSelectionStore.setState({ selectedHex: null, selectedHexes: new Set() });
+    useToolbarStore.setState({
+      onlyMilitary: false,
+      isolation: false,
+      filterGroundVehicles: false,
+      filterBlockedMLAT: false,
+      follow: false,
+      persistence: false,
+      allTracks: false,
+    });
+    historyStore.reset();
+    aircraftStore.reset();
+    usePlaybackStore.getState().reset();
+    useLiveTick.setState({ version: 0 });
+    clearHistorySeedForTest();
+    capturedOnReady = null;
+    capturedSelectCb = null;
+    capturedListOnSelect = null;
+    fakeController.onSelect.mockClear();
+    fakeController.setSelected.mockClear();
+    fakeController.centerOn.mockClear();
+    fakeController.onViewChange.mockClear();
+    fakeController.getViewExtentLonLat.mockClear();
+    fakeController.showTrack.mockClear();
+    fakeController.clearTrack.mockClear();
+    fakeController.resetView.mockClear();
+    fakeController.setDim.mockClear();
+    fakeController.setFollow.mockClear();
+    fakeController.requestFullscreen.mockClear();
+    fakeController.exitFullscreen.mockClear();
+    fakeController.setLabelConfig.mockClear();
+    fakeController.showPTracks.mockClear();
+    fakeController.clearPTracks.mockClear();
+    stubMobileViewport();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders mobile chrome and hides desktop panels', () => {
+    render(<AppShell />);
+    expect(screen.getByTestId('mobile-top-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-toolbar')).toBeInTheDocument();
+    expect(screen.getByTestId('map-root')).toBeInTheDocument();
+    expect(screen.queryByTestId('command-bar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('list-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('right-dock')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('replay-bar')).not.toBeInTheDocument();
+  });
+
+  it('shows altitude legend only when nothing is selected', () => {
+    render(<AppShell />);
+    expect(screen.getByTestId('altitude-legend')).toBeInTheDocument();
+    act(() => useSelectionStore.getState().select('abc123'));
+    expect(screen.queryByTestId('altitude-legend')).not.toBeInTheDocument();
+  });
+
+  it('renders the detail sheet when an aircraft with data is selected', () => {
+    const ac = new Aircraft('abc123');
+    ac.update(
+      { hex: 'abc123', flight: 'CES2345', lat: 30, lon: 120, altitude: 36000 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('abc123', ac);
+    render(<AppShell />);
+    act(() => useSelectionStore.getState().select('abc123'));
+    expect(screen.getByTestId('mobile-detail-sheet')).toBeInTheDocument();
   });
 });
