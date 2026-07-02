@@ -47,8 +47,24 @@ describe('MobileAircraftList', () => {
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getByText('CCA123')).toBeInTheDocument();
     expect(screen.getByText('abc123')).toBeInTheDocument();
-    expect(screen.getByText('12000 ft')).toBeInTheDocument();
+    expect(screen.getByText('12,000 ft')).toBeInTheDocument();
     expect(screen.getByText('430 kt')).toBeInTheDocument();
+  });
+
+  it('renders a visible focus indicator on row buttons', () => {
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123' }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const button = screen.getByRole('button', { name: /CCA123/i });
+    expect(button.className).toContain('focus-visible:ring-2');
+    expect(button.className).toContain('focus-visible:ring-white/50');
+  });
+
+  it('renders nothing when there are no rows', () => {
+    vi.mocked(useAircraftRows).mockReturnValue([]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 
   it('falls back to hex when flight is empty', () => {

@@ -1,14 +1,9 @@
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { altitudeColor, hslString } from '@/domain/altitude';
+import { formatAltitude } from '@/domain/format';
 import type { AircraftRow } from '@/features/list/aircraftRows';
 
 const MAX_MOBILE_ROWS = 8;
-
-function formatAltitude(altitude: AircraftRow['altitude']): string {
-  if (altitude === 'ground') return 'Ground';
-  if (typeof altitude === 'number') return `${altitude} ft`;
-  return '—';
-}
 
 function formatSpeed(speed: AircraftRow['speed']): string {
   return typeof speed === 'number' ? `${speed} kt` : '—';
@@ -30,7 +25,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
           <button
             key={row.hex}
             type="button"
-            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none"
+            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(row.hex)}
           >
