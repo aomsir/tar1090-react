@@ -9,7 +9,11 @@ import { setTestLanguage } from '@/i18n/testUtils';
 vi.mock('./MobileAircraftList', () => ({
   MobileAircraftList: ({ onSelect }: { onSelect: (hex: string) => void }) => (
     <div data-testid="mobile-aircraft-list">
-      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onSelect('abc123')}>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onSelect('abc123')}
+      >
         CCA123
       </button>
     </div>
@@ -88,5 +92,66 @@ describe('MobileTopBar', () => {
     expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
+
+  it('opens the lightweight list from the explicit aircraft list button', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('closes the lightweight list from the explicit aircraft list button when search is inactive', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.click(button);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps search-driven list visible when the explicit aircraft list button is toggled off', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.focus(input);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+  });
+
+  it('closes the pinned list on selection and resets the explicit toggle', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.click(button);
+    fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
+    expect(useSelectionStore.getState().selectedHex).toBe('abc123');
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('closes the pinned list on Escape and resets the explicit toggle', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.click(button);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    fireEvent.focus(input);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('renders translated list button label in zh-CN', async () => {
+    await setTestLanguage('zh-CN');
+    render(<MobileTopBar />);
+    expect(screen.getByRole('button', { name: '显示飞机列表' })).toBeInTheDocument();
   });
 });

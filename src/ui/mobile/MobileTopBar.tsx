@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SearchField } from '@heroui/react';
+import { Button, SearchField } from '@heroui/react';
+import { List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStatsStore } from '@/store/statsStore';
 import { useListControls } from '@/store/listControls';
@@ -13,11 +14,14 @@ export function MobileTopBar() {
   const setQuery = useListControls((s) => s.setQuery);
   const select = useSelectionStore((s) => s.select);
   const [focused, setFocused] = useState(false);
-  const showList = focused || query.trim().length > 0;
+  const [listPinned, setListPinned] = useState(false);
+  const searchDriven = focused || query.trim().length > 0;
+  const showList = searchDriven || listPinned;
 
   const handleSelect = (hex: string) => {
     select(hex);
     setFocused(false);
+    setListPinned(false);
   };
 
   return (
@@ -48,12 +52,23 @@ export function MobileTopBar() {
                 if (event.key === 'Escape' && showList) {
                   setFocused(false);
                   setQuery('');
+                  setListPinned(false);
                 }
               }}
             />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
+        <Button
+          isIconOnly
+          variant="secondary"
+          aria-label={t('commandBar.showAircraftList')}
+          aria-expanded={showList}
+          className="h-9 w-9 shrink-0 text-slate-100"
+          onPress={() => setListPinned((open) => !open)}
+        >
+          <List size={18} />
+        </Button>
         <span className="shrink-0 text-xs text-slate-400">
           {t('commandBar.aircraftCount')} {count}
         </span>
