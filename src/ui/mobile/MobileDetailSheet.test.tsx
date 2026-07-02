@@ -54,10 +54,10 @@ describe('MobileDetailSheet', () => {
     expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
 
-  it('renders header and key stats in peek state by default', () => {
+  it('renders header and key stats in expanded state by default', () => {
     render(<MobileDetailSheet />);
     const sheet = screen.getByTestId('mobile-detail-sheet');
-    expect(sheet).toHaveAttribute('data-state', 'peek');
+    expect(sheet).toHaveAttribute('data-state', 'expanded');
     expect(sheet).toHaveTextContent('CES2345');
     expect(sheet).toHaveTextContent('B-1234');
     expect(sheet).toHaveTextContent('465');
@@ -70,22 +70,22 @@ describe('MobileDetailSheet', () => {
     expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
   });
 
-  it('stays peek when drag is below threshold', () => {
+  it('stays expanded when drag is below threshold', () => {
     render(<MobileDetailSheet />);
     dragHandle(500, 460); // -40px < 60px threshold
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'peek');
+    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
   });
 
   it('collapses from expanded to peek when dragged down', () => {
     render(<MobileDetailSheet />);
-    dragHandle(500, 380); // -> expanded
-    dragHandle(300, 420); // +120px -> peek
+    dragHandle(300, 420);
     expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'peek');
   });
 
   it('closes (clears selection) when dragged down from peek', () => {
     render(<MobileDetailSheet />);
-    dragHandle(300, 420); // +120px in peek
+    dragHandle(300, 420); // expanded -> peek
+    dragHandle(300, 420); // peek -> close
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
@@ -95,12 +95,12 @@ describe('MobileDetailSheet', () => {
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
-  it('resets to peek when a different aircraft is selected', () => {
+  it('resets to expanded when a different aircraft is selected', () => {
     const { rerender } = render(<MobileDetailSheet />);
-    dragHandle(500, 380); // -> expanded
+    dragHandle(300, 420); // -> peek
     useSelectedAircraftMock.mockReturnValue({ ...detail, hex: 'def456' } as AircraftDetail);
     rerender(<MobileDetailSheet />);
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'peek');
+    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
   });
 
   it('shows group rows and KML export button', () => {

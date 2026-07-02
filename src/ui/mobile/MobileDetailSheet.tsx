@@ -36,7 +36,7 @@ export function MobileDetailSheet() {
   const { t, i18n } = useTranslation();
   const d = useSelectedAircraft();
   const select = useSelectionStore((s) => s.select);
-  const [sheetState, setSheetState] = useState<SheetState>('peek');
+  const [sheetState, setSheetState] = useState<SheetState>('expanded');
   const touchStartY = useRef<number | null>(null);
   const { photo, loading: photoLoading } = useAircraftPhoto(
     d?.hex ?? null,
@@ -45,9 +45,9 @@ export function MobileDetailSheet() {
   );
 
   const hex = d?.hex ?? null;
-  /* eslint-disable react-hooks/set-state-in-effect -- reset to peek when selected aircraft changes */
+  /* eslint-disable react-hooks/set-state-in-effect -- reset to expanded when selected aircraft changes */
   useEffect(() => {
-    setSheetState('peek');
+    setSheetState('expanded');
   }, [hex]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
