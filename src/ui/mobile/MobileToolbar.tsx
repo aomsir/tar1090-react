@@ -1,6 +1,8 @@
-import { Home, Shield, LocateFixed } from 'lucide-react';
+import { Home, Shield, LocateFixed, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { useReplay } from '@/features/playback/useReplay';
 
 interface MobileToolbarProps {
   onResetView: () => void;
@@ -14,6 +16,9 @@ export function MobileToolbar({ onResetView }: MobileToolbarProps) {
   const onlyMilitary = useToolbarStore((s) => s.onlyMilitary);
   const follow = useToolbarStore((s) => s.follow);
   const toggle = useToolbarStore((s) => s.toggle);
+  const mode = usePlaybackStore((s) => s.mode);
+  const { enterHistory, exitToLive } = useReplay();
+  const historyActive = mode === 'history';
 
   return (
     <nav
@@ -45,6 +50,18 @@ export function MobileToolbar({ onResetView }: MobileToolbarProps) {
         className={`${BTN} ${follow ? 'bg-blue-500/25 text-blue-300' : ''}`}
       >
         <LocateFixed size={20} />
+      </button>
+      <button
+        type="button"
+        aria-label={t('replay.history')}
+        aria-pressed={historyActive}
+        onClick={() => {
+          if (historyActive) exitToLive();
+          else void enterHistory('1d');
+        }}
+        className={`${BTN} ${historyActive ? 'bg-blue-500/25 text-blue-300' : ''}`}
+      >
+        <History size={20} />
       </button>
     </nav>
   );
