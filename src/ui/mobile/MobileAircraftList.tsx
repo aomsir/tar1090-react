@@ -1,0 +1,58 @@
+import { useAircraftRows } from '@/features/list/useAircraftRows';
+import { altitudeColor, hslString } from '@/domain/altitude';
+import type { AircraftRow } from '@/features/list/aircraftRows';
+
+const MAX_MOBILE_ROWS = 8;
+
+function formatAltitude(altitude: AircraftRow['altitude']): string {
+  if (altitude === 'ground') return 'Ground';
+  if (typeof altitude === 'number') return `${altitude} ft`;
+  return '—';
+}
+
+function formatSpeed(speed: AircraftRow['speed']): string {
+  return typeof speed === 'number' ? `${speed} kt` : '—';
+}
+
+export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => void }) {
+  const rows = useAircraftRows().slice(0, MAX_MOBILE_ROWS);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div
+      data-testid="mobile-aircraft-list"
+      className="glass absolute left-0 right-0 top-12 max-h-[45dvh] overflow-auto rounded-2xl p-1 text-white shadow-xl"
+    >
+      {rows.map((row) => {
+        const label = row.flight || row.hex;
+        return (
+          <button
+            key={row.hex}
+            type="button"
+            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onSelect(row.hex)}
+          >
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: hslString(altitudeColor(row.altitude)) }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{label}</span>
+              {row.flight && (
+                <span className="block truncate font-mono text-[11px] text-slate-400">
+                  {row.hex}
+                </span>
+              )}
+            </span>
+            <span className="shrink-0 text-right font-mono text-[11px] text-slate-300">
+              <span className="block">{formatAltitude(row.altitude)}</span>
+              <span className="block text-slate-500">{formatSpeed(row.speed)}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
