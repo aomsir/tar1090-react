@@ -18,11 +18,12 @@ describe('AltitudeLegend', () => {
     expect(screen.getByText('地面')).toBeInTheDocument();
   });
 
-  it('sits closer to the bottom edge', async () => {
+  it('sits below the replay bar to avoid overlap', async () => {
     await setTestLanguage('en');
     render(<AltitudeLegend />);
     const legend = screen.getByTestId('altitude-legend');
-    expect(legend).toHaveClass('bottom-8');
+    expect(legend).toHaveClass('bottom-14');
     expect(legend).not.toHaveClass('bottom-16');
+    expect(legend).not.toHaveClass('bottom-8');
   });
 });

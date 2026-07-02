@@ -15,7 +15,7 @@ export function AltitudeLegend() {
   return (
     <div
       data-testid="altitude-legend"
-      className="glass absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-3 px-3 py-1 text-[10px] text-white"
+      className="glass absolute bottom-14 left-1/2 flex -translate-x-1/2 items-center gap-3 px-3 py-1 text-[10px] text-white"
     >
       {TICKS.map((tObj) => (
         <span key={tObj.label} className="flex items-center gap-1">
