@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useUrlSync } from './useUrlSync';
 import { useSelectionStore } from '@/store/selectionStore';
@@ -21,6 +21,10 @@ describe('useUrlSync', () => {
     useSelectionStore.setState({ selectedHex: null });
     usePlaybackStore.getState().reset();
     window.history.replaceState(null, '', '/');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('reads ?icao= on mount and selects it', () => {
@@ -50,5 +54,21 @@ describe('useUrlSync', () => {
     expect(window.location.search).toBe('?mode=history');
     act(() => usePlaybackStore.getState().setMode('live'));
     expect(window.location.search).toBe('');
+  });
+
+  it('ignores ?mode=history on mobile viewport', () => {
+    const mql = {
+      matches: true,
+      media: '(max-width: 767px)',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(mql));
+    window.history.replaceState(null, '', '/?mode=history');
+
+    render(<Harness />);
+
+    expect(usePlaybackStore.getState().mode).toBe('live');
+    expect(enterHistoryMock).not.toHaveBeenCalled();
   });
 });

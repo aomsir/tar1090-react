@@ -3,6 +3,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReplay } from '@/features/playback/useReplay';
 import { parseQuery } from './urlState';
+import { isMobileViewport } from './useIsMobile';
 
 export function useUrlSync(): void {
   const selectedHex = useSelectionStore((s) => s.selectedHex);
@@ -13,7 +14,10 @@ export function useUrlSync(): void {
   useEffect(() => {
     const { icao, mode: urlMode } = parseQuery(window.location.search);
     if (icao) select(icao);
-    if (urlMode === 'history') void enterHistory(usePlaybackStore.getState().range);
+    // Mobile has no replay UI; entering history mode would trap the user (spec §5).
+    if (urlMode === 'history' && !isMobileViewport()) {
+      void enterHistory(usePlaybackStore.getState().range);
+    }
   }, [select, enterHistory]);
 
   useEffect(() => {
