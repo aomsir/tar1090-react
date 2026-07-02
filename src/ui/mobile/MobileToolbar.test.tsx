@@ -44,14 +44,14 @@ describe('MobileToolbar', () => {
     expect(useToolbarStore.getState().follow).toBe(false);
   });
 
-  it('keeps the toolbar vertical on the right but lower on mobile', () => {
+  it('anchors the toolbar to the bottom right beside the altitude legend', () => {
     render(<MobileToolbar onResetView={() => {}} />);
     const toolbar = screen.getByTestId('mobile-toolbar');
     expect(toolbar).toHaveClass('right-3');
-    expect(toolbar).toHaveClass('top-28');
+    expect(toolbar).toHaveClass('bottom-[3.75rem]');
     expect(toolbar).toHaveClass('flex-col');
+    expect(toolbar).not.toHaveClass('top-28');
     expect(toolbar).not.toHaveClass('top-16');
-    expect(toolbar).not.toHaveClass('bottom-3');
     expect(toolbar).not.toHaveClass('flex-row');
   });
 
