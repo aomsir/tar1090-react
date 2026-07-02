@@ -161,6 +161,24 @@ describe('MobileAircraftList', () => {
     expect(screen.getByText('FLT29')).toBeInTheDocument();
   });
 
+  it('shows a MIL badge for military aircraft', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'RCH001', isMilitary: true }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByText('MIL')).toBeInTheDocument();
+  });
+
+  it('does not show a MIL badge for civilian aircraft', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({ hex: 'abc123', flight: 'CCA123', isMilitary: false }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.queryByText('MIL')).not.toBeInTheDocument();
+  });
+
   it('selects the tapped aircraft', async () => {
     await setTestLanguage('en');
     const onSelect = vi.fn();

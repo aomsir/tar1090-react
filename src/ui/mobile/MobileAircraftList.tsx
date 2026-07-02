@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Chip } from '@heroui/react';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import { formatAltitude } from '@/domain/format';
@@ -48,7 +49,14 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
               />
             )}
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">{label}</span>
+              <span className="flex items-center gap-1">
+                <span className="truncate text-sm font-semibold">{label}</span>
+                {row.isMilitary ? (
+                  <Chip size="sm" color="danger" variant="soft" className="shrink-0 scale-75">
+                    MIL
+                  </Chip>
+                ) : null}
+              </span>
               {secondary !== label && (
                 <span className="block truncate font-mono text-[11px] text-slate-400">
                   {secondary}
