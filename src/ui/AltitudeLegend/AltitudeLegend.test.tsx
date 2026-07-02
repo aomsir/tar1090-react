@@ -22,8 +22,9 @@ describe('AltitudeLegend', () => {
     await setTestLanguage('en');
     render(<AltitudeLegend />);
     const legend = screen.getByTestId('altitude-legend');
-    expect(legend).toHaveClass('bottom-14');
+    expect(legend).toHaveClass('bottom-[3.875rem]');
     expect(legend).not.toHaveClass('bottom-16');
+    expect(legend).not.toHaveClass('bottom-14');
     expect(legend).not.toHaveClass('bottom-8');
   });
 });
