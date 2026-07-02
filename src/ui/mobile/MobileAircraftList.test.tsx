@@ -77,6 +77,23 @@ describe('MobileAircraftList', () => {
     expect(screen.getByText('B-1234 · A359')).toBeInTheDocument();
   });
 
+  it('uses a generic alt for the flag when country is empty to avoid duplicate hex', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({
+        hex: 'abc123',
+        flight: 'CCA123',
+        registration: '',
+        typeCode: '',
+        country: '',
+        flagPath: '/flags/xx.svg',
+      }),
+    ]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    expect(screen.getByRole('img', { name: 'Aircraft' })).toHaveAttribute('src', '/flags/xx.svg');
+    expect(screen.getByText('abc123')).toBeInTheDocument();
+  });
+
   it('falls back to an altitude color dot when flag is unavailable', async () => {
     await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([

@@ -39,7 +39,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
             {row.flagPath ? (
               <img
                 src={row.flagPath}
-                alt={row.country || row.hex}
+                alt={row.country || 'Aircraft'}
                 className="h-4 w-6 shrink-0 rounded-sm"
               />
             ) : (
