@@ -653,4 +653,13 @@ describe('AppShell mobile layout', () => {
     act(() => useSelectionStore.getState().select('abc123'));
     expect(screen.getByTestId('mobile-detail-sheet')).toBeInTheDocument();
   });
+
+  it('shows the history loading overlay while history loads', () => {
+    render(<AppShell />);
+    expect(screen.queryByTestId('mobile-history-loading')).not.toBeInTheDocument();
+    act(() => {
+      usePlaybackStore.setState({ loading: true, progress: { done: 1, total: 10 } });
+    });
+    expect(screen.getByTestId('mobile-history-loading')).toBeInTheDocument();
+  });
 });

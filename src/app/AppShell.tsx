@@ -10,6 +10,7 @@ import { StatsDashboard } from '@/ui/StatsDashboard/StatsDashboard';
 import { MobileTopBar } from '@/ui/mobile/MobileTopBar';
 import { MobileToolbar } from '@/ui/mobile/MobileToolbar';
 import { MobileDetailSheet } from '@/ui/mobile/MobileDetailSheet';
+import { MobileHistoryLoading } from '@/ui/mobile/MobileHistoryLoading';
 import { MapView } from '@/map/MapView';
 import { useLiveData } from '@/features/live/useLiveData';
 import { useUrlSync } from '@/app/useUrlSync';
@@ -219,6 +220,7 @@ export function AppShell() {
           <MobileTopBar />
           <MobileToolbar onResetView={handleResetView} />
           <MobileDetailSheet />
+          <MobileHistoryLoading />
           {!selectedHex && <AltitudeLegend />}
         </>
       ) : (
