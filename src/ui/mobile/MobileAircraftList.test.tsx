@@ -151,14 +151,14 @@ describe('MobileAircraftList', () => {
     expect(screen.getByText('def456')).toBeInTheDocument();
   });
 
-  it('limits the mobile list to eight rows', async () => {
+  it('renders all rows without a cap', async () => {
     await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue(
-      Array.from({ length: 10 }, (_, index) => row({ hex: `hex${index}`, flight: `FLT${index}` })),
+      Array.from({ length: 30 }, (_, index) => row({ hex: `hex${index}`, flight: `FLT${index}` })),
     );
     render(<MobileAircraftList onSelect={vi.fn()} />);
-    expect(screen.getAllByRole('option')).toHaveLength(8);
-    expect(screen.queryByText('FLT8')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('option')).toHaveLength(30);
+    expect(screen.getByText('FLT29')).toBeInTheDocument();
   });
 
   it('selects the tapped aircraft', async () => {

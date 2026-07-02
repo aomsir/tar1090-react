@@ -4,15 +4,13 @@ import { altitudeColor, hslString } from '@/domain/altitude';
 import { formatAltitude } from '@/domain/format';
 import type { AircraftRow } from '@/features/list/aircraftRows';
 
-const MAX_MOBILE_ROWS = 8;
-
 function formatSpeed(speed: AircraftRow['speed']): string {
   return typeof speed === 'number' ? `${speed} kt` : '—';
 }
 
 export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => void }) {
   const { t } = useTranslation();
-  const rows = useAircraftRows().slice(0, MAX_MOBILE_ROWS);
+  const rows = useAircraftRows();
 
   if (rows.length === 0) return null;
 
