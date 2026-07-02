@@ -26,12 +26,12 @@ const detail: AircraftDetail = {
   ],
 } as AircraftDetail;
 
-const useSelectedAircraftMock = vi.fn<() => AircraftDetail | null>(() => detail);
+const selectedAircraftMock = vi.fn<() => AircraftDetail | null>(() => detail);
 
 vi.mock('@/features/detail/useSelectedAircraft', () => ({
   useSelectedAircraft: () => {
     const selectedHex = useSelectionStore((s) => s.selectedHex);
-    return selectedHex ? useSelectedAircraftMock() : null;
+    return selectedHex ? selectedAircraftMock() : null;
   },
 }));
 vi.mock('@/features/detail/useAircraftPhoto', () => ({
@@ -47,12 +47,12 @@ function dragHandle(fromY: number, toY: number) {
 describe('MobileDetailSheet', () => {
   beforeEach(async () => {
     await setTestLanguage('en');
-    useSelectedAircraftMock.mockReturnValue(detail);
+    selectedAircraftMock.mockReturnValue(detail);
     useSelectionStore.setState({ selectedHex: 'abc123', selectedHexes: new Set() });
   });
 
   it('renders nothing when no aircraft selected', () => {
-    useSelectedAircraftMock.mockReturnValue(null);
+    selectedAircraftMock.mockReturnValue(null);
     render(<MobileDetailSheet />);
     expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
@@ -102,7 +102,7 @@ describe('MobileDetailSheet', () => {
   it('resets to expanded when a different aircraft is selected', () => {
     const { rerender } = render(<MobileDetailSheet />);
     dragHandle(300, 420); // -> peek
-    useSelectedAircraftMock.mockReturnValue({ ...detail, hex: 'def456' } as AircraftDetail);
+    selectedAircraftMock.mockReturnValue({ ...detail, hex: 'def456' } as AircraftDetail);
     rerender(<MobileDetailSheet />);
     expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
   });
