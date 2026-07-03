@@ -88,6 +88,7 @@ describe('StatsDashboard', () => {
 
   it('renders donut total and legend percentages for data source', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
     expect(screen.getByText('40')).toBeInTheDocument(); // donut center total
     expect(screen.getByText(/100%/)).toBeInTheDocument(); // legend share
   });

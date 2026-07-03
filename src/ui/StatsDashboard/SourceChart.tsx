@@ -42,7 +42,12 @@ export function SourceChart({ data }: SourceChartProps) {
   return (
     <ChartCard title={t('stats.charts.dataSource')}>
       <div className="flex items-center gap-5 py-2">
-        <svg viewBox="0 0 42 42" className="h-28 w-28 shrink-0" role="img">
+        <svg
+          viewBox="0 0 42 42"
+          className="h-28 w-28 shrink-0"
+          role="img"
+          aria-label={t('stats.charts.dataSource')}
+        >
           {segments.map((s) => (
             <circle
               key={s.name}
