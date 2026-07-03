@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import {
   AreaChart,
   Area,
@@ -48,13 +49,14 @@ export function TrafficTimeline({ data, peakOnline, peakTime }: TrafficTimelineP
   const { t, i18n } = useTranslation();
   const formatTime = (ts: number) => formatShortTime(ts, i18n.language);
   const tickStyle = { fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT };
+  const gradientId = useId();
 
   return (
     <ChartCard title={t('stats.charts.trafficOverTime')}>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ left: 0, right: 12, top: 16 }}>
           <defs>
-            <linearGradient id="statsTrafficFill" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={AMBER_FILL_TOP} />
               <stop offset="100%" stopColor={AMBER_FILL_BOTTOM} />
             </linearGradient>
@@ -76,7 +78,7 @@ export function TrafficTimeline({ data, peakOnline, peakTime }: TrafficTimelineP
             dataKey="count"
             stroke={AMBER}
             strokeWidth={1.5}
-            fill="url(#statsTrafficFill)"
+            fill={`url(#${gradientId})`}
           />
           {peakTime > 0 && (
             <ReferenceDot
