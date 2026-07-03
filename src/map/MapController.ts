@@ -4,7 +4,6 @@ import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { getBottomLeft, getTopRight } from 'ol/extent';
-import { defaults as defaultControls } from 'ol/control/defaults';
 import type { FeatureLike } from 'ol/Feature';
 import type RenderEvent from 'ol/render/Event';
 import {
@@ -60,7 +59,7 @@ export class MapController {
     this.tileLayer.on('postrender', dimTiles);
     this.map = new Map({
       target,
-      controls: defaultControls({ rotate: false, attribution: false }),
+      controls: [],
       layers: [this.tileLayer, this.pTracksHandle.layer, this.trackHandle.layer, this.handle.layer],
       view: new View({ center: fromLonLat([110, 30]), zoom: 6 }),
     });
