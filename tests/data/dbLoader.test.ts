@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { DbLoader, type ShardData, type ShardFetcher } from './dbLoader';
+import { DbLoader, type ShardData, type ShardFetcher } from '@/data/dbLoader';
 
 function makeLoader(shards: Record<string, ShardData | null>) {
   const fetchShard = vi.fn(async (bkey: string) => shards[bkey] ?? null);

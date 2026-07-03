@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_HISTORY_LOAD_CONCURRENCY, resolveHistoryLoadConcurrency } from './history';
+import { DEFAULT_HISTORY_LOAD_CONCURRENCY, resolveHistoryLoadConcurrency } from '@/config/history';
 
 describe('resolveHistoryLoadConcurrency', () => {
   it('falls back to default when env is missing', () => {

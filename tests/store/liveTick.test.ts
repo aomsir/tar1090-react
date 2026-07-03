@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useLiveTick } from './liveTick';
+import { useLiveTick } from '@/store/liveTick';
 
 describe('liveTick', () => {
   beforeEach(() => useLiveTick.setState({ version: 0 }));

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { usePlaybackStore } from './playbackStore';
+import { usePlaybackStore } from '@/store/playbackStore';
 
 describe('playbackStore', () => {
   beforeEach(() => usePlaybackStore.getState().reset());

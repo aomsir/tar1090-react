@@ -5,7 +5,7 @@ import {
   formatLocaleForLanguage,
   formatShortTime,
   formatTimeOfDay,
-} from './format';
+} from '@/i18n/format';
 
 describe('i18n format helpers', () => {
   describe('formatLocaleForLanguage', () => {

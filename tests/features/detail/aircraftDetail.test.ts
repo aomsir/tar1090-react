@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import i18n from '@/i18n';
-import { toDetail } from './aircraftDetail';
+import { toDetail } from '@/features/detail/aircraftDetail';
 import { Aircraft } from '@/domain/Aircraft';
 
 function makeAircraft(overrides: Partial<Aircraft> = {}): Aircraft {

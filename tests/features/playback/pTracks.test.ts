@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from './pTracks';
+import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
 import type { AircraftSnapshot } from '@/data/types';
 
 const frames: AircraftSnapshot[] = [

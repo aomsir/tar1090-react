@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useIsMobile, isMobileViewport, MOBILE_MEDIA_QUERY } from './useIsMobile';
+import { useIsMobile, isMobileViewport, MOBILE_MEDIA_QUERY } from '@/app/useIsMobile';
 
 type ChangeListener = (e: { matches: boolean }) => void;
 

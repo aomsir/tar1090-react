@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { describe, it, expect } from 'vitest';
 import { gzipSync } from 'node:zlib';
-import { decodeGzipJson } from './gunzip';
+import { decodeGzipJson } from '@/data/gunzip';
 
 describe('decodeGzipJson', () => {
   it('decompresses gzip bytes and parses JSON', async () => {

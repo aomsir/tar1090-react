@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { HistoryLoader, type HistorySource } from './historyLoader';
+import { HistoryLoader, type HistorySource } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot } from '@/data/types';
 

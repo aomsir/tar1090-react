@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { StatsDashboard } from './StatsDashboard';
+import { StatsDashboard } from '@/ui/StatsDashboard/StatsDashboard';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import type { HistoryStatistics } from '@/features/stats/historyStats';

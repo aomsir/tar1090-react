@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_HIDDEN_COLUMNS } from '@/features/list/columns';
-import { useListControls } from './listControls';
+import { useListControls } from '@/store/listControls';
 
 describe('listControls', () => {
   beforeEach(() =>

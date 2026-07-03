@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findCountry, flagPath } from './country';
+import { findCountry, flagPath } from '@/domain/country';
 
 describe('country', () => {
   it('maps a South African hex to its country', () => {

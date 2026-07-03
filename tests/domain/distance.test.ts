@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceNm } from './distance';
+import { distanceNm } from '@/domain/distance';
 
 describe('distanceNm', () => {
   it('returns undefined when any coordinate is missing', () => {

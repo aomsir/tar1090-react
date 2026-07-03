@@ -6,7 +6,7 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
-import { useSelectedAircraft } from './useSelectedAircraft';
+import { useSelectedAircraft } from '@/features/detail/useSelectedAircraft';
 
 describe('useSelectedAircraft', () => {
   beforeEach(() => {

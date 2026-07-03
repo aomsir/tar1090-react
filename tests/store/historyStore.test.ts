@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { historyStore } from './historyStore';
-import { useLiveTick } from './liveTick';
+import { historyStore } from '@/store/historyStore';
+import { useLiveTick } from '@/store/liveTick';
 import type { AircraftSnapshot } from '@/data/types';
 
 vi.mock('@/domain/enrich', () => ({

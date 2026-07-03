@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CommandBar } from './CommandBar';
+import { CommandBar } from '@/ui/CommandBar/CommandBar';
 import { useListControls } from '@/store/listControls';
 import { setTestLanguage } from '@/i18n/testUtils';
 

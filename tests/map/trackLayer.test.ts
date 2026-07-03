@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import VectorSource from 'ol/source/Vector';
 import LineString from 'ol/geom/LineString';
-import { createTrackLayer, syncTrack } from './trackLayer';
+import { createTrackLayer, syncTrack } from '@/map/trackLayer';
 import type { TrackSegment } from '@/features/track/track';
 
 const seg = (over: Partial<TrackSegment>): TrackSegment => ({

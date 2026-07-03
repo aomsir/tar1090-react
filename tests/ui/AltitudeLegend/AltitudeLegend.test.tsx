@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AltitudeLegend } from './AltitudeLegend';
+import { AltitudeLegend } from '@/ui/AltitudeLegend/AltitudeLegend';
 import { setTestLanguage } from '@/i18n/testUtils';
 
 describe('AltitudeLegend', () => {

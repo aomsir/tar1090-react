@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getBaseMarker, svgShapeToDataUri, selectMarker } from './markerShapes';
-import { shapes } from './markerShapes.data';
+import { getBaseMarker, svgShapeToDataUri, selectMarker } from '@/map/markerShapes';
+import { shapes } from '@/map/markerShapes.data';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('getBaseMarker', () => {

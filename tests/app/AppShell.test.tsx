@@ -82,7 +82,7 @@ vi.mock('@/ui/ListPanel/ListPanel', () => ({
   },
 }));
 
-import { AppShell } from './AppShell';
+import { AppShell } from '@/app/AppShell';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { aircraftStore } from '@/store/aircraftStore';

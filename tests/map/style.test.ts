@@ -8,7 +8,7 @@ import {
   MARKER_ZOOM_DIVIDE,
   MARKER_SMALL,
   MARKER_BIG,
-} from './style';
+} from '@/map/style';
 import { Aircraft } from '@/domain/Aircraft';
 
 describe('map style helpers', () => {

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { AircraftSnapshot } from './types';
+import type { AircraftSnapshot } from '@/data/types';
 import {
   loadLiveHistory,
   getHistorySeed,
   useSeedVersion,
   clearHistorySeedForTest,
-} from './liveHistorySeeder';
+} from '@/data/liveHistorySeeder';
 
 function makeGetFrame(frames: Record<number, AircraftSnapshot>) {
   return async (n: number): Promise<AircraftSnapshot> => {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { extractTrackPoints, buildTrackSegments } from './track';
+import { extractTrackPoints, buildTrackSegments } from '@/features/track/track';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftSnapshot } from '@/data/types';
-import type { TrackPoint } from './track';
+import type { TrackPoint } from '@/features/track/track';
 
 const frame = (now: number, ac: Record<string, unknown>[]): AircraftSnapshot => ({
   now,

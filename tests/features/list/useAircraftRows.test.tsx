@@ -8,7 +8,7 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { historyStore } from '@/store/historyStore';
 import { Aircraft } from '@/domain/Aircraft';
-import { useAircraftRows } from './useAircraftRows';
+import { useAircraftRows } from '@/features/list/useAircraftRows';
 
 function seed(hex: string, fields: Partial<Aircraft>): void {
   const a = new Aircraft(hex);

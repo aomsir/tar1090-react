@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MobileTopBar } from './MobileTopBar';
+import { MobileTopBar } from '@/ui/mobile/MobileTopBar';
 import { useListControls } from '@/store/listControls';
 import { useStatsStore } from '@/store/statsStore';
 import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
 
-vi.mock('./MobileAircraftList', () => ({
+vi.mock('@/ui/mobile/MobileAircraftList', () => ({
   MobileAircraftList: ({ onSelect }: { onSelect: (hex: string) => void }) => (
     <div data-testid="mobile-aircraft-list">
       <button

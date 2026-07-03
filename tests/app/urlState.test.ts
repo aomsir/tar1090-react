@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseQuery, buildQuery } from './urlState';
+import { parseQuery, buildQuery } from '@/app/urlState';
 
 describe('urlState', () => {
   it('parses ?icao= from a query string', () => {

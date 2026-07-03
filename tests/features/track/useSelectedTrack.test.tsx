@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
-import { useSelectedTrack } from './useSelectedTrack';
+import { useSelectedTrack } from '@/features/track/useSelectedTrack';
 import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useLiveTick } from '@/store/liveTick';
 import { aircraftStore } from '@/store/aircraftStore';
 import type { AircraftSnapshot } from '@/data/types';
-import type { TrackPoint, TrackSegment } from './track';
+import type { TrackPoint, TrackSegment } from '@/features/track/track';
 import { historyLoader } from '@/data/historyLoader';
-import { loadAircraftTrace } from './aircraftTrace';
+import { loadAircraftTrace } from '@/features/track/aircraftTrace';
 import { loadLiveHistory, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
 
 vi.mock('@/data/historyLoader', () => ({
@@ -24,8 +24,8 @@ vi.mock('@/data/historyLoader', () => ({
   ],
 }));
 
-vi.mock('./aircraftTrace', async () => {
-  const actual = await vi.importActual<typeof import('./aircraftTrace')>('./aircraftTrace');
+vi.mock('@/features/track/aircraftTrace', async () => {
+  const actual = await vi.importActual<typeof import('@/features/track/aircraftTrace')>('@/features/track/aircraftTrace');
   return {
     ...actual,
     loadAircraftTrace: vi.fn(async () => []),

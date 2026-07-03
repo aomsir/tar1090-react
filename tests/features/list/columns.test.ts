@@ -5,8 +5,8 @@ import {
   DEFAULT_HIDDEN_COLUMNS,
   LIST_COLUMNS,
   visibleColumnIds,
-} from './columns';
-import type { AircraftRow } from './aircraftRows';
+} from '@/features/list/columns';
+import type { AircraftRow } from '@/features/list/aircraftRows';
 
 describe('tar1090 list columns', () => {
   it('keeps original tar1090 column order', () => {

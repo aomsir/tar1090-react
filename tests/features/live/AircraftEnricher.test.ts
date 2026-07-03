@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
-import { AircraftEnricher } from './AircraftEnricher';
+import { AircraftEnricher } from '@/features/live/AircraftEnricher';
 
 describe('AircraftEnricher', () => {
   it('enriches pending aircraft once and fires onEnriched', async () => {

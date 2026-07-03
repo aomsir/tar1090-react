@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createAircraftLayer, setFeatureZoom, syncFeatures } from './aircraftLayer';
+import { createAircraftLayer, setFeatureZoom, syncFeatures } from '@/map/aircraftLayer';
 import { Aircraft } from '@/domain/Aircraft';
 
 function ac(hex: string, lat: number, lon: number): Aircraft {

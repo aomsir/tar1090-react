@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { ListPanel } from './ListPanel';
+import { ListPanel } from '@/ui/ListPanel/ListPanel';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useListControls } from '@/store/listControls';

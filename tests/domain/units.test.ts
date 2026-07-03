@@ -8,7 +8,7 @@ import {
   formatRssi,
   formatSpeedKt,
   formatVerticalRate,
-} from './units';
+} from '@/domain/units';
 
 describe('tar1090 unit formatting', () => {
   it('formats missing values consistently', () => {

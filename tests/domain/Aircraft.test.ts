@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Aircraft } from './Aircraft';
+import { Aircraft } from '@/domain/Aircraft';
 
 describe('Aircraft', () => {
   it('applies fields from a DTO and trims the callsign', () => {

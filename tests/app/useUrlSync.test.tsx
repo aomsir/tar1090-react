@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useUrlSync } from './useUrlSync';
+import { useUrlSync } from '@/app/useUrlSync';
 import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 

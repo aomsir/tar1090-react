@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeCallsign } from './callsign';
+import { normalizeCallsign } from '@/domain/callsign';
 
 describe('normalizeCallsign', () => {
   it('trims whitespace and uppercases', () => {

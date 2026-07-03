@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { altitudeColor, hslString } from './altitude';
+import { altitudeColor, hslString } from '@/domain/altitude';
 
 describe('altitudeColor', () => {
   it('returns the unknown color for null/undefined', () => {

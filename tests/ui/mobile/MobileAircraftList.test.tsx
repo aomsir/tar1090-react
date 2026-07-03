@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MobileAircraftList } from './MobileAircraftList';
+import { MobileAircraftList } from '@/ui/mobile/MobileAircraftList';
 import { setTestLanguage } from '@/i18n/testUtils';
 import type { AircraftRow } from '@/features/list/aircraftRows';
 

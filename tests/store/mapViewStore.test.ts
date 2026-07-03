@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useMapViewStore } from './mapViewStore';
+import { useMapViewStore } from '@/store/mapViewStore';
 
 describe('mapViewStore', () => {
   beforeEach(() => useMapViewStore.setState({ extent: null }));

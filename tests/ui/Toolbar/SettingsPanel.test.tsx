@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SettingsPanel } from './SettingsPanel';
+import { SettingsPanel } from '@/ui/Toolbar/SettingsPanel';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { renderWithI18n } from '@/i18n/testUtils';
 import i18n from '@/i18n';

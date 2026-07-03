@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildTrackKml } from './kml';
-import type { TrackPoint } from './track';
+import { buildTrackKml } from '@/features/track/kml';
+import type { TrackPoint } from '@/features/track/track';
 
 const pt = (over: Partial<TrackPoint>): TrackPoint => ({
   lon: 0,

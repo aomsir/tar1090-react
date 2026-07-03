@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RouteService } from './routeService';
+import { RouteService } from '@/data/routeService';
 
 /** Mock a successful adsbdb response for a single callsign */
 function adsbdbOk(origin: string, destination: string) {

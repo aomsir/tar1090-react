@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { registrationFromHexId } from './registration';
+import { registrationFromHexId } from '@/domain/registration';
 
 describe('registrationFromHexId', () => {
   it('derives US N-numbers (0xA-range)', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPTracksLayer, syncPTracks } from './pTracksLayer';
+import { createPTracksLayer, syncPTracks } from '@/map/pTracksLayer';
 import type { TrackPoint } from '@/features/track/track';
 
 describe('createPTracksLayer', () => {

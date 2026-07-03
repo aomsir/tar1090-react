@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Aircraft } from './Aircraft';
-import { enrichAircraft } from './enrich';
+import { Aircraft } from '@/domain/Aircraft';
+import { enrichAircraft } from '@/domain/enrich';
 
 function deps(dbResult: [string, string, string, string] | null) {
   return {

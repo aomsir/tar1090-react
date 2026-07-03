@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { DetailCard } from './DetailCard';
+import { DetailCard } from '@/ui/DetailCard/DetailCard';
 import { aircraftStore } from '@/store/aircraftStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';

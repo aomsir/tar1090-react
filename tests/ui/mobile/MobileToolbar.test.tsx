@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MobileToolbar } from './MobileToolbar';
+import { MobileToolbar } from '@/ui/mobile/MobileToolbar';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { setTestLanguage } from '@/i18n/testUtils';

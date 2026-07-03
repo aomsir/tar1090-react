@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useReplay } from './useReplay';
+import { useReplay } from '@/features/playback/useReplay';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot } from '@/data/types';

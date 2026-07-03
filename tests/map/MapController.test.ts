@@ -4,7 +4,7 @@ import {
   isAircraftHitLayer,
   MAP_DIM_PERCENTAGE,
   MapController,
-} from './MapController';
+} from '@/map/MapController';
 
 vi.stubGlobal(
   'ResizeObserver',

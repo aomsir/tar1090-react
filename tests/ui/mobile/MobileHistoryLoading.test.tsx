@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MobileHistoryLoading } from './MobileHistoryLoading';
+import { MobileHistoryLoading } from '@/ui/mobile/MobileHistoryLoading';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { setTestLanguage } from '@/i18n/testUtils';
 

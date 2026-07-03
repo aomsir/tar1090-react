@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PollingSource } from './pollingSource';
-import type { AircraftSnapshot, Receiver } from './types';
+import { PollingSource } from '@/data/pollingSource';
+import type { AircraftSnapshot, Receiver } from '@/data/types';
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {

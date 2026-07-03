@@ -5,7 +5,7 @@ import {
   mergeTracePoints,
   parseTraceResponse,
   traceFilePath,
-} from './aircraftTrace';
+} from '@/features/track/aircraftTrace';
 
 const jsonResponse = (body: unknown, ok = true): Response =>
   ({ ok, json: vi.fn(async () => body) }) as unknown as Response;

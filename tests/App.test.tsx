@@ -8,7 +8,7 @@ vi.mock('@/map/MapView', () => ({
 vi.mock('@/features/live/useLiveData', () => ({ useLiveData: () => {} }));
 vi.mock('@/app/useUrlSync', () => ({ useUrlSync: () => {} }));
 
-import App from './App';
+import App from '@/./App';
 
 describe('App', () => {
   it('renders the app brand title', async () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MobileDetailSheet } from './MobileDetailSheet';
+import { MobileDetailSheet } from '@/ui/mobile/MobileDetailSheet';
 import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
 import type { AircraftDetail } from '@/features/detail/aircraftDetail';

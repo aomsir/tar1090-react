@@ -22,7 +22,7 @@ describe('i18n initialization', () => {
 
   it('falls back to English for unsupported languages', async () => {
     setBrowserLanguage('fr-FR');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await i18n.changeLanguage('fr-FR');
 
     expect(i18n.t('settings.title')).toBe('Settings');
@@ -30,7 +30,7 @@ describe('i18n initialization', () => {
 
   it('uses Simplified Chinese for zh-CN', async () => {
     setBrowserLanguage('zh-CN');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await i18n.changeLanguage('zh-CN');
 
     expect(i18n.t('settings.title')).toBe('设置');
@@ -38,7 +38,7 @@ describe('i18n initialization', () => {
 
   it('maps browser language zh to Simplified Chinese', async () => {
     setBrowserLanguage('zh');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await flushInit();
 
     expect(i18n.language).toBe('zh-CN');
@@ -47,7 +47,7 @@ describe('i18n initialization', () => {
 
   it('maps browser language zh-Hans to Simplified Chinese', async () => {
     setBrowserLanguage('zh-Hans');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await flushInit();
 
     expect(i18n.language).toBe('zh-CN');
@@ -56,7 +56,7 @@ describe('i18n initialization', () => {
 
   it('falls back to English for Traditional Chinese variants', async () => {
     setBrowserLanguage('zh-TW');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await flushInit();
 
     expect(i18n.language).toBe('en');
@@ -65,7 +65,7 @@ describe('i18n initialization', () => {
 
   it('falls back to English for zh-HK', async () => {
     setBrowserLanguage('zh-HK');
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await flushInit();
 
     expect(i18n.language).toBe('en');
@@ -73,7 +73,7 @@ describe('i18n initialization', () => {
   });
 
   it('persists explicit language choice in localStorage', async () => {
-    const { default: i18n } = await import('./index');
+    const { default: i18n } = await import('@/i18n/index');
     await i18n.changeLanguage('zh-CN');
 
     expect(localStorage.getItem('i18nextLng')).toBe('zh-CN');

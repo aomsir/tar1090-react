@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { AircraftStore } from './aircraftStore';
-import { useToolbarStore } from './toolbarStore';
+import { AircraftStore } from '@/store/aircraftStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import type { AircraftSnapshot } from '@/data/types';
 
 const snap = (now: number, messages: number, hexes: string[]): AircraftSnapshot => ({

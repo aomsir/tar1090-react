@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 const dispose = vi.fn();
 const ctor = vi.fn();
 
-vi.mock('./MapController', () => ({
+vi.mock('@/map/MapController', () => ({
   MapController: class {
     constructor(target: HTMLElement) {
       ctor(target);
@@ -16,7 +16,7 @@ vi.mock('./MapController', () => ({
   },
 }));
 
-import { MapView } from './MapView';
+import { MapView } from '@/map/MapView';
 
 describe('MapView', () => {
   beforeEach(() => {

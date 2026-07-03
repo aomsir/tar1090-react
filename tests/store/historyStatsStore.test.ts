@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useHistoryStatsStore } from './historyStatsStore';
+import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import type { HistoryStatistics } from '@/features/stats/historyStats';
 
 const mockStats: HistoryStatistics = {

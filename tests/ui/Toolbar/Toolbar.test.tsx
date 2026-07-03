@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { Toolbar } from './Toolbar';
+import { Toolbar } from '@/ui/Toolbar/Toolbar';
 import { useToolbarStore } from '@/store/toolbarStore';
 
 describe('Toolbar', () => {

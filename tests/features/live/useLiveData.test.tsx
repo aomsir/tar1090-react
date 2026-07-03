@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRef } from 'react';
-import { useLiveData } from './useLiveData';
+import { useLiveData } from '@/features/live/useLiveData';
 import type { AircraftDataSource, SnapshotHandler } from '@/data/source';
 import type { MapController } from '@/map/MapController';
-import type { AircraftEnricher } from './AircraftEnricher';
+import type { AircraftEnricher } from '@/features/live/AircraftEnricher';
 import { useStatsStore } from '@/store/statsStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 

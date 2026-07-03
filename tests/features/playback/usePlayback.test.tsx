@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { usePlayback } from './usePlayback';
+import { usePlayback } from '@/features/playback/usePlayback';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
 import type { MapController } from '@/map/MapController';

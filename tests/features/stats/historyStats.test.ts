@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHistoryStats } from './historyStats';
+import { computeHistoryStats } from '@/features/stats/historyStats';
 import type { AircraftSnapshot } from '@/data/types';
 import { Aircraft } from '@/domain/Aircraft';
 import type { PeakStats } from '@/features/playback/pTracks';

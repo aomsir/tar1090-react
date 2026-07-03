@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { ReplayBar } from './ReplayBar';
+import { ReplayBar } from '@/ui/ReplayBar/ReplayBar';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
 import type { AircraftSnapshot } from '@/data/types';

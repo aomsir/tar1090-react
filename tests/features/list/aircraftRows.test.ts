@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
-import { toRow, buildRows, isInExtent, type RowQuery } from './aircraftRows';
+import { toRow, buildRows, isInExtent, type RowQuery } from '@/features/list/aircraftRows';
 import { routeService } from '@/data/routeService';
-import { LIST_COLUMNS } from './columns';
+import { LIST_COLUMNS } from '@/features/list/columns';
 import type { PeakStats } from '@/features/playback/pTracks';
 
 async function seedRoute(callsign: string, route: string) {
