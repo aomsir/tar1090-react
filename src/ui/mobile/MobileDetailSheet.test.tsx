@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MobileDetailSheet } from './MobileDetailSheet';
 import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
@@ -55,6 +55,32 @@ describe('MobileDetailSheet', () => {
     render(<MobileDetailSheet />);
     const sheet = screen.getByTestId('mobile-detail-sheet');
     expect(sheet).toHaveAttribute('data-snap', 'peek');
+  });
+
+  it('uses a full-height drawer content without an 85dvh max-height cap', () => {
+    render(<MobileDetailSheet />);
+    const sheet = screen.getByTestId('mobile-detail-sheet');
+    expect(sheet.className).toContain('h-full');
+    expect(sheet.className).not.toContain('max-h-[85dvh]');
+  });
+
+  it('wraps the sheet body in an 85% height container', () => {
+    render(<MobileDetailSheet />);
+    const sheet = screen.getByTestId('mobile-detail-sheet');
+    const wrapper = Array.from(sheet.children).find((el) =>
+      el.className.includes('h-[85%]'),
+    );
+    expect(wrapper).toBeTruthy();
+  });
+
+  it('keeps the drag handle outside the scroll area but keeps header, key stats, and KML button inside', () => {
+    render(<MobileDetailSheet />);
+    const scrollArea = screen.getByTestId('sheet-scroll-area');
+    const handle = screen.getByTestId('sheet-drag-handle');
+    expect(scrollArea.contains(handle)).toBe(false);
+    expect(within(scrollArea).getByRole('button', { name: 'Close details' })).toBeInTheDocument();
+    expect(within(scrollArea).getByTestId('key-stats')).toBeInTheDocument();
+    expect(within(scrollArea).getByRole('button', { name: 'Export KML' })).toBeInTheDocument();
   });
 
   it('renders header and key stats', () => {
