@@ -173,4 +173,21 @@ describe('computeHistoryStats', () => {
     const s = computeHistoryStats([], many, null);
     expect(s.countryDistribution).toHaveLength(15);
   });
+
+  it('computes peakTime as timestamp of the peak frame', () => {
+    expect(stats.peakTime).toBe(1000); // frame 1 has 3 aircraft (peak)
+  });
+
+  it('keeps first frame time when peak ties', () => {
+    const tied: AircraftSnapshot[] = [
+      { now: 1, messages: 0, aircraft: [{ hex: 'a1', lat: 0, lon: 0 }] },
+      { now: 2, messages: 0, aircraft: [{ hex: 'a2', lat: 0, lon: 0 }] },
+    ];
+    const s = computeHistoryStats(tied, [], null);
+    expect(s.peakTime).toBe(1);
+  });
+
+  it('returns zero peakTime for empty frames', () => {
+    expect(computeHistoryStats([], [], null).peakTime).toBe(0);
+  });
 });

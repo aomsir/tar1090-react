@@ -7,6 +7,7 @@ export interface HistoryStatistics {
   uniqueCallsigns: number;
   militaryCount: number;
   peakOnline: number;
+  peakTime: number;
 
   typeDistribution: { name: string; count: number }[];
   airlineDistribution: { name: string; count: number }[];
@@ -170,10 +171,14 @@ export function computeHistoryStats(
   }
 
   let peakOnline = 0;
+  let peakTime = 0;
   const trafficTimeline: { time: number; count: number }[] = [];
   for (const f of frames) {
     const count = (f.aircraft ?? []).length;
-    if (count > peakOnline) peakOnline = count;
+    if (count > peakOnline) {
+      peakOnline = count;
+      peakTime = f.now;
+    }
     trafficTimeline.push({ time: f.now, count });
   }
 
@@ -182,6 +187,7 @@ export function computeHistoryStats(
     uniqueCallsigns: callsigns.size,
     militaryCount,
     peakOnline,
+    peakTime,
     typeDistribution: topN(typeMap, 20),
     airlineDistribution: topN(airlineMap, 20),
     countryDistribution: topN(countryMap, 15),

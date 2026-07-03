@@ -22,6 +22,7 @@ const mockStats: HistoryStatistics = {
   uniqueCallsigns: 35,
   militaryCount: 3,
   peakOnline: 20,
+  peakTime: 1000,
   typeDistribution: [{ name: 'B738', count: 10 }],
   airlineDistribution: [{ name: 'CCA', count: 5 }],
   countryDistribution: [{ name: 'China', count: 30 }],
