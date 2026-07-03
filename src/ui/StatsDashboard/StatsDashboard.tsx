@@ -70,7 +70,11 @@ export function StatsDashboard() {
         />
 
         <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          <TrafficTimeline data={stats.trafficTimeline} />
+          <TrafficTimeline
+            data={stats.trafficTimeline}
+            peakOnline={stats.peakOnline}
+            peakTime={stats.peakTime}
+          />
           <AltitudeChart data={stats.altitudeBins} />
           <CountryChart data={stats.countryDistribution} />
         </div>

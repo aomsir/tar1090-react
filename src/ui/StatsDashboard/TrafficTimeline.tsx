@@ -1,11 +1,30 @@
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceDot,
+  ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { formatShortTime } from '@/i18n/format';
 import { ChartCard } from './ChartCard';
-import { PRIMARY_COLOR, PRIMARY_FILL, AXIS_COLOR } from './chartColors';
+import { TooltipBox } from './TooltipBox';
+import {
+  AMBER,
+  AMBER_FILL_TOP,
+  AMBER_FILL_BOTTOM,
+  AXIS_COLOR,
+  GRID_COLOR,
+  MONO_FONT,
+} from './chartColors';
 
 interface TrafficTimelineProps {
   data: { time: number; count: number }[];
+  peakOnline: number;
+  peakTime: number;
 }
 
 function TrafficTimelineTooltip({
@@ -17,29 +36,33 @@ function TrafficTimelineTooltip({
 }) {
   const { t, i18n } = useTranslation();
   if (!active || !payload?.length) return null;
-  const formatTime = (ts: number) => formatShortTime(ts, i18n.language);
   return (
-    <div className="rounded bg-zinc-900 px-2 py-1 text-xs text-white shadow">
-      {formatTime(payload[0].payload.time)}: {payload[0].value} {t('stats.aircraft')}
-    </div>
+    <TooltipBox>
+      {formatShortTime(payload[0].payload.time, i18n.language)}: {payload[0].value}{' '}
+      {t('stats.aircraft')}
+    </TooltipBox>
   );
 }
 
-export function TrafficTimeline({ data }: TrafficTimelineProps) {
+export function TrafficTimeline({ data, peakOnline, peakTime }: TrafficTimelineProps) {
   const { t, i18n } = useTranslation();
   const formatTime = (ts: number) => formatShortTime(ts, i18n.language);
+  const tickStyle = { fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT };
 
   return (
     <ChartCard title={t('stats.charts.trafficOverTime')}>
       <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={data} margin={{ left: 0, right: 12 }}>
-          <XAxis
-            dataKey="time"
-            tickFormatter={formatTime}
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
-          />
+        <AreaChart data={data} margin={{ left: 0, right: 12, top: 16 }}>
+          <defs>
+            <linearGradient id="statsTrafficFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={AMBER_FILL_TOP} />
+              <stop offset="100%" stopColor={AMBER_FILL_BOTTOM} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+          <XAxis dataKey="time" tickFormatter={formatTime} tick={tickStyle} />
           <YAxis
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            tick={tickStyle}
             label={{
               value: t('stats.aircraftAxis'),
               angle: -90,
@@ -47,8 +70,30 @@ export function TrafficTimeline({ data }: TrafficTimelineProps) {
               style: { fill: AXIS_COLOR },
             }}
           />
-          <Tooltip content={<TrafficTimelineTooltip />} cursor={{ stroke: PRIMARY_COLOR }} />
-          <Area type="monotone" dataKey="count" stroke={PRIMARY_COLOR} fill={PRIMARY_FILL} />
+          <Tooltip content={<TrafficTimelineTooltip />} cursor={{ stroke: AMBER }} />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke={AMBER}
+            strokeWidth={1.5}
+            fill="url(#statsTrafficFill)"
+          />
+          {peakTime > 0 && (
+            <ReferenceDot
+              x={peakTime}
+              y={peakOnline}
+              r={3}
+              fill={AMBER}
+              stroke="none"
+              label={{
+                value: `${peakOnline} @ ${formatShortTime(peakTime, i18n.language)}`,
+                position: 'top',
+                fill: AMBER,
+                fontSize: 10,
+                fontFamily: MONO_FONT,
+              }}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </ChartCard>

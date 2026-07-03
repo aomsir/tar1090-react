@@ -14,6 +14,9 @@ vi.mock('recharts', async () => {
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
       <div style={{ width: 400, height: 200 }}>{children}</div>
     ),
+    AreaChart: ({ children }: { children: React.ReactNode }) => <svg>{children}</svg>,
+    ReferenceDot: ({ label }: { label?: { value?: string } }) =>
+      label?.value ? <span>{label.value}</span> : null,
   };
 });
 
@@ -91,5 +94,10 @@ describe('StatsDashboard', () => {
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
     expect(screen.getByText('40')).toBeInTheDocument(); // donut center total
     expect(screen.getByText(/100%/)).toBeInTheDocument(); // legend share
+  });
+
+  it('annotates the traffic peak on the timeline', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText(/20 @/)).toBeInTheDocument();
   });
 });
