@@ -179,6 +179,7 @@ const zhCN: TranslationResource = {
     aircraft: '架飞机',
     aircraftAxis: '飞机数',
     count: '数量',
+    noData: '无数据',
     summary: {
       totalAircraft: '飞机总数',
       uniqueCallsigns: '唯一呼号',

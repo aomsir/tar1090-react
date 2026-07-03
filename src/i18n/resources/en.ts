@@ -179,6 +179,7 @@ const en: TranslationResource = {
     aircraft: 'aircraft',
     aircraftAxis: 'Aircraft',
     count: 'Count',
+    noData: 'No data',
     summary: {
       totalAircraft: 'Total Aircraft',
       uniqueCallsigns: 'Unique Callsigns',

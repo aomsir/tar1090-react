@@ -200,6 +200,7 @@ export interface StatsResource {
   aircraft: string;
   aircraftAxis: string;
   count: string;
+  noData: string;
   summary: {
     totalAircraft: string;
     uniqueCallsigns: string;
