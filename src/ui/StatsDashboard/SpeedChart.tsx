@@ -1,7 +1,8 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { ChartCard } from './ChartCard';
-import { PRIMARY_COLOR, AXIS_COLOR, LABEL_COLOR } from './chartColors';
+import { TooltipBox } from './TooltipBox';
+import { AMBER, AMBER_CURSOR, AXIS_COLOR, LABEL_COLOR, MONO_FONT } from './chartColors';
 
 interface SpeedChartProps {
   data: { range: string; count: number }[];
@@ -16,9 +17,9 @@ const CustomTooltip = ({
 }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded bg-zinc-900 px-2 py-1 text-xs text-white shadow">
+    <TooltipBox>
       {payload[0].payload.range} kt: {payload[0].value}
-    </div>
+    </TooltipBox>
   );
 };
 
@@ -31,7 +32,7 @@ export function SpeedChart({ data }: SpeedChartProps) {
         <BarChart data={data} margin={{ left: 0, right: 12 }}>
           <XAxis
             dataKey="range"
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}
             angle={-30}
             textAnchor="end"
             height={40}
@@ -43,7 +44,7 @@ export function SpeedChart({ data }: SpeedChartProps) {
             }}
           />
           <YAxis
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}
             label={{
               value: t('stats.count'),
               angle: -90,
@@ -51,12 +52,12 @@ export function SpeedChart({ data }: SpeedChartProps) {
               style: { fill: AXIS_COLOR },
             }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(31, 119, 180, 0.1)' }} />
-          <Bar dataKey="count" fill={PRIMARY_COLOR} radius={[3, 3, 0, 0]}>
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: AMBER_CURSOR }} />
+          <Bar dataKey="count" fill={AMBER} fillOpacity={0.85} radius={[3, 3, 0, 0]}>
             <LabelList
               dataKey="count"
               position="top"
-              style={{ fill: LABEL_COLOR, fontSize: 11 }}
+              style={{ fill: LABEL_COLOR, fontSize: 10, fontFamily: MONO_FONT }}
               className="hidden sm:block"
             />
           </Bar>
