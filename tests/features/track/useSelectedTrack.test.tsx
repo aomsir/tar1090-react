@@ -25,7 +25,9 @@ vi.mock('@/data/historyLoader', () => ({
 }));
 
 vi.mock('@/features/track/aircraftTrace', async () => {
-  const actual = await vi.importActual<typeof import('@/features/track/aircraftTrace')>('@/features/track/aircraftTrace');
+  const actual = await vi.importActual<typeof import('@/features/track/aircraftTrace')>(
+    '@/features/track/aircraftTrace',
+  );
   return {
     ...actual,
     loadAircraftTrace: vi.fn(async () => []),

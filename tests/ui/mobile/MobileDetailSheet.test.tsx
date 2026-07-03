@@ -67,9 +67,7 @@ describe('MobileDetailSheet', () => {
   it('wraps the sheet body in an 85% height container', () => {
     render(<MobileDetailSheet />);
     const sheet = screen.getByTestId('mobile-detail-sheet');
-    const wrapper = Array.from(sheet.children).find((el) =>
-      el.className.includes('h-[85%]'),
-    );
+    const wrapper = Array.from(sheet.children).find((el) => el.className.includes('h-[85%]'));
     expect(wrapper).toBeTruthy();
   });
 

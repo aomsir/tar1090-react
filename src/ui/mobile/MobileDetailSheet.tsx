@@ -111,7 +111,9 @@ export function MobileDetailSheet() {
                     {d.registration ? (
                       <span className="font-mono text-slate-300">{d.registration}</span>
                     ) : null}
-                    {d.registration && d.typeCode ? <span className="text-slate-600">·</span> : null}
+                    {d.registration && d.typeCode ? (
+                      <span className="text-slate-600">·</span>
+                    ) : null}
                     {d.typeCode ? <span>{d.typeCode}</span> : null}
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
@@ -211,7 +213,11 @@ export function MobileDetailSheet() {
                         </h3>
                       </div>
                       {group.rows.map((row) => (
-                        <Field key={`${group.title}-${row.label}`} label={row.label} value={row.value} />
+                        <Field
+                          key={`${group.title}-${row.label}`}
+                          label={row.label}
+                          value={row.value}
+                        />
                       ))}
                     </section>
                   );
