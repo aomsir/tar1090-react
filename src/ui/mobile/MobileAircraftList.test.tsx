@@ -148,6 +148,15 @@ describe('MobileAircraftList', () => {
     expect(list.className).not.toContain('rounded-2xl');
   });
 
+  it('flushes the list top against the bottom of the top bar', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const list = screen.getByTestId('mobile-aircraft-list');
+    expect(list.className).toContain('top-11');
+    expect(list.className).not.toContain('top-12');
+  });
+
   it('renders flat rows without per-row rounded blocks', async () => {
     await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);

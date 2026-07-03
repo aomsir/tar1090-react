@@ -181,4 +181,46 @@ describe('MobileTopBar', () => {
     render(<MobileTopBar />);
     expect(screen.getByRole('button', { name: '显示飞机列表' })).toBeInTheDocument();
   });
+
+  it('hides the pinned list when a pointerdown lands outside the header', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.click(button);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
+
+  it('keeps the query text after dismissing the list via outside pointerdown', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    fireEvent.change(input, { target: { value: 'CCA' } });
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    expect(input).toHaveValue('CCA');
+  });
+
+  it('shows the list again after focusing the search input following an outside dismissal', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const input = screen.getByPlaceholderText('Flight / registration / ICAO');
+    fireEvent.change(input, { target: { value: 'CCA' } });
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+    fireEvent.focus(input);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+  });
+
+  it('keeps the list visible when a pointerdown lands inside the header', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const button = screen.getByRole('button', { name: 'Show aircraft list' });
+    fireEvent.click(button);
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+    fireEvent.pointerDown(screen.getByPlaceholderText('Flight / registration / ICAO'));
+    expect(screen.getByTestId('mobile-aircraft-list')).toBeInTheDocument();
+  });
 });

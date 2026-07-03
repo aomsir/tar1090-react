@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button, SearchField } from '@heroui/react';
 import { List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -15,8 +15,10 @@ export function MobileTopBar() {
   const select = useSelectionStore((s) => s.select);
   const [focused, setFocused] = useState(false);
   const [listPinned, setListPinned] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const searchDriven = focused || query.trim().length > 0;
-  const showList = searchDriven || listPinned;
+  const showList = (searchDriven || listPinned) && !dismissed;
 
   const handleSelect = (hex: string) => {
     select(hex);
@@ -24,8 +26,22 @@ export function MobileTopBar() {
     setListPinned(false);
   };
 
+  useEffect(() => {
+    if (!showList) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setDismissed(true);
+        setFocused(false);
+        setListPinned(false);
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showList]);
+
   return (
     <header
+      ref={headerRef}
       data-testid="mobile-top-bar"
       className="absolute left-3 right-3 top-3 z-10 text-white"
       onBlur={(event) => {
@@ -38,7 +54,10 @@ export function MobileTopBar() {
         <SearchField
           aria-label={t('commandBar.searchAircraft')}
           value={query}
-          onChange={setQuery}
+          onChange={(value) => {
+            setDismissed(false);
+            setQuery(value);
+          }}
           variant="secondary"
           className="min-w-0 flex-1"
         >
@@ -47,7 +66,10 @@ export function MobileTopBar() {
             <SearchField.Input
               className="min-w-0 flex-1"
               placeholder={t('commandBar.searchPlaceholder')}
-              onFocus={() => setFocused(true)}
+              onFocus={() => {
+                setFocused(true);
+                setDismissed(false);
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Escape' && showList) {
                   setFocused(false);
@@ -71,6 +93,7 @@ export function MobileTopBar() {
               setFocused(false);
             } else {
               setListPinned(true);
+              setDismissed(false);
             }
           }}
         >
