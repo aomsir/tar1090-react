@@ -9,7 +9,7 @@ export function RankedBarList({ items, emptyText }: RankedBarListProps) {
   if (items.length === 0) {
     return <div className="py-8 text-center font-mono text-xs text-slate-500">{emptyText}</div>;
   }
-  const max = Math.max(...items.map((i) => i.count));
+  const max = Math.max(1, ...items.map((i) => i.count));
   return (
     <ul className="flex flex-col gap-1.5">
       {items.map((item, index) => (

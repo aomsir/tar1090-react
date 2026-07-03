@@ -37,4 +37,9 @@ describe('RankedBarList', () => {
     render(<RankedBarList items={[]} emptyText="No data" />);
     expect(screen.getByText('No data')).toBeInTheDocument();
   });
+
+  it('renders zero-width bars when all counts are zero', () => {
+    render(<RankedBarList items={[{ name: 'A', count: 0 }]} emptyText="No data" />);
+    expect(screen.getAllByTestId('ranked-bar-fill')[0].style.width).toBe('0%');
+  });
 });
