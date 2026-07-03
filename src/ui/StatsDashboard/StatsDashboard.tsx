@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { formatShortTime } from '@/i18n/format';
 import { SummaryCards } from './SummaryCards';
 import { TypeChart } from './TypeChart';
 import { AirlineChart } from './AirlineChart';
@@ -14,7 +15,7 @@ import { TrafficTimeline } from './TrafficTimeline';
 import { SourceChart } from './SourceChart';
 
 export function StatsDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const stats = useHistoryStatsStore((s) => s.stats);
   const toggle = useToolbarStore((s) => s.toggleStatsDashboard);
 
@@ -28,14 +29,28 @@ export function StatsDashboard() {
 
   if (!stats) return null;
 
+  const timeline = stats.trafficTimeline;
+  const timeRange =
+    timeline.length > 0
+      ? `${formatShortTime(timeline[0].time, i18n.language)} – ${formatShortTime(
+          timeline[timeline.length - 1].time,
+          i18n.language,
+        )}`
+      : '';
+
   return (
     <div
       data-testid="stats-dashboard"
-      className="fixed inset-0 z-50 overflow-auto bg-[#0f1622]/95 backdrop-blur"
+      className="fixed inset-0 z-50 overflow-auto bg-[#0d131d]/95 backdrop-blur"
     >
       <div className="mx-auto max-w-[1600px] px-6 py-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-200">{t('stats.title')}</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-lg font-semibold text-slate-200">{t('stats.title')}</h2>
+            <span data-testid="stats-time-range" className="font-mono text-xs text-slate-500">
+              {timeRange}
+            </span>
+          </div>
           <button
             type="button"
             aria-label={t('stats.close')}
@@ -53,18 +68,18 @@ export function StatsDashboard() {
           peakOnline={stats.peakOnline}
         />
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           <TrafficTimeline data={stats.trafficTimeline} />
           <AltitudeChart data={stats.altitudeBins} />
           <CountryChart data={stats.countryDistribution} />
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <SpeedChart data={stats.speedBins} />
           <DistanceChart data={stats.distanceBins} />
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           <TypeChart data={stats.typeDistribution} />
           <AirlineChart data={stats.airlineDistribution} />
           <SourceChart data={stats.sourceDistribution} />

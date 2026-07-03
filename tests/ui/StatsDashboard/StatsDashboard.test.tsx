@@ -73,4 +73,10 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('历史统计')).toBeInTheDocument();
     expect(screen.getByText('飞机总数')).toBeInTheDocument();
   });
+
+  it('renders history time range in header', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    const range = screen.getByTestId('stats-time-range');
+    expect(range.textContent).not.toBe('');
+  });
 });
