@@ -205,6 +205,8 @@ export interface StatsResource {
     uniqueCallsigns: string;
     military: string;
     peakOnline: string;
+    withCallsign: string;
+    ofTotal: string;
   };
   charts: {
     trafficOverTime: string;

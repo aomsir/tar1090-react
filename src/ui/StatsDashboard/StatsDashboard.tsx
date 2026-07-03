@@ -66,6 +66,7 @@ export function StatsDashboard() {
           uniqueCallsigns={stats.uniqueCallsigns}
           militaryCount={stats.militaryCount}
           peakOnline={stats.peakOnline}
+          peakTime={stats.peakTime}
         />
 
         <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">

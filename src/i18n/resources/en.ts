@@ -184,6 +184,8 @@ const en: TranslationResource = {
       uniqueCallsigns: 'Unique Callsigns',
       military: 'Military',
       peakOnline: 'Peak Online',
+      withCallsign: '{{percent}} with callsign',
+      ofTotal: '{{percent}} of total',
     },
     charts: {
       trafficOverTime: 'Traffic Over Time',

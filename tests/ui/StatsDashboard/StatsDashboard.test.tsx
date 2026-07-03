@@ -74,6 +74,12 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('飞机总数')).toBeInTheDocument();
   });
 
+  it('renders summary context lines', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText('83% with callsign')).toBeInTheDocument(); // 35/42
+    expect(screen.getByText('7.1% of total')).toBeInTheDocument(); // 3/42
+  });
+
   it('renders history time range in header', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     const range = screen.getByTestId('stats-time-range');

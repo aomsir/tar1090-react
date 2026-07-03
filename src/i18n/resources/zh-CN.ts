@@ -184,6 +184,8 @@ const zhCN: TranslationResource = {
       uniqueCallsigns: '唯一呼号',
       military: '军机',
       peakOnline: '在线峰值',
+      withCallsign: '{{percent}} 有呼号',
+      ofTotal: '占比 {{percent}}',
     },
     charts: {
       trafficOverTime: '流量时间线',
