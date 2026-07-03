@@ -50,7 +50,7 @@ export function MobileTopBar() {
         }
       }}
     >
-      <div className="glass flex h-11 items-center gap-2 px-3">
+      <div className="glass flex h-11 items-center gap-2 px-3 [&:has(+[role=listbox])]:rounded-b-none">
         <SearchField
           aria-label={t('commandBar.searchAircraft')}
           value={query}

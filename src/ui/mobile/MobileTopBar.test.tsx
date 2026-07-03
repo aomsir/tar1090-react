@@ -116,6 +116,13 @@ describe('MobileTopBar', () => {
     expect(button).toHaveClass('w-11');
   });
 
+  it('squares the bar bottom corners only when the listbox is present as a sibling', async () => {
+    await setTestLanguage('en');
+    render(<MobileTopBar />);
+    const bar = screen.getByTestId('mobile-top-bar').querySelector('div')!;
+    expect(bar.className).toContain('[&:has(+[role=listbox])]:rounded-b-none');
+  });
+
   it('closes the lightweight list from the explicit aircraft list button when search is inactive', async () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);

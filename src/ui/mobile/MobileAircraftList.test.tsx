@@ -143,9 +143,19 @@ describe('MobileAircraftList', () => {
     vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
     render(<MobileAircraftList onSelect={vi.fn()} />);
     const list = screen.getByTestId('mobile-aircraft-list');
-    expect(list.className).toContain('rounded-lg');
     expect(list.className).toContain('divide-y');
     expect(list.className).not.toContain('rounded-2xl');
+  });
+
+  it('joins the list top seamlessly against the bottom of the top bar', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const list = screen.getByTestId('mobile-aircraft-list');
+    expect(list.classList.contains('rounded-t-none')).toBe(true);
+    expect(list.classList.contains('rounded-b-lg')).toBe(true);
+    expect(list.classList.contains('border-t-0')).toBe(true);
+    expect(list.classList.contains('rounded-lg')).toBe(false);
   });
 
   it('flushes the list top against the bottom of the top bar', async () => {

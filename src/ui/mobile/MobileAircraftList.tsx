@@ -20,7 +20,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
       role="listbox"
       aria-label={t('commandBar.aircraftList')}
       data-testid="mobile-aircraft-list"
-      className="glass absolute left-0 right-0 top-11 max-h-[45dvh] divide-y divide-white/5 overflow-auto rounded-lg text-white shadow-xl"
+      className="glass absolute left-0 right-0 top-11 max-h-[45dvh] divide-y divide-white/5 overflow-auto rounded-t-none rounded-b-lg border-t-0 text-white shadow-xl"
     >
       {rows.map((row) => {
         const label = row.flight || row.hex;
