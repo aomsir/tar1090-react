@@ -135,6 +135,26 @@ describe('MobileAircraftList', () => {
     const option = screen.getByRole('option', { name: /CCA123/i });
     expect(option.className).toContain('focus-visible:ring-2');
     expect(option.className).toContain('focus-visible:ring-white/50');
+    expect(option.className).toContain('focus-visible:ring-inset');
+  });
+
+  it('uses a flat divider list container instead of a heavily rounded card', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const list = screen.getByTestId('mobile-aircraft-list');
+    expect(list.className).toContain('rounded-lg');
+    expect(list.className).toContain('divide-y');
+    expect(list.className).not.toContain('rounded-2xl');
+  });
+
+  it('renders flat rows without per-row rounded blocks', async () => {
+    await setTestLanguage('en');
+    vi.mocked(useAircraftRows).mockReturnValue([row({ hex: 'abc123', flight: 'CCA123' })]);
+    render(<MobileAircraftList onSelect={vi.fn()} />);
+    const option = screen.getByRole('option', { name: /CCA123/i });
+    expect(option.className).not.toContain('rounded-xl');
+    expect(option.className).toContain('active:bg-white/10');
   });
 
   it('renders nothing when there are no rows', async () => {

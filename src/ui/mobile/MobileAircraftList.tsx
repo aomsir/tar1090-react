@@ -20,7 +20,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
       role="listbox"
       aria-label={t('commandBar.aircraftList')}
       data-testid="mobile-aircraft-list"
-      className="glass absolute left-0 right-0 top-12 max-h-[45dvh] overflow-auto rounded-2xl p-1 text-white shadow-xl"
+      className="glass absolute left-0 right-0 top-12 max-h-[45dvh] divide-y divide-white/5 overflow-auto rounded-lg text-white shadow-xl"
     >
       {rows.map((row) => {
         const label = row.flight || row.hex;
@@ -31,7 +31,7 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
             key={row.hex}
             type="button"
             role="option"
-            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left active:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(row.hex)}
           >
