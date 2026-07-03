@@ -1,99 +1,99 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  type PieLabelRenderProps,
-} from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { formatInteger } from '@/i18n/format';
 import { ChartCard } from './ChartCard';
-import { CHART_COLORS } from './chartColors';
+import { AMBER, MONO_FONT, seriesOpacity } from './chartColors';
 
 interface SourceChartProps {
   data: { name: string; count: number }[];
 }
 
-const renderCustomLabel = ({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  percent,
-}: PieLabelRenderProps) => {
-  if (!percent || percent < 0.05) return null;
-
-  const RADIAN = Math.PI / 180;
-  const radius = (innerRadius ?? 0) + ((outerRadius ?? 0) - (innerRadius ?? 0)) * 0.5;
-  const x = (cx ?? 0) + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-  const y = (cy ?? 0) + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      fontSize={11}
-      fontWeight={500}
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
-const CustomTooltip = ({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { value: number; name: string }[];
-}) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded bg-zinc-900 px-2 py-1 text-xs text-white shadow">
-      {payload[0].name}: {payload[0].value}
-    </div>
-  );
-};
+// r=15.9155 -> circumference ~= 100, so dash lengths are percentages
+const RADIUS = 15.9155;
 
 export function SourceChart({ data }: SourceChartProps) {
-  const { t } = useTranslation();
-  const localizedData = data.map((d) => ({
+  const { t, i18n } = useTranslation();
+  const localized = data.map((d) => ({
     ...d,
     name: d.name === 'Other' ? t('stats.categories.other') : d.name,
   }));
+  const total = localized.reduce((sum, d) => sum + d.count, 0);
+
+  if (total === 0) {
+    return (
+      <ChartCard title={t('stats.charts.dataSource')}>
+        <div className="py-8 text-center font-mono text-xs text-slate-500">{t('stats.noData')}</div>
+      </ChartCard>
+    );
+  }
+
+  const fracs = localized.map((d) => d.count / total);
+  const segments = localized.map((d, index) => {
+    const frac = fracs[index];
+    const prefixSum = fracs.slice(0, index).reduce((sum, f) => sum + f, 0);
+    return {
+      ...d,
+      frac,
+      dasharray: `${frac * 100} ${100 - frac * 100}`,
+      dashoffset: 25 - prefixSum * 100,
+      opacity: seriesOpacity(index),
+    };
+  });
 
   return (
     <ChartCard title={t('stats.charts.dataSource')}>
-      <ResponsiveContainer width="100%" height={200}>
-        <PieChart>
-          <Pie
-            data={localizedData}
-            dataKey="count"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={70}
-            strokeWidth={0}
-            label={renderCustomLabel}
-            labelLine={false}
+      <div className="flex items-center gap-5 py-2">
+        <svg viewBox="0 0 42 42" className="h-28 w-28 shrink-0" role="img">
+          {segments.map((s) => (
+            <circle
+              key={s.name}
+              cx="21"
+              cy="21"
+              r={RADIUS}
+              fill="none"
+              stroke={AMBER}
+              strokeOpacity={s.opacity}
+              strokeWidth="5"
+              strokeDasharray={s.dasharray}
+              strokeDashoffset={s.dashoffset}
+            />
+          ))}
+          <text
+            x="21"
+            y="20.5"
+            textAnchor="middle"
+            fontSize="7"
+            fontWeight="700"
+            fontFamily={MONO_FONT}
+            fill="#e2e8f0"
           >
-            {data.map((_, i) => (
-              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            wrapperStyle={{ fontSize: '12px' }}
-            iconType="circle"
-            formatter={(value: string) => <span className="text-slate-300">{value}</span>}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+            {formatInteger(total, i18n.language)}
+          </text>
+          <text
+            x="21"
+            y="27"
+            textAnchor="middle"
+            fontSize="3.5"
+            fontFamily={MONO_FONT}
+            fill="#64748b"
+          >
+            TOTAL
+          </text>
+        </svg>
+        <ul className="flex flex-col gap-1.5 font-mono text-[11px]">
+          {segments.map((s) => (
+            <li key={s.name} className="flex items-center gap-2">
+              <span
+                className="h-2 w-2 shrink-0 rounded-[2px]"
+                style={{ backgroundColor: AMBER, opacity: s.opacity }}
+              />
+              <span className="text-slate-300">{s.name}</span>
+              <span className="text-slate-500 tabular-nums">
+                {formatInteger(s.count, i18n.language)} · {Math.round(s.frac * 100)}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </ChartCard>
   );
 }

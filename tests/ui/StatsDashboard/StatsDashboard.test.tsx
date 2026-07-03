@@ -85,4 +85,10 @@ describe('StatsDashboard', () => {
     const range = screen.getByTestId('stats-time-range');
     expect(range.textContent).toMatch(/^\d{2}:\d{2} – \d{2}:\d{2}$/);
   });
+
+  it('renders donut total and legend percentages for data source', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText('40')).toBeInTheDocument(); // donut center total
+    expect(screen.getByText(/100%/)).toBeInTheDocument(); // legend share
+  });
 });
