@@ -77,6 +77,6 @@ describe('StatsDashboard', () => {
   it('renders history time range in header', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     const range = screen.getByTestId('stats-time-range');
-    expect(range.textContent).not.toBe('');
+    expect(range.textContent).toMatch(/^\d{2}:\d{2} – \d{2}:\d{2}$/);
   });
 });
