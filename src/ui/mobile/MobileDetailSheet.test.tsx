@@ -38,12 +38,6 @@ vi.mock('@/features/detail/useAircraftPhoto', () => ({
   useAircraftPhoto: () => ({ photo: null, loading: false }),
 }));
 
-function dragHandle(fromY: number, toY: number) {
-  const handle = screen.getByTestId('sheet-drag-handle');
-  fireEvent.touchStart(handle, { touches: [{ clientY: fromY }] });
-  fireEvent.touchEnd(handle, { changedTouches: [{ clientY: toY }] });
-}
-
 describe('MobileDetailSheet', () => {
   beforeEach(async () => {
     await setTestLanguage('en');
@@ -57,40 +51,19 @@ describe('MobileDetailSheet', () => {
     expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
 
-  it('renders header and key stats in expanded state by default', () => {
+  it('opens at the peek snap point by default', () => {
     render(<MobileDetailSheet />);
     const sheet = screen.getByTestId('mobile-detail-sheet');
-    expect(sheet).toHaveAttribute('data-state', 'expanded');
+    expect(sheet).toHaveAttribute('data-snap', 'peek');
+  });
+
+  it('renders header and key stats', () => {
+    render(<MobileDetailSheet />);
+    const sheet = screen.getByTestId('mobile-detail-sheet');
     expect(sheet).toHaveTextContent('CES2345');
     expect(sheet).toHaveTextContent('B-1234');
     expect(sheet).toHaveTextContent('465');
     expect(sheet).toHaveTextContent('274°');
-  });
-
-  it('expands when dragged up past threshold', () => {
-    render(<MobileDetailSheet />);
-    dragHandle(500, 380); // -120px
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
-  });
-
-  it('stays expanded when drag is below threshold', () => {
-    render(<MobileDetailSheet />);
-    dragHandle(500, 460); // -40px < 60px threshold
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
-  });
-
-  it('collapses from expanded to peek when dragged down', () => {
-    render(<MobileDetailSheet />);
-    dragHandle(300, 420);
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'peek');
-  });
-
-  it('closes (clears selection) when dragged down from peek', () => {
-    render(<MobileDetailSheet />);
-    dragHandle(300, 420); // expanded -> peek
-    dragHandle(300, 420); // peek -> close
-    expect(useSelectionStore.getState().selectedHex).toBeNull();
-    expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
 
   it('closes when close button pressed', () => {
@@ -99,12 +72,10 @@ describe('MobileDetailSheet', () => {
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
-  it('resets to expanded when a different aircraft is selected', () => {
-    const { rerender } = render(<MobileDetailSheet />);
-    dragHandle(300, 420); // -> peek
-    selectedAircraftMock.mockReturnValue({ ...detail, hex: 'def456' } as AircraftDetail);
-    rerender(<MobileDetailSheet />);
-    expect(screen.getByTestId('mobile-detail-sheet')).toHaveAttribute('data-state', 'expanded');
+  it('unmounts the sheet after selection is cleared', () => {
+    render(<MobileDetailSheet />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close details' }));
+    expect(screen.queryByTestId('mobile-detail-sheet')).not.toBeInTheDocument();
   });
 
   it('shows group rows and KML export button', () => {
@@ -112,5 +83,10 @@ describe('MobileDetailSheet', () => {
     expect(screen.getByText('Identity')).toBeInTheDocument();
     expect(screen.getByText('ABC123')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export KML' })).toBeInTheDocument();
+  });
+
+  it('keeps a visual drag handle', () => {
+    render(<MobileDetailSheet />);
+    expect(screen.getByTestId('sheet-drag-handle')).toBeInTheDocument();
   });
 });
