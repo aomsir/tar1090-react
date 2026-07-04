@@ -84,7 +84,9 @@ export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
 
   const renderDonut = () => {
     if (total === 0) {
-      return <div className="py-8 text-center font-mono text-xs text-slate-500">{t('stats.noData')}</div>;
+      return (
+        <div className="py-8 text-center font-mono text-xs text-slate-500">{t('stats.noData')}</div>
+      );
     }
     const fracs = localized.map((d) => d.count / total);
     const segments = localized.map((d, index) => {
