@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       rolldownOptions: {
+        input: {
+          main: 'index.html',
+          login: 'login.html',
+        },
         output: {
           manualChunks(id: string) {
             if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
