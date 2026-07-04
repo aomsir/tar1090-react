@@ -9,7 +9,7 @@ interface TypeChartProps {
 export function TypeChart({ data }: TypeChartProps) {
   const { t } = useTranslation();
   return (
-    <ChartCard title={t('stats.charts.typeDistribution')}>
+    <ChartCard title={t('stats.charts.typeDistribution')} contentClassName="overflow-hidden">
       <RankedBarList
         items={data}
         emptyText={t('stats.noData')}

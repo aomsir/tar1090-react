@@ -9,7 +9,7 @@ interface AirlineChartProps {
 export function AirlineChart({ data }: AirlineChartProps) {
   const { t } = useTranslation();
   return (
-    <ChartCard title={t('stats.charts.airlineDistribution')}>
+    <ChartCard title={t('stats.charts.airlineDistribution')} contentClassName="overflow-hidden">
       <RankedBarList
         items={data}
         emptyText={t('stats.noData')}

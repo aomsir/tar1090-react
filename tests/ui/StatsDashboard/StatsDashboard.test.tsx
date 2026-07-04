@@ -63,6 +63,36 @@ describe('StatsDashboard', () => {
     expect(screen.queryByText('Other')).toBeNull();
   });
 
+  it('clips ranked card bodies so long lists scroll without resizing cards', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      typeDistribution: Array.from({ length: 20 }, (_, i) => ({
+        name: `TYPE${i + 1}`,
+        count: 20 - i,
+      })),
+      airlineDistribution: Array.from({ length: 20 }, (_, i) => ({
+        name: `AIR${i + 1}`,
+        count: 20 - i,
+      })),
+      countryDistribution: Array.from({ length: 15 }, (_, i) => ({
+        name: `Country ${i + 1}`,
+        count: 15 - i,
+      })),
+    });
+
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+
+    for (const label of ['Country', 'Aircraft Type', 'Airline']) {
+      const scrollRegion = screen.getByLabelText(label);
+      expect(scrollRegion.className).toContain('overflow-y-auto');
+      expect(scrollRegion.className).toContain('flex-1');
+      expect(scrollRegion.className).toContain('min-h-0');
+      expect(scrollRegion.parentElement?.className).toContain('overflow-hidden');
+      expect(scrollRegion.closest('.h-full')?.className).toContain('min-h-0');
+      expect(scrollRegion.closest('[class*="max-h-"]')).toBeNull();
+    }
+  });
+
   it('calls toggleStatsDashboard on close button click', async () => {
     useToolbarStore.setState({ statsDashboardOpen: true });
     await renderWithI18n(<StatsDashboard />, { language: 'en' });

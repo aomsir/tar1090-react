@@ -9,7 +9,7 @@ interface CountryChartProps {
 export function CountryChart({ data }: CountryChartProps) {
   const { t } = useTranslation();
   return (
-    <ChartCard title={t('stats.charts.countryDistribution')}>
+    <ChartCard title={t('stats.charts.countryDistribution')} contentClassName="overflow-hidden">
       <RankedBarList
         items={data}
         emptyText={t('stats.noData')}
