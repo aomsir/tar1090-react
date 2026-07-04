@@ -229,7 +229,6 @@ export interface StatsResource {
     other: string;
   };
   otherMetrics: {
-    subtitle: string;
     identified: string;
     positioned: string;
     status: string;

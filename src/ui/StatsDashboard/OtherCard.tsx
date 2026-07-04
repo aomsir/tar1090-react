@@ -4,7 +4,7 @@ import { formatInteger } from '@/i18n/format';
 import { ChartCard } from './ChartCard';
 import { MONO_FONT, seriesColor } from './chartColors';
 
-interface SourceChartProps {
+interface OtherCardProps {
   data: { name: string; count: number }[];
   totalAircraft: number;
   otherStats: OtherStats;
@@ -69,7 +69,7 @@ function MetricGroup({ title, headline, children }: MetricGroupProps) {
   );
 }
 
-export function SourceChart({ data, totalAircraft, otherStats }: SourceChartProps) {
+export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
   const { t, i18n } = useTranslation();
   const localized = data.map((d) => ({
     ...d,

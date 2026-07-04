@@ -208,7 +208,6 @@ const en: TranslationResource = {
       other: 'Other',
     },
     otherMetrics: {
-      subtitle: 'Additional coverage',
       identified: 'Identified',
       positioned: 'Positioned',
       status: 'Status',

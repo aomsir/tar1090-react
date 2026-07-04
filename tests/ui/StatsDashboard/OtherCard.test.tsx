@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
-import { SourceChart } from '@/ui/StatsDashboard/SourceChart';
+import { OtherCard } from '@/ui/StatsDashboard/OtherCard';
 import type { OtherStats } from '@/features/stats/historyStats';
 
 const data = [
@@ -15,28 +15,25 @@ const otherStats: OtherStats = {
   status: { ground: 2, emergency: 0, squawk: 32 },
 };
 
-describe('SourceChart', () => {
+describe('OtherCard', () => {
   it('uses Other as the card title', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
-      { language: 'en' },
-    );
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
     expect(screen.getByText('Other')).toBeInTheDocument();
   });
 
   it('keeps the donut accessible as the Data Source image', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
-      { language: 'en' },
-    );
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
   });
 
   it('strokes donut segments with distinct palette colors', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
-      { language: 'en' },
-    );
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
     const svg = screen.getByRole('img', { name: 'Data Source' });
     const circles = svg.querySelectorAll('circle');
     expect(circles).toHaveLength(2);
@@ -46,30 +43,47 @@ describe('SourceChart', () => {
   });
 
   it('renders matching legend swatch colors', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
-      { language: 'en' },
-    );
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
     const swatches = screen.getAllByTestId('source-legend-swatch');
     expect(swatches[0].style.backgroundColor).toBe('rgb(251, 191, 36)');
     expect(swatches[1].style.backgroundColor).toBe('rgb(56, 189, 248)');
   });
 
   it('renders Identified, Positioned, and Status metric groups', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
-      { language: 'en' },
-    );
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
     expect(screen.getByText('Identified')).toBeInTheDocument();
     expect(screen.getByText('Positioned')).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
   it('shows No emergency text when emergency count is zero', async () => {
-    await renderWithI18n(
-      <SourceChart data={data} totalAircraft={40} otherStats={otherStats} />,
+    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+      language: 'en',
+    });
+    expect(screen.getByText('No emergency')).toBeInTheDocument();
+  });
+
+  it('renders metric percentages as -- and never NaN/Infinity when totalAircraft is 0', async () => {
+    const { container } = await renderWithI18n(
+      <OtherCard data={[{ name: 'ADS-B', count: 1 }]} totalAircraft={0} otherStats={otherStats} />,
       { language: 'en' },
     );
-    expect(screen.getByText('No emergency')).toBeInTheDocument();
+
+    // Eight metric bars across Identified/Positioned/Status groups. Each should
+    // show the placeholder percent rather than NaN/Infinity when total is zero.
+    const placeholders = container.querySelectorAll('.text-slate-300.tabular-nums');
+    expect(placeholders).toHaveLength(8);
+    placeholders.forEach((node) => {
+      expect(node.textContent).toContain('--');
+      expect(node.textContent).not.toContain('NaN');
+      expect(node.textContent).not.toContain('Infinity');
+    });
+
+    expect(container.textContent).not.toContain('NaN');
+    expect(container.textContent).not.toContain('Infinity');
   });
 });

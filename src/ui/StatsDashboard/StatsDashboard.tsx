@@ -11,7 +11,7 @@ import { AltitudeChart } from './AltitudeChart';
 import { SpeedChart } from './SpeedChart';
 import { DistanceChart } from './DistanceChart';
 import { TrafficTimeline } from './TrafficTimeline';
-import { SourceChart } from './SourceChart';
+import { OtherCard } from './OtherCard';
 
 export function StatsDashboard() {
   const { t } = useTranslation();
@@ -110,7 +110,7 @@ export function StatsDashboard() {
         <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           <TypeChart data={stats.typeDistribution} />
           <AirlineChart data={stats.airlineDistribution} />
-          <SourceChart
+          <OtherCard
             data={stats.sourceDistribution}
             totalAircraft={stats.totalAircraft}
             otherStats={stats.otherStats}

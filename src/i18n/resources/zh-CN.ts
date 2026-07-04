@@ -208,7 +208,6 @@ const zhCN: TranslationResource = {
       other: '其他',
     },
     otherMetrics: {
-      subtitle: '附加覆盖',
       identified: '身份识别',
       positioned: '位置数据',
       status: '状态',
