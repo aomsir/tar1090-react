@@ -48,10 +48,11 @@ export function RankedBarList({
   );
 
   if (scrollable) {
+    const accessibleScrollLabel = scrollLabel ?? 'Scrollable ranked items';
     return (
       <div
-        aria-label={scrollLabel}
-        className="max-h-44 overflow-y-auto pr-1 scrollbar-none [mask-image:linear-gradient(to_bottom,transparent_0,black_14px,black_calc(100%-14px),transparent_100%)]"
+        aria-label={accessibleScrollLabel}
+        className="max-h-44 overflow-y-auto pr-1 scrollbar-none [mask-image:linear-gradient(to_bottom,black_14px,black_calc(100%_-_14px),transparent_100%)]"
         tabIndex={0}
       >
         {list}

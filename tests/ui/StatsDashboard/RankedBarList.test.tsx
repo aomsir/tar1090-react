@@ -92,7 +92,19 @@ describe('RankedBarList', () => {
     const className = region.className;
     expect(className).toContain('overflow-y-auto');
     expect(className).toContain('scrollbar-none');
+    // Bottom-only fade: no top transparent stop, valid Tailwind arbitrary value.
     expect(className).toContain('[mask-image:linear-gradient');
+    expect(className).toContain('black_calc(100%_-_14px)');
+    expect(className).not.toContain('transparent_0');
     expect(screen.getAllByRole('listitem')).toHaveLength(8);
+  });
+
+  it('provides a fallback accessible label when scrollLabel is omitted', () => {
+    const items = Array.from({ length: 8 }, (_, i) => ({
+      name: `Item ${i + 1}`,
+      count: 10 - i,
+    }));
+    render(<RankedBarList items={items} emptyText="No data" scrollable />);
+    expect(screen.getByLabelText('Scrollable ranked items')).toBeInTheDocument();
   });
 });
