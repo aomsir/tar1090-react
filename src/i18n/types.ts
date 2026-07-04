@@ -222,10 +222,28 @@ export interface StatsResource {
     airlineDistribution: string;
     countryDistribution: string;
     dataSource: string;
+    other: string;
   };
   categories: {
     ground: string;
     other: string;
+  };
+  otherMetrics: {
+    subtitle: string;
+    identified: string;
+    positioned: string;
+    status: string;
+    callsign: string;
+    type: string;
+    registration: string;
+    position: string;
+    speed: string;
+    altitude: string;
+    ground: string;
+    emergency: string;
+    squawk: string;
+    noEmergency: string;
+    emergencyCount: string;
   };
 }
 

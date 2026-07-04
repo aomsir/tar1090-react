@@ -34,6 +34,11 @@ const mockStats: HistoryStatistics = {
   speedBins: [{ range: '400-450', count: 8 }],
   distanceBins: [{ range: '50-75', count: 6 }],
   trafficTimeline: [{ time: 1000, count: 20 }],
+  otherStats: {
+    identified: { any: 37, callsign: 35, type: 30, registration: 28 },
+    positioned: { position: 40, speed: 34, altitude: 36 },
+    status: { ground: 2, emergency: 0, squawk: 32 },
+  },
 };
 
 describe('StatsDashboard', () => {
@@ -54,7 +59,7 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('Aircraft Type')).toBeInTheDocument();
     expect(screen.getByText('Airline')).toBeInTheDocument();
     expect(screen.getByText('Traffic Over Time')).toBeInTheDocument();
-    expect(screen.getByText('Data Source')).toBeInTheDocument();
+    expect(screen.getByText('Other')).toBeInTheDocument();
   });
 
   it('calls toggleStatsDashboard on close button click', async () => {
@@ -154,6 +159,14 @@ describe('StatsDashboard', () => {
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
     expect(screen.getByText('40')).toBeInTheDocument(); // donut center total
     expect(screen.getByText(/100%/)).toBeInTheDocument(); // legend share
+  });
+
+  it('renders Identified, Positioned, Status, and No emergency from otherStats', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText('Identified')).toBeInTheDocument();
+    expect(screen.getByText('Positioned')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByText('No emergency')).toBeInTheDocument();
   });
 
   it('annotates the traffic peak on the timeline', async () => {
