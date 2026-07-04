@@ -10,7 +10,12 @@ export function AirlineChart({ data }: AirlineChartProps) {
   const { t } = useTranslation();
   return (
     <ChartCard title={t('stats.charts.airlineDistribution')}>
-      <RankedBarList items={data} emptyText={t('stats.noData')} />
+      <RankedBarList
+        items={data}
+        emptyText={t('stats.noData')}
+        scrollable
+        scrollLabel={t('stats.charts.airlineDistribution')}
+      />
     </ChartCard>
   );
 }

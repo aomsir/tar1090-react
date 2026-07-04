@@ -4,14 +4,22 @@ interface RankedBarListProps {
   items: { name: string; count: number }[];
   emptyText: string;
   labelWidth?: string;
+  scrollable?: boolean;
+  scrollLabel?: string;
 }
 
-export function RankedBarList({ items, emptyText, labelWidth = 'w-20' }: RankedBarListProps) {
+export function RankedBarList({
+  items,
+  emptyText,
+  labelWidth = 'w-20',
+  scrollable = false,
+  scrollLabel,
+}: RankedBarListProps) {
   if (items.length === 0) {
     return <div className="py-8 text-center font-mono text-xs text-slate-500">{emptyText}</div>;
   }
   const max = Math.max(1, ...items.map((i) => i.count));
-  return (
+  const list = (
     <ul className="flex flex-col gap-1.5">
       {items.map((item, index) => (
         <li key={item.name} className="flex items-center gap-2">
@@ -38,4 +46,18 @@ export function RankedBarList({ items, emptyText, labelWidth = 'w-20' }: RankedB
       ))}
     </ul>
   );
+
+  if (scrollable) {
+    return (
+      <div
+        aria-label={scrollLabel}
+        className="max-h-44 overflow-y-auto pr-1 scrollbar-none [mask-image:linear-gradient(to_bottom,transparent_0,black_14px,black_calc(100%-14px),transparent_100%)]"
+        tabIndex={0}
+      >
+        {list}
+      </div>
+    );
+  }
+
+  return list;
 }

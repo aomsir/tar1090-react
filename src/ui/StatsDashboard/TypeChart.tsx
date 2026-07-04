@@ -10,7 +10,12 @@ export function TypeChart({ data }: TypeChartProps) {
   const { t } = useTranslation();
   return (
     <ChartCard title={t('stats.charts.typeDistribution')}>
-      <RankedBarList items={data} emptyText={t('stats.noData')} />
+      <RankedBarList
+        items={data}
+        emptyText={t('stats.noData')}
+        scrollable
+        scrollLabel={t('stats.charts.typeDistribution')}
+      />
     </ChartCard>
   );
 }

@@ -73,4 +73,26 @@ describe('RankedBarList', () => {
     expect(label.className).toContain('w-32');
     expect(label.className).not.toContain('w-20');
   });
+
+  it('wraps the list in an accessible scroll region when scrollable', () => {
+    const items = Array.from({ length: 8 }, (_, i) => ({
+      name: `Item ${i + 1}`,
+      count: 10 - i,
+    }));
+    render(
+      <RankedBarList
+        items={items}
+        emptyText="No data"
+        scrollable
+        scrollLabel="Country distribution"
+      />,
+    );
+    const region = screen.getByLabelText('Country distribution');
+    expect(region.getAttribute('tabIndex')).toBe('0');
+    const className = region.className;
+    expect(className).toContain('overflow-y-auto');
+    expect(className).toContain('scrollbar-none');
+    expect(className).toContain('[mask-image:linear-gradient');
+    expect(screen.getAllByRole('listitem')).toHaveLength(8);
+  });
 });
