@@ -53,10 +53,7 @@ export function SummaryCards({
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {items.map((item) => (
-        <div
-          key={item.label}
-          className="rounded-lg border border-amber-400/10 bg-white/[0.03] p-4"
-        >
+        <div key={item.label} className="rounded-lg border border-amber-400/10 bg-white/[0.03] p-4">
           <div className="font-mono text-[10px] tracking-widest text-slate-500 uppercase">
             {item.label}
           </div>
