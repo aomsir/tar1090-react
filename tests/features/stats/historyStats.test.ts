@@ -211,6 +211,8 @@ describe('computeHistoryStats', () => {
     expect(s.peakOnline).toBe(99);
     expect(s.peakTime).toBe(1000 + 100 * 30);
     expect(s.trafficTimeline.some((p) => p.count === 99)).toBe(true);
+    expect(s.trafficTimeline[0].time).toBe(longFrames[0].now);
+    expect(s.trafficTimeline[s.trafficTimeline.length - 1].time).toBe(longFrames[longFrames.length - 1].now);
   });
 
   it('does not downsample short timelines', () => {

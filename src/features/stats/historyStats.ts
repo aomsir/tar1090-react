@@ -55,13 +55,16 @@ function downsampleTimeline(
   if (points.length <= MAX_TRAFFIC_TIMELINE_POINTS) return points;
   const bucketSize = Math.ceil(points.length / MAX_TRAFFIC_TIMELINE_POINTS);
   const sampled: { time: number; count: number }[] = [];
+  const lastOriginalTime = points[points.length - 1].time;
   for (let start = 0; start < points.length; start += bucketSize) {
     const bucket = points.slice(start, start + bucketSize);
     let max = bucket[0].count;
     for (let i = 1; i < bucket.length; i++) {
       if (bucket[i].count > max) max = bucket[i].count;
     }
-    sampled.push({ time: bucket[0].time, count: max });
+    const isLastBucket = start + bucketSize >= points.length;
+    const time = isLastBucket ? lastOriginalTime : bucket[0].time;
+    sampled.push({ time, count: max });
   }
   return sampled;
 }
