@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginPage } from '@/ui/LoginPage/LoginPage';
@@ -8,7 +8,30 @@ describe('LoginPage', () => {
   beforeEach(() => {
     document.cookie = 'tar1090_auth=; max-age=0; path=/';
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * Stub window.location with a controllable `href` setter.
+   * Uses vi.stubGlobal for per-test isolation (restored automatically).
+   */
+  function stubLocation(overrides: { pathname?: string; search?: string } = {}) {
+    const hrefSpy = vi.fn();
+    vi.stubGlobal('location', {
+      href: '',
+      pathname: window.location.pathname,
+      search: window.location.search,
+      set href(v: string) {
+        hrefSpy(v);
+      },
+      ...overrides,
+    });
+    return hrefSpy;
+  }
 
   it('renders password input and submit button', async () => {
     await renderWithI18n(<LoginPage />, { language: 'en' });
@@ -34,19 +57,7 @@ describe('LoginPage', () => {
       'fetch',
       vi.fn(async () => new Response('{}', { status: 200 })),
     );
-    // Mock location redirect
-    const hrefSpy = vi.fn();
-    Object.defineProperty(window, 'location', {
-      value: {
-        ...window.location,
-        href: '',
-        set href(v: string) {
-          hrefSpy(v);
-        },
-      },
-      writable: true,
-      configurable: true,
-    });
+    const hrefSpy = stubLocation();
 
     await renderWithI18n(<LoginPage />, { language: 'en' });
     const input = screen.getByPlaceholderText('Enter password');
@@ -74,7 +85,7 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Incorrect password')).toBeInTheDocument();
     });
-    // Cookie should be cleared
+    expect(input).toHaveValue('');
     expect(document.cookie).not.toContain('tar1090_auth=wrongpass');
   });
 
@@ -88,12 +99,15 @@ describe('LoginPage', () => {
     );
 
     await renderWithI18n(<LoginPage />, { language: 'en' });
-    await user.type(screen.getByPlaceholderText('Enter password'), 'test');
+    const input = screen.getByPlaceholderText('Enter password');
+    await user.type(input, 'test');
     await user.click(screen.getByRole('button', { name: 'Sign In' }));
 
     await waitFor(() => {
       expect(screen.getByText('Network error, please try again')).toBeInTheDocument();
     });
+    expect(document.cookie).not.toContain('tar1090_auth=test');
+    expect(input).toHaveValue('');
   });
 
   it('submits on Enter key', async () => {
@@ -102,18 +116,7 @@ describe('LoginPage', () => {
       'fetch',
       vi.fn(async () => new Response('{}', { status: 200 })),
     );
-    const hrefSpy = vi.fn();
-    Object.defineProperty(window, 'location', {
-      value: {
-        ...window.location,
-        href: '',
-        set href(v: string) {
-          hrefSpy(v);
-        },
-      },
-      writable: true,
-      configurable: true,
-    });
+    const hrefSpy = stubLocation();
 
     await renderWithI18n(<LoginPage />, { language: 'en' });
     const input = screen.getByPlaceholderText('Enter password');
@@ -129,20 +132,7 @@ describe('LoginPage', () => {
       'fetch',
       vi.fn(async () => new Response('{}', { status: 200 })),
     );
-    const hrefSpy = vi.fn();
-    Object.defineProperty(window, 'location', {
-      value: {
-        ...window.location,
-        href: '',
-        pathname: '/login.html',
-        search: '?token=tk_abc123',
-        set href(v: string) {
-          hrefSpy(v);
-        },
-      },
-      writable: true,
-      configurable: true,
-    });
+    const hrefSpy = stubLocation({ pathname: '/login.html', search: '?token=tk_abc123' });
     const replaceSpy = vi.spyOn(history, 'replaceState');
 
     await renderWithI18n(<LoginPage />, { language: 'en' });
@@ -159,18 +149,9 @@ describe('LoginPage', () => {
       'fetch',
       vi.fn(async () => new Response('Unauthorized', { status: 401 })),
     );
-    Object.defineProperty(window, 'location', {
-      value: {
-        ...window.location,
-        href: '',
-        pathname: '/login.html',
-        search: '?token=tk_expired',
-        set href(_v: string) {
-          /* no-op */
-        },
-      },
-      writable: true,
-      configurable: true,
+    stubLocation({
+      pathname: '/login.html',
+      search: '?token=tk_expired',
     });
     vi.spyOn(history, 'replaceState').mockImplementation(() => {});
 

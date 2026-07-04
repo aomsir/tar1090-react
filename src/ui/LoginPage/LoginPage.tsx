@@ -90,6 +90,8 @@ export function LoginPage() {
     } catch {
       clearAuthCookie();
       setError(t('auth.error.network'));
+      setPassword('');
+      inputRef.current?.focus();
     } finally {
       setPending(false);
     }
@@ -171,6 +173,7 @@ export function LoginPage() {
           <TextField
             name="password"
             type="password"
+            aria-label={t('auth.passwordPlaceholder')}
             isInvalid={!!error}
             value={password}
             onChange={setPassword}
