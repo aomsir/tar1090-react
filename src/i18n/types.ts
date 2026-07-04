@@ -203,6 +203,8 @@ export interface StatsResource {
   pastMinutes: string;
   pastHours: string;
   pastHoursMinutes: string;
+  pastDays: string;
+  pastDaysHours: string;
   summary: {
     totalAircraft: string;
     uniqueCallsigns: string;

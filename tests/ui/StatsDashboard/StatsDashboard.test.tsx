@@ -88,7 +88,7 @@ describe('StatsDashboard', () => {
       ...mockStats,
       trafficTimeline: [
         { time: 1000, count: 20 },
-        { time: 1000 + 5 * 60_000, count: 10 },
+        { time: 1000 + 5 * 60, count: 10 },
       ],
     });
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
@@ -106,7 +106,7 @@ describe('StatsDashboard', () => {
       ...mockStats,
       trafficTimeline: [
         { time: 1000, count: 20 },
-        { time: 1000 + 80 * 60_000, count: 10 },
+        { time: 1000 + 80 * 60, count: 10 },
       ],
     });
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
@@ -118,11 +118,23 @@ describe('StatsDashboard', () => {
       ...mockStats,
       trafficTimeline: [
         { time: 1000, count: 20 },
-        { time: 1000 + 120 * 60_000, count: 10 },
+        { time: 1000 + 120 * 60, count: 10 },
       ],
     });
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 2 H');
+  });
+
+  it('shows day-scale windows with days and remaining hours', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      trafficTimeline: [
+        { time: 1000, count: 20 },
+        { time: 1000 + (20 * 24 + 5) * 60 * 60, count: 10 },
+      ],
+    });
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 20 D 5 H');
   });
 
   it('renders donut total and legend percentages for data source', async () => {

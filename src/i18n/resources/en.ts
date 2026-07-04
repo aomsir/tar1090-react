@@ -182,6 +182,8 @@ const en: TranslationResource = {
     pastMinutes: 'PAST {{min}} MIN',
     pastHours: 'PAST {{h}} H',
     pastHoursMinutes: 'PAST {{h}} H {{m}} MIN',
+    pastDays: 'PAST {{d}} D',
+    pastDaysHours: 'PAST {{d}} D {{h}} H',
     summary: {
       totalAircraft: 'Total Aircraft',
       uniqueCallsigns: 'Unique Callsigns',

@@ -29,20 +29,34 @@ export function StatsDashboard() {
   if (!stats) return null;
 
   const timeline = stats.trafficTimeline;
+  const spanMin =
+    timeline.length > 1
+      ? Math.max(0, Math.round((timeline[timeline.length - 1].time - timeline[0].time) / 60))
+      : 0;
   let timeRange = '';
   if (timeline.length > 0) {
-    const spanMin = Math.round((timeline[timeline.length - 1].time - timeline[0].time) / 60_000);
     if (spanMin < 1) {
       timeRange = t('stats.pastLessThanMin');
     } else if (spanMin < 60) {
       timeRange = t('stats.pastMinutes', { min: spanMin });
-    } else if (spanMin % 60 === 0) {
-      timeRange = t('stats.pastHours', { h: spanMin / 60 });
     } else {
-      timeRange = t('stats.pastHoursMinutes', {
-        h: Math.floor(spanMin / 60),
-        m: spanMin % 60,
-      });
+      const hours = Math.floor(spanMin / 60);
+      const minutes = spanMin % 60;
+      if (hours < 24) {
+        if (minutes === 0) {
+          timeRange = t('stats.pastHours', { h: hours });
+        } else {
+          timeRange = t('stats.pastHoursMinutes', { h: hours, m: minutes });
+        }
+      } else {
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        if (remainingHours === 0) {
+          timeRange = t('stats.pastDays', { d: days });
+        } else {
+          timeRange = t('stats.pastDaysHours', { d: days, h: remainingHours });
+        }
+      }
     }
   }
 
