@@ -2,6 +2,25 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { PeakStats } from '@/features/playback/pTracks';
 
+export interface OtherStats {
+  identified: {
+    any: number;
+    callsign: number;
+    type: number;
+    registration: number;
+  };
+  positioned: {
+    position: number;
+    speed: number;
+    altitude: number;
+  };
+  status: {
+    ground: number;
+    emergency: number;
+    squawk: number;
+  };
+}
+
 export interface HistoryStatistics {
   totalAircraft: number;
   uniqueCallsigns: number;
@@ -19,6 +38,32 @@ export interface HistoryStatistics {
   distanceBins: { range: string; count: number }[];
 
   trafficTimeline: { time: number; count: number }[];
+  otherStats: OtherStats;
+}
+
+const MAX_TRAFFIC_TIMELINE_POINTS = 200;
+
+function isEmergency(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized !== '' && normalized !== 'none' && normalized !== 'no emergency';
+}
+
+function downsampleTimeline(
+  points: { time: number; count: number }[],
+): { time: number; count: number }[] {
+  if (points.length <= MAX_TRAFFIC_TIMELINE_POINTS) return points;
+  const bucketSize = Math.ceil(points.length / MAX_TRAFFIC_TIMELINE_POINTS);
+  const sampled: { time: number; count: number }[] = [];
+  for (let start = 0; start < points.length; start += bucketSize) {
+    const bucket = points.slice(start, start + bucketSize);
+    let max = bucket[0].count;
+    for (let i = 1; i < bucket.length; i++) {
+      if (bucket[i].count > max) max = bucket[i].count;
+    }
+    sampled.push({ time: bucket[0].time, count: max });
+  }
+  return sampled;
 }
 
 function topN(map: Map<string, number>, n: number): { name: string; count: number }[] {
@@ -130,6 +175,17 @@ export function computeHistoryStats(
   const sourceMap = new Map<string, number>();
   const altBinMap = new Map<string, number>();
 
+  let identifiedAny = 0;
+  let identifiedCallsign = 0;
+  let identifiedType = 0;
+  let identifiedRegistration = 0;
+  let positionedPosition = 0;
+  let positionedSpeed = 0;
+  let positionedAltitude = 0;
+  let statusGround = 0;
+  let statusEmergency = 0;
+  let statusSquawk = 0;
+
   for (const ac of allAircraft) {
     if (ac.flight) callsigns.add(ac.flight);
     if (ac.isMilitary) militaryCount++;
@@ -154,6 +210,22 @@ export function computeHistoryStats(
     if (binLabel) {
       altBinMap.set(binLabel, (altBinMap.get(binLabel) ?? 0) + 1);
     }
+
+    const hasCallsign = Boolean(ac.flight);
+    const hasType = Boolean(ac.typeCode);
+    const hasRegistration = Boolean(ac.registration);
+    if (hasCallsign) identifiedCallsign++;
+    if (hasType) identifiedType++;
+    if (hasRegistration) identifiedRegistration++;
+    if (hasCallsign || hasType || hasRegistration) identifiedAny++;
+
+    if (ac.hasPosition()) positionedPosition++;
+    if (ac.speed !== undefined) positionedSpeed++;
+    if (ac.altitude !== undefined) positionedAltitude++;
+
+    if (ac.altitude === 'ground') statusGround++;
+    if (isEmergency(ac.emergency)) statusEmergency++;
+    if (ac.squawk && ac.squawk.trim() !== '') statusSquawk++;
   }
 
   const altitudeBins = ALTITUDE_BIN_ORDER.filter((label) => altBinMap.has(label)).map((label) => ({
@@ -195,6 +267,24 @@ export function computeHistoryStats(
     altitudeBins,
     speedBins: buildHistogram(speeds, SPEED_BINS, ''),
     distanceBins: buildHistogram(distances, DISTANCE_BINS, ''),
-    trafficTimeline,
+    trafficTimeline: downsampleTimeline(trafficTimeline),
+    otherStats: {
+      identified: {
+        any: identifiedAny,
+        callsign: identifiedCallsign,
+        type: identifiedType,
+        registration: identifiedRegistration,
+      },
+      positioned: {
+        position: positionedPosition,
+        speed: positionedSpeed,
+        altitude: positionedAltitude,
+      },
+      status: {
+        ground: statusGround,
+        emergency: statusEmergency,
+        squawk: statusSquawk,
+      },
+    },
   };
 }

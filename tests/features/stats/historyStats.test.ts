@@ -12,6 +12,12 @@ function makeAircraft(overrides: Partial<Aircraft> & { hex: string }): Aircraft 
   if (overrides.country !== undefined) ac.country = overrides.country;
   if (overrides.addrType !== undefined) ac.addrType = overrides.addrType;
   if (overrides.isMilitary !== undefined) ac.isMilitary = overrides.isMilitary;
+  if (overrides.registration !== undefined) ac.registration = overrides.registration;
+  if (overrides.speed !== undefined) ac.speed = overrides.speed;
+  if (overrides.lat !== undefined) ac.lat = overrides.lat;
+  if (overrides.lon !== undefined) ac.lon = overrides.lon;
+  if (overrides.emergency !== undefined) ac.emergency = overrides.emergency;
+  if (overrides.squawk !== undefined) ac.squawk = overrides.squawk;
   return ac;
 }
 
@@ -189,5 +195,66 @@ describe('computeHistoryStats', () => {
 
   it('returns zero peakTime for empty frames', () => {
     expect(computeHistoryStats([], [], null).peakTime).toBe(0);
+  });
+
+  it('downsamples long timelines to <=200 points and preserves peak stats', () => {
+    const longFrames: AircraftSnapshot[] = Array.from({ length: 401 }, (_, i) => ({
+      now: 1000 + i * 30,
+      messages: 0,
+      aircraft:
+        i === 100
+          ? Array.from({ length: 99 }, (_, k) => ({ hex: `p${k}`, lat: 0, lon: 0 }))
+          : [{ hex: 'a1', lat: 0, lon: 0 }],
+    }));
+    const s = computeHistoryStats(longFrames, [], null);
+    expect(s.trafficTimeline.length).toBeLessThanOrEqual(200);
+    expect(s.peakOnline).toBe(99);
+    expect(s.peakTime).toBe(1000 + 100 * 30);
+    expect(s.trafficTimeline.some((p) => p.count === 99)).toBe(true);
+  });
+
+  it('does not downsample short timelines', () => {
+    const shortFrames: AircraftSnapshot[] = [
+      { now: 1, messages: 0, aircraft: [{ hex: 'a', lat: 0, lon: 0 }] },
+      { now: 2, messages: 0, aircraft: [{ hex: 'b', lat: 0, lon: 0 }] },
+      { now: 3, messages: 0, aircraft: [{ hex: 'c', lat: 0, lon: 0 }] },
+    ];
+    const s = computeHistoryStats(shortFrames, [], null);
+    expect(s.trafficTimeline).toEqual([
+      { time: 1, count: 1 },
+      { time: 2, count: 1 },
+      { time: 3, count: 1 },
+    ]);
+  });
+
+  it('computes otherStats counts for identity, position, and status', () => {
+    const otherAircraft: Aircraft[] = [
+      // Identified: has callsign+type, no reg
+      makeAircraft({
+        hex: 'o1',
+        flight: 'IDL1',
+        typeCode: 'B738',
+        addrType: 'adsb_icao',
+        altitude: 35000,
+        speed: 450,
+        lat: 30,
+        lon: 110,
+      }),
+      // Identified: has registration only (also counts in any)
+      makeAircraft({
+        hex: 'o2',
+        registration: 'N12345',
+        addrType: 'adsb_icao',
+        altitude: 'ground',
+        squawk: '7700',
+        emergency: 'general',
+      }),
+    ];
+    const s = computeHistoryStats([], otherAircraft, null);
+    expect(s.otherStats).toEqual({
+      identified: { any: 2, callsign: 1, type: 1, registration: 1 },
+      positioned: { position: 1, speed: 1, altitude: 2 },
+      status: { ground: 1, emergency: 1, squawk: 1 },
+    });
   });
 });
