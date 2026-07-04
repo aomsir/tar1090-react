@@ -99,7 +99,7 @@ describe('RankedBarList', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(8);
   });
 
-  it('uses a stretchy flex-fill container instead of a fixed max height when scrollable', () => {
+  it('uses a flex-scroll container that does not grow from content when scrollable', () => {
     const items = Array.from({ length: 8 }, (_, i) => ({
       name: `Item ${i + 1}`,
       count: 10 - i,
@@ -117,6 +117,13 @@ describe('RankedBarList', () => {
     // Should grow to fill its parent card and let overflow scroll naturally.
     expect(className).toContain('flex-1');
     expect(className).toContain('min-h-0');
+    expect(className).toContain('overflow-y-auto');
+    expect(className).toContain('scrollbar-none');
+    // The scroll area must have a zero base size (h-0 or basis-0) so its
+    // content cannot inflate the flex chain and prevent overflow. Match the
+    // token boundary to avoid colliding with "min-h-0".
+    const tokens = className.split(/\s+/);
+    expect(tokens.includes('h-0') || tokens.includes('basis-0')).toBe(true);
     // The old fixed cap must be gone so short lists can stretch with siblings.
     expect(className).not.toContain('max-h-44');
   });
