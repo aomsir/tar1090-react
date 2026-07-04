@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# tar1090-react
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React rewrite of [tar1090](https://github.com/wiedehopf/tar1090), the popular ADS-B aircraft tracking web interface. Built with React 19, TypeScript, and OpenLayers — fully compatible with the original tar1090 data backend.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Real-time aircraft tracking on an interactive map
+- History playback with timeline controls
+- Aircraft detail view with registration, route, photo lookup, and more
+- Statistics dashboard with various charts
+- Dark mode UI
+- Mobile-responsive layout
+- Internationalization (English & Simplified Chinese)
+- KML export for aircraft tracks
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js 20+
+- pnpm (recommended) or npm
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Install & Run
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/aomsir/tar1090-react.git
+cd tar1090-react
+pnpm install
+pnpm run vendor-db   # download aircraft database
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env.local` file to point at your ADS-B data source:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_PROXY_TARGET=https://your-tar1090-server.example.com
 ```
+
+### Build
+
+```bash
+pnpm build
+pnpm preview
+```
+
+## Tech Stack
+
+React 19 / TypeScript / Vite / Tailwind CSS v4 / HeroUI v3 / OpenLayers / Zustand / TanStack Query / Recharts / i18next / Vitest
+
+## Acknowledgements
+
+This project is a React-based rewrite inspired by the original **[tar1090](https://github.com/wiedehopf/tar1090)** by **[wiedehopf](https://github.com/wiedehopf)** (Matthias Wirth), which is itself based on **[dump1090](https://github.com/flightaware/dump1090)** by **[FlightAware](https://www.flightaware.com/)**. Huge thanks to both projects for their contributions to the ADS-B open-source community.
+
+Additional credits:
+
+- **[tar1090-db](https://github.com/wiedehopf/tar1090-db)** — Aircraft database for type/registration lookups
+- **[country-flag-icons](https://gitlab.com/nicedoc/country-flag-icons)** by @catamphetamine — Country flag SVGs
+
+## License
+
+GPL-2.0-or-later — see [LICENSE](LICENSE).
