@@ -215,6 +215,20 @@ describe('computeHistoryStats', () => {
     expect(s.trafficTimeline[s.trafficTimeline.length - 1].time).toBe(longFrames[longFrames.length - 1].now);
   });
 
+  it('uses the original final timestamp for downsampled timelines with uneven spacing', () => {
+    const unevenFrames: AircraftSnapshot[] = Array.from({ length: 401 }, (_, i) => ({
+      now: i === 400 ? 999999 : 1000 + i * 30,
+      messages: i,
+      aircraft: [{ hex: `u${i}` }],
+    }));
+
+    const s = computeHistoryStats(unevenFrames, [], null);
+
+    expect(s.trafficTimeline.length).toBeLessThanOrEqual(200);
+    expect(s.trafficTimeline[s.trafficTimeline.length - 1].time).toBe(999999);
+    expect(s.trafficTimeline[s.trafficTimeline.length - 1].time).not.toBe(1000 + 399 * 30);
+  });
+
   it('does not downsample short timelines', () => {
     const shortFrames: AircraftSnapshot[] = [
       { now: 1, messages: 0, aircraft: [{ hex: 'a', lat: 0, lon: 0 }] },
