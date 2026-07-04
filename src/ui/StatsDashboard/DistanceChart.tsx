@@ -29,7 +29,7 @@ export function DistanceChart({ data }: DistanceChartProps) {
   return (
     <ChartCard title={t('stats.charts.distanceDistribution')} unit="nmi">
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ left: 0, right: 12 }}>
+        <BarChart data={data} margin={{ top: 16, left: 0, right: 12 }}>
           <XAxis
             dataKey="range"
             tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}

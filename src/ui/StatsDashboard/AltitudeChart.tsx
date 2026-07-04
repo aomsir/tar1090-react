@@ -33,7 +33,7 @@ export function AltitudeChart({ data }: AltitudeChartProps) {
   return (
     <ChartCard title={t('stats.charts.altitudeDistribution')} unit="ft">
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={localizedData} margin={{ left: 0, right: 12 }}>
+        <BarChart data={localizedData} margin={{ top: 16, left: 0, right: 12 }}>
           <XAxis
             dataKey="range"
             tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}

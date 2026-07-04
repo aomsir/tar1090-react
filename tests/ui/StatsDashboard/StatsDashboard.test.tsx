@@ -187,4 +187,11 @@ describe('StatsDashboard', () => {
     expect(screen.queryByText('Count')).toBeNull();
     expect(screen.getByText('Speed Distribution')).toBeInTheDocument();
   });
+
+  it('top-aligns the Type/Airline/Other row to avoid stretched lists', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    const typeChart = screen.getByText('Aircraft Type').closest('div.grid');
+    expect(typeChart).not.toBeNull();
+    expect(typeChart!.className).toContain('items-start');
+  });
 });
