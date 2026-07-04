@@ -83,10 +83,34 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('7.1% of total')).toBeInTheDocument(); // 3/42
   });
 
-  it('renders history time range in header', async () => {
+  it('shows window duration in minutes in the header', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      trafficTimeline: [
+        { time: 1000, count: 20 },
+        { time: 1000 + 5 * 60_000, count: 10 },
+      ],
+    });
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
-    const range = screen.getByTestId('stats-time-range');
-    expect(range.textContent).toMatch(/^\d{2}:\d{2} – \d{2}:\d{2}$/);
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 5 MIN');
+  });
+
+  it('shows sub-minute windows as less than one minute', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    // mockStats has a single timeline point -> zero span
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST <1 MIN');
+  });
+
+  it('shows hour-scale windows with hours and minutes', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      trafficTimeline: [
+        { time: 1000, count: 20 },
+        { time: 1000 + 80 * 60_000, count: 10 },
+      ],
+    });
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 1 H 20 MIN');
   });
 
   it('renders donut total and legend percentages for data source', async () => {

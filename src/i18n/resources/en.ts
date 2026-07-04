@@ -180,6 +180,10 @@ const en: TranslationResource = {
     aircraftAxis: 'Aircraft',
     count: 'Count',
     noData: 'No data',
+    pastLessThanMin: 'PAST <1 MIN',
+    pastMinutes: 'PAST {{min}} MIN',
+    pastHours: 'PAST {{h}} H',
+    pastHoursMinutes: 'PAST {{h}} H {{m}} MIN',
     summary: {
       totalAircraft: 'Total Aircraft',
       uniqueCallsigns: 'Unique Callsigns',

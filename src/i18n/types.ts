@@ -201,6 +201,10 @@ export interface StatsResource {
   aircraftAxis: string;
   count: string;
   noData: string;
+  pastLessThanMin: string;
+  pastMinutes: string;
+  pastHours: string;
+  pastHoursMinutes: string;
   summary: {
     totalAircraft: string;
     uniqueCallsigns: string;

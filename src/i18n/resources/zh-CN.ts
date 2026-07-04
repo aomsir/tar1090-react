@@ -180,6 +180,10 @@ const zhCN: TranslationResource = {
     aircraftAxis: '飞机数',
     count: '数量',
     noData: '无数据',
+    pastLessThanMin: '过去不足 1 分钟',
+    pastMinutes: '过去 {{min}} 分钟',
+    pastHours: '过去 {{h}} 小时',
+    pastHoursMinutes: '过去 {{h}} 小时 {{m}} 分',
     summary: {
       totalAircraft: '飞机总数',
       uniqueCallsigns: '唯一呼号',

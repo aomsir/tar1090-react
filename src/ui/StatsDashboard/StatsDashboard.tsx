@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { useToolbarStore } from '@/store/toolbarStore';
-import { formatShortTime } from '@/i18n/format';
 import { SummaryCards } from './SummaryCards';
 import { TypeChart } from './TypeChart';
 import { AirlineChart } from './AirlineChart';
@@ -15,7 +14,7 @@ import { TrafficTimeline } from './TrafficTimeline';
 import { SourceChart } from './SourceChart';
 
 export function StatsDashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const stats = useHistoryStatsStore((s) => s.stats);
   const toggle = useToolbarStore((s) => s.toggleStatsDashboard);
 
@@ -30,13 +29,24 @@ export function StatsDashboard() {
   if (!stats) return null;
 
   const timeline = stats.trafficTimeline;
-  const timeRange =
-    timeline.length > 0
-      ? `${formatShortTime(timeline[0].time, i18n.language)} – ${formatShortTime(
-          timeline[timeline.length - 1].time,
-          i18n.language,
-        )}`
-      : '';
+  let timeRange = '';
+  if (timeline.length > 0) {
+    const spanMin = Math.round(
+      (timeline[timeline.length - 1].time - timeline[0].time) / 60_000,
+    );
+    if (spanMin < 1) {
+      timeRange = t('stats.pastLessThanMin');
+    } else if (spanMin < 60) {
+      timeRange = t('stats.pastMinutes', { min: spanMin });
+    } else if (spanMin % 60 === 0) {
+      timeRange = t('stats.pastHours', { h: spanMin / 60 });
+    } else {
+      timeRange = t('stats.pastHoursMinutes', {
+        h: Math.floor(spanMin / 60),
+        m: spanMin % 60,
+      });
+    }
+  }
 
   return (
     <div
