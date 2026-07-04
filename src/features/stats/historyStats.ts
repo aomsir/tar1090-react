@@ -69,11 +69,15 @@ function downsampleTimeline(
   return sampled;
 }
 
-function topN(map: Map<string, number>, n: number): { name: string; count: number }[] {
-  const entries = Array.from(map.entries())
+function rankAll(map: Map<string, number>): { name: string; count: number }[] {
+  return Array.from(map.entries())
     .filter(([name]) => name !== '')
-    .sort((a, b) => b[1] - a[1]);
-  return entries.slice(0, n).map(([name, count]) => ({ name, count }));
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+}
+
+function topN(map: Map<string, number>, n: number): { name: string; count: number }[] {
+  return rankAll(map).slice(0, n);
 }
 
 function extractAirlineCode(flight: string): string | null {
@@ -263,9 +267,9 @@ export function computeHistoryStats(
     militaryCount,
     peakOnline,
     peakTime,
-    typeDistribution: topN(typeMap, 20),
-    airlineDistribution: topN(airlineMap, 20),
-    countryDistribution: topN(countryMap, 15),
+    typeDistribution: rankAll(typeMap),
+    airlineDistribution: rankAll(airlineMap),
+    countryDistribution: rankAll(countryMap),
     sourceDistribution: topN(sourceMap, 20),
     altitudeBins,
     speedBins: buildHistogram(speeds, SPEED_BINS, ''),

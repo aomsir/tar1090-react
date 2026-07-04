@@ -165,7 +165,7 @@ describe('computeHistoryStats', () => {
     expect(s.airlineDistribution).toEqual([]);
   });
 
-  it('truncates distributions to their top-N limits', () => {
+  it('renders all countries sorted by count', () => {
     const many: Aircraft[] = Array.from({ length: 16 }, (_, i) =>
       makeAircraft({
         hex: `c${i}`,
@@ -177,7 +177,12 @@ describe('computeHistoryStats', () => {
       }),
     );
     const s = computeHistoryStats([], many, null);
-    expect(s.countryDistribution).toHaveLength(15);
+    expect(s.countryDistribution.length).toBeGreaterThan(15);
+    for (let i = 1; i < s.countryDistribution.length; i++) {
+      expect(s.countryDistribution[i - 1].count).toBeGreaterThanOrEqual(
+        s.countryDistribution[i].count,
+      );
+    }
   });
 
   it('computes peakTime as timestamp of the peak frame', () => {
