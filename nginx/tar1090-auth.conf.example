@@ -3,8 +3,18 @@
 # Prerequisites:
 #   1. Generate tokens:  node scripts/token.mjs set-password <password>
 #   2. Place token files: /etc/tar1090/tokens.json + tokens.map
-#   3. Include this file in your nginx.conf or site config
-#   4. After any token change: nginx -s reload
+#   3. Include this file in the `http {}` block of your nginx.conf. The `map`
+#      directives below are only valid in the `http` context — do NOT include
+#      this file inside a `server {}` block, or nginx will fail to load.
+#   4. Define an upstream block (in `http {}`) pointing at your tar1090
+#      backend, e.g.:
+#          upstream upstream { server 127.0.0.1:8080; }
+#      The `proxy_pass https://upstream;` lines below refer to that name.
+#   5. After any token change: nginx -s reload
+#
+# Note: This example only shows the HTTPS server block. Add a separate
+# `server { listen 80; return 301 https://$host$request_uri; }` block to
+# redirect HTTP → HTTPS.
 
 # ── Token maps ──────────────────────────────────────────────
 map $cookie_tar1090_auth $auth_cookie_ok {
@@ -30,8 +40,8 @@ server {
 
     # ── Crawler blocking ────────────────────────────────────
     location /robots.txt {
-        return 200 "User-agent: *\nDisallow: /\n";
         add_header Content-Type text/plain;
+        return 200 "User-agent: *\nDisallow: /\n";
     }
 
     if ($http_user_agent ~* "(bot|spider|crawl|slurp|Baiduspider|Googlebot)") {
