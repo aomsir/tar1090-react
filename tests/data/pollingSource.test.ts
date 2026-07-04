@@ -103,4 +103,36 @@ describe('PollingSource.getHistoryFrame', () => {
     expect(url).toContain('/data/history_42.json');
     expect(url).toContain('_=');
   });
+
+  it('calls onUnauthorized when response is 401', async () => {
+    const fetchFn = vi.fn(async () => new Response('Unauthorized', { status: 401 }));
+    const onUnauthorized = vi.fn();
+    const src = new PollingSource({ fetchFn, onUnauthorized });
+    await expect(src.getHistoryFrame(0)).rejects.toThrow();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PollingSource.getReceiver', () => {
+  it('calls onUnauthorized when response is 401', async () => {
+    const fetchFn = vi.fn(async () => new Response('Unauthorized', { status: 401 }));
+    const onUnauthorized = vi.fn();
+    const src = new PollingSource({ fetchFn, onUnauthorized });
+    await expect(src.getReceiver()).rejects.toThrow();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PollingSource.subscribe 401 handling', () => {
+  it('calls onUnauthorized and stops polling when response is 401', async () => {
+    const fetchFn = vi.fn(async () => new Response('Unauthorized', { status: 401 }));
+    const onUnauthorized = vi.fn();
+    const src = new PollingSource({ fetchFn, refreshMs: 5, onUnauthorized });
+    const handler = vi.fn();
+    src.subscribe(handler);
+    await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalledTimes(1));
+    expect(handler).not.toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
 });
