@@ -100,4 +100,9 @@ describe('StatsDashboard', () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByText(/20 @/)).toBeInTheDocument();
   });
+
+  it('renders a semantic icon on each summary card', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getAllByTestId('kpi-icon')).toHaveLength(4);
+  });
 });
