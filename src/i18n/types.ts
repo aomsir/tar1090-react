@@ -246,10 +246,24 @@ export interface StatsResource {
 }
 
 /**
+ * Shared shape for auth-related copy used by the login page.
+ */
+export interface AuthResource {
+  passwordPlaceholder: string;
+  submit: string;
+  error: {
+    wrong: string;
+    expired: string;
+    network: string;
+  };
+}
+
+/**
  * Minimal shared resource type covering keys introduced in Tasks 3-7.
  * Future tasks extend this as additional surfaces are translated.
  */
 export interface TranslationResource {
+  auth: AuthResource;
   settings: SettingsResource;
   toolbar: ToolbarResource;
   list: ListResource;

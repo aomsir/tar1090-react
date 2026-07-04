@@ -80,6 +80,18 @@ describe('i18n initialization', () => {
   });
 });
 
+describe('auth keys', () => {
+  it.each(['en', 'zh-CN'] as const)('%s has all auth keys', async (lang) => {
+    const { default: i18n } = await import('@/i18n/index');
+    await i18n.changeLanguage(lang);
+    expect(i18n.t('auth.passwordPlaceholder')).not.toMatch(/^auth\./);
+    expect(i18n.t('auth.submit')).not.toMatch(/^auth\./);
+    expect(i18n.t('auth.error.wrong')).not.toMatch(/^auth\./);
+    expect(i18n.t('auth.error.expired')).not.toMatch(/^auth\./);
+    expect(i18n.t('auth.error.network')).not.toMatch(/^auth\./);
+  });
+});
+
 // i18next-browser-languagedetector reads `navigator.languages` (the array)
 // before `navigator.language`, so both must be overridden to simulate a
 // browser locale in jsdom. This keeps tests independent of the host browser.

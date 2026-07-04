@@ -1,6 +1,15 @@
 import type { TranslationResource } from '../types';
 
 const en: TranslationResource = {
+  auth: {
+    passwordPlaceholder: 'Enter password',
+    submit: 'Sign In',
+    error: {
+      wrong: 'Incorrect password',
+      expired: 'Link expired, please enter password',
+      network: 'Network error, please try again',
+    },
+  },
   settings: {
     title: 'Settings',
     close: 'Close settings',

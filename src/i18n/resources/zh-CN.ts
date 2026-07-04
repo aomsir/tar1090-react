@@ -1,6 +1,15 @@
 import type { TranslationResource } from '../types';
 
 const zhCN: TranslationResource = {
+  auth: {
+    passwordPlaceholder: '请输入密码',
+    submit: '登录',
+    error: {
+      wrong: '密码错误',
+      expired: '链接已失效，请输入密码',
+      network: '网络异常，请重试',
+    },
+  },
   settings: {
     title: '设置',
     close: '关闭设置',
