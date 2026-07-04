@@ -10,11 +10,6 @@ export const AMBER_FILL_TOP = 'rgba(251, 191, 36, 0.3)';
 export const AMBER_FILL_BOTTOM = 'rgba(251, 191, 36, 0.02)';
 export const AMBER_CURSOR = 'rgba(251, 191, 36, 0.08)';
 
-// Opacity ladder for ranked series (item i, 0-based)
-export function seriesOpacity(index: number): number {
-  return Math.max(0.25, 1 - index * 0.08);
-}
-
 // Categorical palette: amber always leads, cool accents follow (index cycles)
 export const SERIES_COLORS = [
   '#fbbf24', // amber

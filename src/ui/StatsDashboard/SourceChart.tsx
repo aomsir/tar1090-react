@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { formatInteger } from '@/i18n/format';
 import { ChartCard } from './ChartCard';
-import { AMBER, MONO_FONT, seriesOpacity } from './chartColors';
+import { MONO_FONT, seriesColor } from './chartColors';
 
 interface SourceChartProps {
   data: { name: string; count: number }[];
@@ -35,7 +35,7 @@ export function SourceChart({ data }: SourceChartProps) {
       frac,
       dasharray: `${frac * 100} ${100 - frac * 100}`,
       dashoffset: 25 - prefixSum * 100,
-      opacity: seriesOpacity(index),
+      color: seriesColor(index),
     };
   });
 
@@ -55,8 +55,7 @@ export function SourceChart({ data }: SourceChartProps) {
               cy="21"
               r={RADIUS}
               fill="none"
-              stroke={AMBER}
-              strokeOpacity={s.opacity}
+              stroke={s.color}
               strokeWidth="5"
               strokeDasharray={s.dasharray}
               strokeDashoffset={s.dashoffset}
@@ -88,8 +87,9 @@ export function SourceChart({ data }: SourceChartProps) {
           {segments.map((s) => (
             <li key={s.name} className="flex items-center gap-2">
               <span
+                data-testid="source-legend-swatch"
                 className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{ backgroundColor: AMBER, opacity: s.opacity }}
+                style={{ backgroundColor: s.color }}
               />
               <span className="text-slate-300">{s.name}</span>
               <span className="text-slate-500 tabular-nums">
