@@ -198,8 +198,6 @@ export interface StatsResource {
   title: string;
   close: string;
   aircraft: string;
-  aircraftAxis: string;
-  count: string;
   noData: string;
   pastLessThanMin: string;
   pastMinutes: string;
@@ -222,10 +220,6 @@ export interface StatsResource {
     airlineDistribution: string;
     countryDistribution: string;
     dataSource: string;
-  };
-  axes: {
-    speedKts: string;
-    distanceNmi: string;
   };
   categories: {
     ground: string;

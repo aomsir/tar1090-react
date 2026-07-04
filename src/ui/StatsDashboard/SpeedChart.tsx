@@ -27,7 +27,7 @@ export function SpeedChart({ data }: SpeedChartProps) {
   const { t } = useTranslation();
 
   return (
-    <ChartCard title={t('stats.charts.speedDistribution')}>
+    <ChartCard title={t('stats.charts.speedDistribution')} unit="kt">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ left: 0, right: 12 }}>
           <XAxis
@@ -36,22 +36,8 @@ export function SpeedChart({ data }: SpeedChartProps) {
             angle={-30}
             textAnchor="end"
             height={40}
-            label={{
-              value: t('stats.axes.speedKts'),
-              position: 'insideBottom',
-              offset: -5,
-              style: { fill: AXIS_COLOR },
-            }}
           />
-          <YAxis
-            tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}
-            label={{
-              value: t('stats.count'),
-              angle: -90,
-              position: 'insideLeft',
-              style: { fill: AXIS_COLOR },
-            }}
-          />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: AMBER_CURSOR }} />
           <Bar dataKey="count" fill={AMBER} fillOpacity={0.85} radius={[3, 3, 0, 0]}>
             <LabelList

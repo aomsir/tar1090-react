@@ -63,15 +63,7 @@ export function TrafficTimeline({ data, peakOnline, peakTime }: TrafficTimelineP
           </defs>
           <CartesianGrid stroke={GRID_COLOR} vertical={false} />
           <XAxis dataKey="time" tickFormatter={formatTime} tick={tickStyle} />
-          <YAxis
-            tick={tickStyle}
-            label={{
-              value: t('stats.aircraftAxis'),
-              angle: -90,
-              position: 'insideLeft',
-              style: { fill: AXIS_COLOR },
-            }}
-          />
+          <YAxis tick={tickStyle} />
           <Tooltip content={<TrafficTimelineTooltip />} cursor={{ stroke: AMBER }} />
           <Area
             type="monotone"

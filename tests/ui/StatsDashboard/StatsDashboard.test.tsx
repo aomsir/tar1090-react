@@ -141,4 +141,13 @@ describe('StatsDashboard', () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getAllByTestId('kpi-icon')).toHaveLength(4);
   });
+
+  it('renders unit suffixes on histogram cards instead of axis titles', async () => {
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByText('· ft')).toBeInTheDocument();
+    expect(screen.getByText('· kt')).toBeInTheDocument();
+    expect(screen.getByText('· nmi')).toBeInTheDocument();
+    expect(screen.queryByText('Count')).toBeNull();
+    expect(screen.getByText('Speed Distribution')).toBeInTheDocument();
+  });
 });

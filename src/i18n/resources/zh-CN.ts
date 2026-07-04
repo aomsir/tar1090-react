@@ -177,8 +177,6 @@ const zhCN: TranslationResource = {
     title: '历史统计',
     close: '关闭统计',
     aircraft: '架飞机',
-    aircraftAxis: '飞机数',
-    count: '数量',
     noData: '无数据',
     pastLessThanMin: '过去不足 1 分钟',
     pastMinutes: '过去 {{min}} 分钟',
@@ -195,16 +193,12 @@ const zhCN: TranslationResource = {
     charts: {
       trafficOverTime: '流量时间线',
       altitudeDistribution: '高度分布',
-      speedDistribution: '速度分布 (kt)',
-      distanceDistribution: '距离分布 (nmi)',
+      speedDistribution: '速度分布',
+      distanceDistribution: '距离分布',
       typeDistribution: '机型分布',
       airlineDistribution: '航司分布',
       countryDistribution: '国家/地区分布',
       dataSource: '数据来源',
-    },
-    axes: {
-      speedKts: '速度 (kts)',
-      distanceNmi: '距离 (nmi)',
     },
     categories: {
       ground: '地面',

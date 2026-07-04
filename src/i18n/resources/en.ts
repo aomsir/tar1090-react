@@ -177,8 +177,6 @@ const en: TranslationResource = {
     title: 'History Statistics',
     close: 'Close statistics',
     aircraft: 'aircraft',
-    aircraftAxis: 'Aircraft',
-    count: 'Count',
     noData: 'No data',
     pastLessThanMin: 'PAST <1 MIN',
     pastMinutes: 'PAST {{min}} MIN',
@@ -195,16 +193,12 @@ const en: TranslationResource = {
     charts: {
       trafficOverTime: 'Traffic Over Time',
       altitudeDistribution: 'Altitude Distribution',
-      speedDistribution: 'Speed Distribution (kt)',
-      distanceDistribution: 'Distance Distribution (nmi)',
+      speedDistribution: 'Speed Distribution',
+      distanceDistribution: 'Distance Distribution',
       typeDistribution: 'Aircraft Type',
       airlineDistribution: 'Airline',
       countryDistribution: 'Country',
       dataSource: 'Data Source',
-    },
-    axes: {
-      speedKts: 'Speed (kts)',
-      distanceNmi: 'Distance (nmi)',
     },
     categories: {
       ground: 'Ground',

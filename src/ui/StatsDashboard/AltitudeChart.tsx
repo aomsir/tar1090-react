@@ -31,7 +31,7 @@ export function AltitudeChart({ data }: AltitudeChartProps) {
   }));
 
   return (
-    <ChartCard title={t('stats.charts.altitudeDistribution')}>
+    <ChartCard title={t('stats.charts.altitudeDistribution')} unit="ft">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={localizedData} margin={{ left: 0, right: 12 }}>
           <XAxis
@@ -41,15 +41,7 @@ export function AltitudeChart({ data }: AltitudeChartProps) {
             textAnchor="end"
             height={40}
           />
-          <YAxis
-            tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }}
-            label={{
-              value: t('stats.count'),
-              angle: -90,
-              position: 'insideLeft',
-              style: { fill: AXIS_COLOR },
-            }}
-          />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11, fontFamily: MONO_FONT }} />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: AMBER_CURSOR }} />
           <Bar dataKey="count" fill={AMBER} fillOpacity={0.85} radius={[3, 3, 0, 0]}>
             <LabelList
