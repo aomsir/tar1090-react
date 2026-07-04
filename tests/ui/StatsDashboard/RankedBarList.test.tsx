@@ -116,16 +116,19 @@ describe('RankedBarList', () => {
     const className = region.className;
     // Should grow to fill its parent card and let overflow scroll naturally.
     expect(className).toContain('flex-1');
-    expect(className).toContain('min-h-0');
     expect(className).toContain('overflow-y-auto');
     expect(className).toContain('scrollbar-none');
+    const tokens = className.split(/\s+/);
     // The scroll area must have a zero base size (h-0 or basis-0) so its
     // content cannot inflate the flex chain and prevent overflow. Match the
-    // token boundary to avoid colliding with "min-h-0".
-    const tokens = className.split(/\s+/);
+    // token boundary to avoid colliding with "min-h-[200px]".
     expect(tokens.includes('h-0') || tokens.includes('basis-0')).toBe(true);
     // The old fixed cap must be gone so short lists can stretch with siblings.
     expect(className).not.toContain('max-h-44');
+    // Size containment prevents list content from inflating the grid row
+    // height; the min height floor keeps ranked-only rows from collapsing.
+    expect(tokens.includes('[contain:size]')).toBe(true);
+    expect(tokens.includes('min-h-[200px]')).toBe(true);
   });
 
   it('provides a fallback accessible label when scrollLabel is omitted', () => {

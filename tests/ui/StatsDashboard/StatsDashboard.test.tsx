@@ -86,7 +86,8 @@ describe('StatsDashboard', () => {
       const scrollRegion = screen.getByLabelText(label);
       expect(scrollRegion.className).toContain('overflow-y-auto');
       expect(scrollRegion.className).toContain('flex-1');
-      expect(scrollRegion.className).toContain('min-h-0');
+      expect(scrollRegion.className).toContain('min-h-[200px]');
+      expect(scrollRegion.className).toContain('[contain:size]');
       expect(scrollRegion.parentElement?.className).toContain('overflow-hidden');
       expect(scrollRegion.closest('.h-full')?.className).toContain('min-h-0');
       expect(scrollRegion.closest('[class*="max-h-"]')).toBeNull();
