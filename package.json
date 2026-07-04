@@ -13,7 +13,12 @@
     "format:check": "prettier --check \"{src,tests}/**/*.{ts,tsx,css}\"",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "token:password": "node scripts/token.mjs set-password",
+    "token:create": "node scripts/token.mjs create",
+    "token:list": "node scripts/token.mjs list",
+    "token:revoke": "node scripts/token.mjs revoke",
+    "token:gc": "node scripts/token.mjs gc"
   },
   "dependencies": {
     "@heroui/react": "^3.2.0",
