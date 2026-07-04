@@ -10,7 +10,7 @@ export function CountryChart({ data }: CountryChartProps) {
   const { t } = useTranslation();
   return (
     <ChartCard title={t('stats.charts.countryDistribution')}>
-      <RankedBarList items={data} emptyText={t('stats.noData')} />
+      <RankedBarList items={data} emptyText={t('stats.noData')} labelWidth="w-32" />
     </ChartCard>
   );
 }

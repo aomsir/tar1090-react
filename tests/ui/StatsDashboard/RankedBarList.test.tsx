@@ -42,4 +42,35 @@ describe('RankedBarList', () => {
     render(<RankedBarList items={[{ name: 'A', count: 0 }]} emptyText="No data" />);
     expect(screen.getAllByTestId('ranked-bar-fill')[0].style.width).toBe('0%');
   });
+
+  it('colors bars by rank using the series palette', () => {
+    render(
+      <RankedBarList
+        items={[
+          { name: 'A', count: 10 },
+          { name: 'B', count: 8 },
+          { name: 'C', count: 5 },
+        ]}
+        emptyText="No data"
+      />,
+    );
+    const bars = screen.getAllByTestId('ranked-bar-fill');
+    expect(bars[0].style.backgroundColor).toBe('rgb(251, 191, 36)'); // amber
+    expect(bars[1].style.backgroundColor).toBe('rgb(56, 189, 248)'); // sky
+    expect(bars[2].style.backgroundColor).toBe('rgb(52, 211, 153)'); // emerald
+    expect(bars[0].style.opacity).toBe('');
+  });
+
+  it('applies a custom label width class when provided', () => {
+    render(
+      <RankedBarList
+        items={[{ name: 'United Arab Emirates', count: 3 }]}
+        emptyText="No data"
+        labelWidth="w-32"
+      />,
+    );
+    const label = screen.getByTitle('United Arab Emirates');
+    expect(label.className).toContain('w-32');
+    expect(label.className).not.toContain('w-20');
+  });
 });
