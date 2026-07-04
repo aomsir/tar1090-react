@@ -113,6 +113,18 @@ describe('StatsDashboard', () => {
     expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 1 H 20 MIN');
   });
 
+  it('shows exact-hour windows without a minute part', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      trafficTimeline: [
+        { time: 1000, count: 20 },
+        { time: 1000 + 120 * 60_000, count: 10 },
+      ],
+    });
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 2 H');
+  });
+
   it('renders donut total and legend percentages for data source', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
