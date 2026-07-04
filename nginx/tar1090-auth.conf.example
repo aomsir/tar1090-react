@@ -1,0 +1,86 @@
+# tar1090-react access control — Nginx configuration example
+#
+# Prerequisites:
+#   1. Generate tokens:  node scripts/token.mjs set-password <password>
+#   2. Place token files: /etc/tar1090/tokens.json + tokens.map
+#   3. Include this file in your nginx.conf or site config
+#   4. After any token change: nginx -s reload
+
+# ── Token maps ──────────────────────────────────────────────
+map $cookie_tar1090_auth $auth_cookie_ok {
+    default 0;
+    include /etc/tar1090/tokens.map;
+}
+
+map $arg_token $auth_token_ok {
+    default 0;
+    include /etc/tar1090/tokens.map;
+}
+
+map "$auth_cookie_ok:$auth_token_ok" $auth_ok {
+    default 0;
+    "1:0" 1;
+    "0:1" 1;
+    "1:1" 1;
+}
+
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    # ── Crawler blocking ────────────────────────────────────
+    location /robots.txt {
+        return 200 "User-agent: *\nDisallow: /\n";
+        add_header Content-Type text/plain;
+    }
+
+    if ($http_user_agent ~* "(bot|spider|crawl|slurp|Baiduspider|Googlebot)") {
+        return 403;
+    }
+
+    # ── Login page — always served (no auth required) ───────
+    location = /login.html {
+        root /var/www/tar1090/dist;
+    }
+
+    # ── Build assets — always served (code is open source) ──
+    location /assets/ {
+        root /var/www/tar1090/dist;
+    }
+
+    # ── Favicon — always served ─────────────────────────────
+    location = /favicon.svg {
+        root /var/www/tar1090/dist;
+    }
+
+    # ── Data endpoints — requires auth (return 401) ─────────
+    location /data/ {
+        if ($auth_ok = 0) {
+            return 401;
+        }
+        proxy_pass https://upstream;
+    }
+
+    location /chunks/ {
+        if ($auth_ok = 0) {
+            return 401;
+        }
+        proxy_pass https://upstream;
+    }
+
+    location /globe_history/ {
+        if ($auth_ok = 0) {
+            return 401;
+        }
+        proxy_pass https://upstream;
+    }
+
+    # ── Everything else (SPA) — requires auth ───────────────
+    location / {
+        if ($auth_ok = 0) {
+            return 302 /login.html;
+        }
+        root /var/www/tar1090/dist;
+        try_files $uri $uri/ /index.html;
+    }
+}
