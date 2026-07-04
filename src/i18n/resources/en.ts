@@ -201,7 +201,6 @@ const en: TranslationResource = {
       airlineDistribution: 'Airline',
       countryDistribution: 'Country',
       dataSource: 'Data Source',
-      other: 'Other',
     },
     categories: {
       ground: 'Ground',

@@ -59,7 +59,8 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('Aircraft Type')).toBeInTheDocument();
     expect(screen.getByText('Airline')).toBeInTheDocument();
     expect(screen.getByText('Traffic Over Time')).toBeInTheDocument();
-    expect(screen.getByText('Other')).toBeInTheDocument();
+    expect(screen.getByText('Data Source')).toBeInTheDocument();
+    expect(screen.queryByText('Other')).toBeNull();
   });
 
   it('calls toggleStatsDashboard on close button click', async () => {
@@ -188,10 +189,11 @@ describe('StatsDashboard', () => {
     expect(screen.getByText('Speed Distribution')).toBeInTheDocument();
   });
 
-  it('top-aligns the Type/Airline/Other row to avoid stretched lists', async () => {
+  it('stretches the Type/Airline/Data Source row so cards share equal height', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     const typeChart = screen.getByText('Aircraft Type').closest('div.grid');
     expect(typeChart).not.toBeNull();
-    expect(typeChart!.className).toContain('items-start');
+    // CSS grid default is stretch; the previous items-start override must be gone.
+    expect(typeChart!.className).not.toContain('items-start');
   });
 });

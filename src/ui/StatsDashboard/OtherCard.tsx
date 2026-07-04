@@ -164,7 +164,7 @@ export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
   };
 
   return (
-    <ChartCard title={t('stats.charts.other')}>
+    <ChartCard title={t('stats.charts.dataSource')}>
       {renderDonut()}
       <div className="mt-3 flex flex-col gap-3 border-t border-white/[0.06] pt-3">
         <MetricGroup

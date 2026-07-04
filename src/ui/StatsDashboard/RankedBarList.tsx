@@ -52,7 +52,7 @@ export function RankedBarList({
     return (
       <div
         aria-label={accessibleScrollLabel}
-        className="max-h-44 overflow-y-auto pr-1 scrollbar-none [mask-image:linear-gradient(to_bottom,black_14px,black_calc(100%_-_14px),transparent_100%)]"
+        className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-none [mask-image:linear-gradient(to_bottom,black_14px,black_calc(100%_-_14px),transparent_100%)]"
         tabIndex={0}
       >
         {list}

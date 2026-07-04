@@ -201,7 +201,6 @@ const zhCN: TranslationResource = {
       airlineDistribution: '航司分布',
       countryDistribution: '国家/地区分布',
       dataSource: '数据来源',
-      other: '其他',
     },
     categories: {
       ground: '地面',

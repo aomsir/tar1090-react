@@ -16,11 +16,12 @@ const otherStats: OtherStats = {
 };
 
 describe('OtherCard', () => {
-  it('uses Other as the card title', async () => {
+  it('uses Data Source as the card title', async () => {
     await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
       language: 'en',
     });
-    expect(screen.getByText('Other')).toBeInTheDocument();
+    expect(screen.getByText('Data Source')).toBeInTheDocument();
+    expect(screen.queryByText('Other')).toBeNull();
   });
 
   it('keeps the donut accessible as the Data Source image', async () => {

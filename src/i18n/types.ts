@@ -222,7 +222,6 @@ export interface StatsResource {
     airlineDistribution: string;
     countryDistribution: string;
     dataSource: string;
-    other: string;
   };
   categories: {
     ground: string;
