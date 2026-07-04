@@ -35,7 +35,13 @@ export function SummaryCards({
 }: SummaryCardsProps) {
   const { t, i18n } = useTranslation();
   const items: CardItem[] = [
-    { label: t('stats.summary.totalAircraft'), value: totalAircraft, sub: null, icon: Plane, iconColor: AMBER },
+    {
+      label: t('stats.summary.totalAircraft'),
+      value: totalAircraft,
+      sub: null,
+      icon: Plane,
+      iconColor: AMBER,
+    },
     {
       label: t('stats.summary.uniqueCallsigns'),
       value: uniqueCallsigns,
@@ -66,12 +72,7 @@ export function SummaryCards({
       {items.map((item) => (
         <div key={item.label} className="rounded-lg border border-amber-400/10 bg-white/[0.03] p-4">
           <div className="flex items-center gap-1.5">
-            <item.icon
-              size={14}
-              color={item.iconColor}
-              aria-hidden="true"
-              data-testid="kpi-icon"
-            />
+            <item.icon size={14} color={item.iconColor} aria-hidden="true" data-testid="kpi-icon" />
             <span className="font-mono text-[10px] tracking-widest text-slate-500 uppercase">
               {item.label}
             </span>

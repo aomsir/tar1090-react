@@ -31,9 +31,7 @@ export function StatsDashboard() {
   const timeline = stats.trafficTimeline;
   let timeRange = '';
   if (timeline.length > 0) {
-    const spanMin = Math.round(
-      (timeline[timeline.length - 1].time - timeline[0].time) / 60_000,
-    );
+    const spanMin = Math.round((timeline[timeline.length - 1].time - timeline[0].time) / 60_000);
     if (spanMin < 1) {
       timeRange = t('stats.pastLessThanMin');
     } else if (spanMin < 60) {
