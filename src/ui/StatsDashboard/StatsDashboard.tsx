@@ -49,8 +49,9 @@ export function StatsDashboard() {
           timeRange = t('stats.pastHoursMinutes', { h: hours, m: minutes });
         }
       } else {
-        const days = Math.floor(hours / 24);
-        const remainingHours = hours % 24;
+        const roundedHours = Math.round(spanMin / 60);
+        const days = Math.floor(roundedHours / 24);
+        const remainingHours = roundedHours % 24;
         if (remainingHours === 0) {
           timeRange = t('stats.pastDays', { d: days });
         } else {

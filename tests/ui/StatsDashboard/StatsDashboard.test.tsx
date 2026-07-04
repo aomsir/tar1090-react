@@ -137,6 +137,18 @@ describe('StatsDashboard', () => {
     expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 20 D 5 H');
   });
 
+  it('rounds day-scale windows to the nearest hour', async () => {
+    useHistoryStatsStore.getState().setStats({
+      ...mockStats,
+      trafficTimeline: [
+        { time: 1000, count: 20 },
+        { time: 1000 + (24 * 60 + 30) * 60, count: 10 },
+      ],
+    });
+    await renderWithI18n(<StatsDashboard />, { language: 'en' });
+    expect(screen.getByTestId('stats-time-range').textContent).toBe('PAST 1 D 1 H');
+  });
+
   it('renders donut total and legend percentages for data source', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
