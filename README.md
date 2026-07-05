@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/images/readme-banner.svg" alt="tar1090-react" width="800" />
+  <img src="./public/images/readme-banner.svg" alt="tar1090-react" width="800" />
 </p>
 
 # tar1090-react
