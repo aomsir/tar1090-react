@@ -9,6 +9,10 @@ const resources = {
   'zh-CN': { translation: zhCN },
 } as const;
 
+const syncDocumentTitle = () => {
+  document.title = i18n.t('app.title');
+};
+
 void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -38,6 +42,9 @@ void i18n
       },
     },
     react: { useSuspense: false },
-  });
+  })
+  .then(syncDocumentTitle);
+
+i18n.on('languageChanged', syncDocumentTitle);
 
 export default i18n;

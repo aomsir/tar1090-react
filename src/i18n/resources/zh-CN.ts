@@ -233,6 +233,7 @@ const zhCN: TranslationResource = {
     },
   },
   app: {
+    title: 'ADS-B 实时交通',
     loadingLiveHistory: '正在加载实时历史数据',
     loading: '加载中…',
   },
