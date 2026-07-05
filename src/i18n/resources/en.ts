@@ -233,6 +233,7 @@ const en: TranslationResource = {
     },
   },
   app: {
+    title: 'ADS-B Live Traffic',
     loadingLiveHistory: 'Loading live history data',
     loading: 'Loading…',
   },

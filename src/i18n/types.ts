@@ -276,6 +276,7 @@ export interface TranslationResource {
 }
 
 export interface AppResource {
+  title: string;
   loadingLiveHistory: string;
   loading: string;
 }

@@ -6,6 +6,7 @@ describe('i18n initialization', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    document.title = 'tar1090';
     vi.resetModules();
   });
 
@@ -77,6 +78,17 @@ describe('i18n initialization', () => {
     await i18n.changeLanguage('zh-CN');
 
     expect(localStorage.getItem('i18nextLng')).toBe('zh-CN');
+  });
+
+  it('keeps the document title in sync with the active language', async () => {
+    setBrowserLanguage('en-US');
+    const { default: i18n } = await import('@/i18n/index');
+    await flushInit();
+
+    expect(document.title).toBe('ADS-B Live Traffic');
+
+    await i18n.changeLanguage('zh-CN');
+    expect(document.title).toBe('ADS-B 实时交通');
   });
 });
 
