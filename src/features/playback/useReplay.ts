@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useReceiverStore } from '@/store/receiverStore';
 import { useToolbarStore } from '@/store/toolbarStore';
+import { useSelectionStore } from '@/store/selectionStore';
 import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 import type { HistoryRange } from '@/data/historyLoader';
@@ -14,6 +15,7 @@ export function useReplay(): {
     const store = usePlaybackStore.getState();
     if (store.loading) return;
     if (store.mode === 'history' && store.range === range) return;
+    useSelectionStore.getState().clearAll();
     store.setLoading(true);
     try {
       store.setRange(range);
@@ -28,7 +30,7 @@ export function useReplay(): {
       usePlaybackStore.getState().setMode('history');
       const { lat, lon } = useReceiverStore.getState();
       const { routeApiEnabled } = useToolbarStore.getState();
-      await historyStore.buildPTracksData(lat, lon, routeApiEnabled);
+      await historyStore.buildPassData(lat, lon, routeApiEnabled);
     } finally {
       usePlaybackStore.getState().setLoading(false);
     }
@@ -36,9 +38,10 @@ export function useReplay(): {
 
   const exitToLive = useCallback(() => {
     const store = usePlaybackStore.getState();
+    useSelectionStore.getState().clearAll();
+    historyStore.clearPassData();
     store.pause();
     store.setMode('live');
-    historyStore.clearPTracksData();
     if (useToolbarStore.getState().statsDashboardOpen) {
       useToolbarStore.setState({ statsDashboardOpen: false });
     }

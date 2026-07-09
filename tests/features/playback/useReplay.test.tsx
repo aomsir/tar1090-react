@@ -3,6 +3,7 @@ import { render, act } from '@testing-library/react';
 import { useReplay } from '@/features/playback/useReplay';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
+import { useSelectionStore } from '@/store/selectionStore';
 import type { AircraftSnapshot } from '@/data/types';
 
 const { ensureLoadedMock } = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ describe('useReplay', () => {
     usePlaybackStore.getState().reset();
     historyStore.reset();
     ensureLoadedMock.mockClear();
+    useSelectionStore.getState().clearAll();
   });
 
   it('does not call ensureLoaded twice when enterHistory is invoked while loading', async () => {
@@ -159,5 +161,21 @@ describe('useReplay', () => {
     });
 
     expect(historyLoader.reset).toHaveBeenCalled();
+  });
+
+  it('clears selection before exposing history mode and clears pass data on exit', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    render(<Harness onReady={(r) => { replay = r; }} />);
+    useSelectionStore.getState().select('abc123');
+    const clearPassData = vi.spyOn(historyStore, 'clearPassData');
+
+    await act(async () => {
+      await replay!.enterHistory('1d');
+    });
+
+    expect(useSelectionStore.getState().selectedHex).toBeNull();
+    act(() => replay!.exitToLive());
+    expect(useSelectionStore.getState().selectedHex).toBeNull();
+    expect(clearPassData).toHaveBeenCalledOnce();
   });
 });

@@ -33,6 +33,7 @@ export function AppShell() {
   const { t } = useTranslation();
   const controllerRef = useRef<MapController | null>(null);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
+  const selectedPassId = useSelectionStore((s) => s.selectedPassId);
   const selectedHexes = useSelectionStore((s) => s.selectedHexes);
   const onlyMilitary = useToolbarStore((s) => s.onlyMilitary);
   const isolation = useToolbarStore((s) => s.isolation);
@@ -108,7 +109,7 @@ export function AppShell() {
     else c.clearTrack();
   }, [trackSegments]);
 
-  // Live: show all live aircraft. History: only show the selected aircraft.
+  // Live: show all live aircraft. History: show only the selected pass aircraft.
   useEffect(() => {
     if (mode === 'live') {
       let list = aircraftStore.list();
@@ -128,14 +129,13 @@ export function AppShell() {
         }
       }
     } else {
-      const list = selectedHex
-        ? historyStore.allAircraft.filter((ac) => ac.hex === selectedHex)
-        : [];
-      controllerRef.current?.syncAircraft(list);
+      const pass = historyStore.getPass(selectedPassId);
+      controllerRef.current?.syncAircraft(pass ? [pass.aircraft] : []);
     }
   }, [
     mode,
     selectedHex,
+    selectedPassId,
     selectedHexes,
     onlyMilitary,
     isolation,
@@ -147,6 +147,10 @@ export function AppShell() {
   useEffect(() => {
     controllerRef.current?.setSelected(selectedHex);
   }, [selectedHex]);
+
+  useEffect(() => {
+    controllerRef.current?.setSelectedTrackKey(mode === 'history' ? selectedPassId : selectedHex);
+  }, [mode, selectedHex, selectedPassId]);
 
   useEffect(() => {
     if (mode !== 'live') return;
@@ -181,10 +185,9 @@ export function AppShell() {
       const pass = historyStore.getPass(rowId);
       if (!pass) return;
       useSelectionStore.getState().selectPass(pass.passId, pass.hex);
-      const frame = historyStore.frameAt(state.cursorTime);
-      const dto = (frame?.aircraft ?? []).find((a) => a.hex === pass.hex);
-      if (dto && typeof dto.lon === 'number' && typeof dto.lat === 'number') {
-        controllerRef.current?.centerOn(dto.lon, dto.lat);
+      const point = pass.trackPoints.at(-1);
+      if (point) {
+        controllerRef.current?.centerOn(point.lon, point.lat);
       }
     } else {
       useSelectionStore.getState().select(rowId);
@@ -200,8 +203,25 @@ export function AppShell() {
       <MapView
         onReady={(controller) => {
           controllerRef.current = controller;
-          controller.onSelect((hex) => useSelectionStore.getState().select(hex));
+          controller.onSelect((hex) => {
+            const selection = useSelectionStore.getState();
+            if (hex === null) {
+              selection.clearAll();
+            } else if (
+              usePlaybackStore.getState().mode !== 'history' ||
+              !selection.selectedPassId ||
+              selection.selectedHex !== hex
+            ) {
+              selection.select(hex);
+            }
+          });
           controller.setSelected(useSelectionStore.getState().selectedHex);
+          const selection = useSelectionStore.getState();
+          controller.setSelectedTrackKey(
+            usePlaybackStore.getState().mode === 'history'
+              ? selection.selectedPassId
+              : selection.selectedHex,
+          );
 
           const toolbarState = useToolbarStore.getState();
           controller.setLabelConfig({

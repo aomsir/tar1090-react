@@ -139,7 +139,10 @@ export class MapController {
       feature.set('selected', feature.getId() === hex);
     }
     this.handle.layer.changed();
-    this.pTracksHandle.setSelectedHex(hex);
+  }
+
+  setSelectedTrackKey(key: string | null): void {
+    this.pTracksHandle.setSelectedKey(key);
   }
 
   onSelect(cb: (hex: string | null) => void): void {

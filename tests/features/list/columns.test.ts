@@ -33,6 +33,7 @@ describe('tar1090 list columns', () => {
       'wd',
       'ws',
       'last_seen',
+      'pass_time',
     ]);
   });
 
@@ -62,6 +63,7 @@ describe('tar1090 list columns', () => {
       'speed',
       'distance',
       'rssi',
+      'pass_time',
     ]);
   });
 });

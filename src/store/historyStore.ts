@@ -1,8 +1,6 @@
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
-import type { PeakStats } from '@/features/playback/pTracks';
-import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
 import { buildAircraftPasses, type AircraftPass } from '@/features/playback/aircraftPasses';
 import { enrichAircraft } from '@/domain/enrich';
 import { routeService } from '@/data/routeService';
@@ -17,9 +15,6 @@ export class HistoryStore {
   passes: AircraftPass[] = [];
   passTracksData: Map<string, TrackPoint[]> | null = null;
   private passById = new Map<string, AircraftPass>();
-  pTracksData: Map<string, TrackPoint[]> | null = null;
-  peakStats: Map<string, PeakStats> | null = null;
-  allAircraft: Aircraft[] = [];
 
   setFrames(frames: AircraftSnapshot[]): void {
     this.frames = [...frames].sort((a, b) => a.now - b.now);
@@ -28,9 +23,6 @@ export class HistoryStore {
   reset(): void {
     this.frames = [];
     this.clearPassData();
-    this.pTracksData = null;
-    this.peakStats = null;
-    this.allAircraft = [];
   }
 
   getPass(passId: string | null): AircraftPass | null {
@@ -58,33 +50,11 @@ export class HistoryStore {
     useLiveTick.getState().bump();
   }
 
-  async buildPTracksData(
-    siteLat?: number,
-    siteLon?: number,
-    routeApiEnabled = false,
-  ): Promise<void> {
-    await this.buildPassData(siteLat, siteLon, routeApiEnabled);
-    this.pTracksData = buildPTracks(this.frames);
-    this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
-    this.allAircraft = buildAllHistoryAircraft(this.frames);
-    // Enrich all aircraft with registration, type, etc. from the client-side
-    // database. History frames from the backend don't contain these fields.
-    await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
-    useLiveTick.getState().bump();
-  }
-
   clearPassData(): void {
     this.passes = [];
     this.passTracksData = null;
     this.passById = new Map();
     useHistoryStatsStore.getState().clear();
-  }
-
-  clearPTracksData(): void {
-    this.clearPassData();
-    this.pTracksData = null;
-    this.peakStats = null;
-    this.allAircraft = [];
   }
 
   /** Median interval between consecutive frames (seconds). */
@@ -131,6 +101,7 @@ export class HistoryStore {
       return ac;
     });
   }
+
 }
 
 export const historyStore = new HistoryStore();

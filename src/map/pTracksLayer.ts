@@ -11,17 +11,17 @@ import { buildTrackSegments } from '@/features/track/track';
 export interface PTracksLayerHandle {
   layer: VectorLayer<VectorSource>;
   source: VectorSource;
-  setSelectedHex: (hex: string | null) => void;
+  setSelectedKey: (key: string | null) => void;
 }
 
 export function createPTracksLayer(): PTracksLayerHandle {
-  let selectedHex: string | null = null;
+  let selectedKey: string | null = null;
   const source = new VectorSource();
   const layer = new VectorLayer({
     source,
     style: (feature) => {
-      const hex = feature.get('hex') as string;
-      if (selectedHex !== null && hex !== selectedHex) return new Style({});
+      const trackKey = feature.get('trackKey') as string;
+      if (selectedKey !== null && trackKey !== selectedKey) return new Style({});
       const color = feature.get('colorKey') as string;
       const estimated = feature.get('estimated') === true;
       return new Style({
@@ -37,8 +37,8 @@ export function createPTracksLayer(): PTracksLayerHandle {
   return {
     layer,
     source,
-    setSelectedHex(hex: string | null) {
-      selectedHex = hex;
+    setSelectedKey(key: string | null) {
+      selectedKey = key;
       layer.changed();
     },
   };
@@ -50,14 +50,14 @@ export function syncPTracks(
   gapThresholdSec?: number,
 ): void {
   source.clear();
-  for (const [hex, points] of tracksMap) {
+  for (const [trackKey, points] of tracksMap) {
     const segments = buildTrackSegments(points, { gapThresholdSec });
     for (const seg of segments) {
       if (seg.coords.length < 2) continue;
       const feature = new Feature({
         geometry: new LineString(seg.coords.map(([lon, lat]) => fromLonLat([lon, lat]))),
       });
-      feature.set('hex', hex);
+      feature.set('trackKey', trackKey);
       feature.set('colorKey', seg.colorKey);
       feature.set('estimated', seg.estimated);
       source.addFeature(feature);
