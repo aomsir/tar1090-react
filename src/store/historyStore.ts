@@ -3,6 +3,7 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import type { PeakStats } from '@/features/playback/pTracks';
 import { buildPTracks, buildPeakStats, buildAllHistoryAircraft } from '@/features/playback/pTracks';
+import { buildAircraftPasses, type AircraftPass } from '@/features/playback/aircraftPasses';
 import { enrichAircraft } from '@/domain/enrich';
 import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
@@ -13,6 +14,9 @@ import { useHistoryStatsStore } from './historyStatsStore';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
+  passes: AircraftPass[] = [];
+  passTracksData: Map<string, TrackPoint[]> | null = null;
+  private passById = new Map<string, AircraftPass>();
   pTracksData: Map<string, TrackPoint[]> | null = null;
   peakStats: Map<string, PeakStats> | null = null;
   allAircraft: Aircraft[] = [];
@@ -23,7 +27,35 @@ export class HistoryStore {
 
   reset(): void {
     this.frames = [];
-    this.clearPTracksData();
+    this.clearPassData();
+    this.pTracksData = null;
+    this.peakStats = null;
+    this.allAircraft = [];
+  }
+
+  getPass(passId: string | null): AircraftPass | null {
+    if (!passId) return null;
+    return this.passById.get(passId) ?? null;
+  }
+
+  async buildPassData(siteLat?: number, siteLon?: number, routeApiEnabled = false): Promise<void> {
+    this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
+    this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
+    this.passById = new Map(this.passes.map((pass) => [pass.passId, pass]));
+    await Promise.all(this.passes.map((pass) => enrichAircraft(pass.aircraft)));
+
+    if (routeApiEnabled) {
+      const callsigns = new Set<string>();
+      for (const pass of this.passes) {
+        const callsign = normalizeCallsign(pass.aircraft.flight ?? '');
+        if (callsign) callsigns.add(callsign);
+      }
+      for (const callsign of callsigns) routeService.enqueue(callsign);
+      await routeService.flush(ROUTE_API_URL);
+    }
+
+    useHistoryStatsStore.getState().setStats(computeHistoryStats(this.frames, this.passes));
+    useLiveTick.getState().bump();
   }
 
   async buildPTracksData(
@@ -31,38 +63,27 @@ export class HistoryStore {
     siteLon?: number,
     routeApiEnabled = false,
   ): Promise<void> {
+    await this.buildPassData(siteLat, siteLon, routeApiEnabled);
     this.pTracksData = buildPTracks(this.frames);
     this.peakStats = buildPeakStats(this.frames, siteLat, siteLon);
     this.allAircraft = buildAllHistoryAircraft(this.frames);
     // Enrich all aircraft with registration, type, etc. from the client-side
     // database. History frames from the backend don't contain these fields.
     await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
+  }
 
-    // Fetch route data for history aircraft with callsigns.
-    // In live mode this happens inside the polling subscribe callback,
-    // but history mode bypasses that path entirely.
-    if (routeApiEnabled) {
-      for (const ac of this.allAircraft) {
-        if (ac.flight) {
-          routeService.enqueue(normalizeCallsign(ac.flight));
-        }
-      }
-      await routeService.flush(ROUTE_API_URL);
-    }
-
-    // Bump liveTick so useAircraftRows' useMemo invalidates and picks up
-    // the enriched type/registration data.
-    useLiveTick.getState().bump();
-
-    const historyStats = computeHistoryStats(this.frames, this.allAircraft, this.peakStats);
-    useHistoryStatsStore.getState().setStats(historyStats);
+  clearPassData(): void {
+    this.passes = [];
+    this.passTracksData = null;
+    this.passById = new Map();
+    useHistoryStatsStore.getState().clear();
   }
 
   clearPTracksData(): void {
+    this.clearPassData();
     this.pTracksData = null;
     this.peakStats = null;
     this.allAircraft = [];
-    useHistoryStatsStore.getState().clear();
   }
 
   /** Median interval between consecutive frames (seconds). */

@@ -194,9 +194,10 @@ const zhCN: TranslationResource = {
     pastDays: '过去 {{d}} 天',
     pastDaysHours: '过去 {{d}} 天 {{h}} 小时',
     summary: {
-      totalAircraft: '飞机总数',
+      totalPasses: '经过架次',
+      uniqueAircraft: '唯一飞机',
       uniqueCallsigns: '唯一呼号',
-      military: '军机',
+      militaryPasses: '军机架次',
       peakOnline: '在线峰值',
       withCallsign: '{{percent}} 有呼号',
       ofTotal: '占比 {{percent}}',

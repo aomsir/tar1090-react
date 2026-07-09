@@ -6,7 +6,7 @@ import { MONO_FONT, seriesColor } from './chartColors';
 
 interface OtherCardProps {
   data: { name: string; count: number }[];
-  totalAircraft: number;
+  totalPasses: number;
   otherStats: OtherStats;
 }
 
@@ -69,7 +69,7 @@ function MetricGroup({ title, headline, children }: MetricGroupProps) {
   );
 }
 
-export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
+export function OtherCard({ data, totalPasses, otherStats }: OtherCardProps) {
   const { t, i18n } = useTranslation();
   const localized = data.map((d) => ({
     ...d,
@@ -169,26 +169,26 @@ export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
       <div className="mt-3 flex flex-col gap-3 border-t border-white/[0.06] pt-3">
         <MetricGroup
           title={t('stats.otherMetrics.identified')}
-          headline={`${formatInteger(identified.any, lang)} / ${formatInteger(totalAircraft, lang)}`}
+          headline={`${formatInteger(identified.any, lang)} / ${formatInteger(totalPasses, lang)}`}
         >
           <MetricBar
             label={t('stats.otherMetrics.callsign')}
             count={identified.callsign}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={0}
           />
           <MetricBar
             label={t('stats.otherMetrics.type')}
             count={identified.type}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={1}
           />
           <MetricBar
             label={t('stats.otherMetrics.registration')}
             count={identified.registration}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={2}
           />
@@ -196,26 +196,26 @@ export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
 
         <MetricGroup
           title={t('stats.otherMetrics.positioned')}
-          headline={`${formatInteger(positioned.position, lang)} / ${formatInteger(totalAircraft, lang)}`}
+          headline={`${formatInteger(positioned.position, lang)} / ${formatInteger(totalPasses, lang)}`}
         >
           <MetricBar
             label={t('stats.otherMetrics.position')}
             count={positioned.position}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={0}
           />
           <MetricBar
             label={t('stats.otherMetrics.speed')}
             count={positioned.speed}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={1}
           />
           <MetricBar
             label={t('stats.otherMetrics.altitude')}
             count={positioned.altitude}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={2}
           />
@@ -232,14 +232,14 @@ export function OtherCard({ data, totalAircraft, otherStats }: OtherCardProps) {
           <MetricBar
             label={t('stats.otherMetrics.ground')}
             count={status.ground}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={0}
           />
           <MetricBar
             label={t('stats.otherMetrics.squawk')}
             count={status.squawk}
-            total={totalAircraft}
+            total={totalPasses}
             language={lang}
             colorIndex={3}
           />

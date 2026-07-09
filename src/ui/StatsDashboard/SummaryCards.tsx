@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { Plane, Radio, Shield, TrendingUp } from 'lucide-react';
+import { Plane, Radio, Shield, TrendingUp, Waypoints } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatInteger, formatShortTime } from '@/i18n/format';
 import { AMBER, SEMANTIC_GREEN, SEMANTIC_RED, SEMANTIC_SKY } from './chartColors';
 
 interface SummaryCardsProps {
-  totalAircraft: number;
+  totalPasses: number;
+  uniqueAircraft: number;
   uniqueCallsigns: number;
-  militaryCount: number;
+  callsignPasses: number;
+  militaryPasses: number;
   peakOnline: number;
   peakTime: number;
 }
@@ -27,34 +29,43 @@ function formatPercent(numerator: number, denominator: number): string {
 }
 
 export function SummaryCards({
-  totalAircraft,
+  totalPasses,
+  uniqueAircraft,
   uniqueCallsigns,
-  militaryCount,
+  callsignPasses,
+  militaryPasses,
   peakOnline,
   peakTime,
 }: SummaryCardsProps) {
   const { t, i18n } = useTranslation();
   const items: CardItem[] = [
     {
-      label: t('stats.summary.totalAircraft'),
-      value: totalAircraft,
+      label: t('stats.summary.totalPasses'),
+      value: totalPasses,
+      sub: null,
+      icon: Waypoints,
+      iconColor: AMBER,
+    },
+    {
+      label: t('stats.summary.uniqueAircraft'),
+      value: uniqueAircraft,
       sub: null,
       icon: Plane,
-      iconColor: AMBER,
+      iconColor: SEMANTIC_SKY,
     },
     {
       label: t('stats.summary.uniqueCallsigns'),
       value: uniqueCallsigns,
       sub: t('stats.summary.withCallsign', {
-        percent: formatPercent(uniqueCallsigns, totalAircraft),
+        percent: formatPercent(callsignPasses, totalPasses),
       }),
       icon: Radio,
       iconColor: SEMANTIC_SKY,
     },
     {
-      label: t('stats.summary.military'),
-      value: militaryCount,
-      sub: t('stats.summary.ofTotal', { percent: formatPercent(militaryCount, totalAircraft) }),
+      label: t('stats.summary.militaryPasses'),
+      value: militaryPasses,
+      sub: t('stats.summary.ofTotal', { percent: formatPercent(militaryPasses, totalPasses) }),
       icon: Shield,
       iconColor: SEMANTIC_RED,
     },
@@ -68,7 +79,7 @@ export function SummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
       {items.map((item) => (
         <div key={item.label} className="rounded-lg border border-amber-400/10 bg-white/[0.03] p-4">
           <div className="flex items-center gap-1.5">

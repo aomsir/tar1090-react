@@ -206,9 +206,10 @@ export interface StatsResource {
   pastDays: string;
   pastDaysHours: string;
   summary: {
-    totalAircraft: string;
+    totalPasses: string;
+    uniqueAircraft: string;
     uniqueCallsigns: string;
-    military: string;
+    militaryPasses: string;
     peakOnline: string;
     withCallsign: string;
     ofTotal: string;
