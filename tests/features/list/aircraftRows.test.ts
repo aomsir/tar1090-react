@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Aircraft } from '@/domain/Aircraft';
-import { toRow, buildRows, isInExtent, type RowQuery } from '@/features/list/aircraftRows';
+import {
+  toRow,
+  buildRows,
+  buildPassRows,
+  isInExtent,
+  type RowQuery,
+} from '@/features/list/aircraftRows';
 import { routeService } from '@/data/routeService';
 import { LIST_COLUMNS } from '@/features/list/columns';
-import type { PeakStats } from '@/features/playback/pTracks';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 
 async function seedRoute(callsign: string, route: string) {
   const [origin, destination] = route.split(' - ');
@@ -252,8 +258,99 @@ describe('buildRows', () => {
   });
 });
 
+describe('buildPassRows', () => {
+  function pass(
+    passId: string,
+    fields: Partial<AircraftPass> & { aircraft?: Aircraft } = {},
+  ): AircraftPass {
+    const aircraft = fields.aircraft ?? ac('abc123', { flight: 'CCA123', altitude: 12000 });
+    return {
+      passId,
+      hex: aircraft.hex,
+      startTime: 1000,
+      endTime: 1900,
+      aircraft,
+      trackPoints: [],
+      hadAltitude: false,
+      hadGround: false,
+      hadEmergency: false,
+      hadSquawk: false,
+      ...fields,
+    };
+  }
+
+  it('projects isolated passes with stable pass identity and maxima', () => {
+    const rows = buildPassRows(
+      [
+        pass('abc123:1000', {
+          maxAltitude: 25000,
+          maxSpeed: 480,
+          maxDistance: 120,
+        }),
+      ],
+      base,
+    );
+
+    expect(rows[0]).toMatchObject({
+      rowId: 'abc123:1000',
+      passId: 'abc123:1000',
+      hex: 'abc123',
+      altitude: 25000,
+      speed: 480,
+      distance: 120,
+      passStartTime: 1000,
+      passEndTime: 1900,
+    });
+  });
+
+  it('keeps repeated hex passes separate and uses pass start for sorting', () => {
+    const rows = buildPassRows(
+      [
+        pass('abc123:2000', { startTime: 2000 }),
+        pass('abc123:1000', { startTime: 1000 }),
+      ],
+      { ...base, sortKey: 'pass_time', sortDir: 'asc' },
+    );
+
+    expect(rows.map((row) => row.rowId)).toEqual(['abc123:1000', 'abc123:2000']);
+  });
+
+  it('uses ground only when no airborne altitude maximum exists', () => {
+    const rows = buildPassRows(
+      [
+        pass('ground:1000', { aircraft: ac('ground'), hadGround: true }),
+        pass('mixed:2000', {
+          aircraft: ac('mixed'),
+          hadGround: true,
+          maxAltitude: 22000,
+        }),
+      ],
+      base,
+    );
+
+    expect(rows.find((row) => row.rowId === 'ground:1000')?.altitude).toBe('ground');
+    expect(rows.find((row) => row.rowId === 'mixed:2000')?.altitude).toBe(22000);
+  });
+
+  it('applies the shared search and filter tail to pass rows', () => {
+    const rows = buildPassRows(
+      [
+        pass('abc123:1000', {
+          aircraft: ac('abc123', { flight: 'CCA123', altitude: 18000 }),
+          maxAltitude: 18000,
+        }),
+        pass('def456:2000', { aircraft: ac('def456', { flight: 'GND456' }), hadGround: true }),
+      ],
+      { ...base, query: 'cca', filter: 'airborne' },
+    );
+
+    expect(rows.map((row) => row.rowId)).toEqual(['abc123:1000']);
+  });
+});
+
 it('formats original tar1090 columns from row data', () => {
   const row = {
+    rowId: 'abc123',
     hex: 'abc123',
     flight: 'CCA101',
     route: '',
@@ -297,6 +394,7 @@ it('formats data source values like original tar1090', () => {
   expect(col).toBeDefined();
 
   const baseRow = {
+    rowId: 'abc',
     hex: 'abc',
     flight: '',
     route: '',
@@ -344,6 +442,7 @@ it('formats data source values like original tar1090', () => {
 describe('last_seen column format', () => {
   it('formats lastSeenTime as local HH:mm:ss, not raw epoch', () => {
     const row = {
+      rowId: 'a',
       hex: 'a',
       flight: '',
       route: '',
@@ -377,6 +476,7 @@ describe('last_seen column format', () => {
 
   it('returns empty string when lastSeenTime is undefined', () => {
     const row = {
+      rowId: 'a',
       hex: 'a',
       flight: '',
       route: '',
@@ -454,28 +554,6 @@ describe('altitude sort stability', () => {
   });
 });
 
-describe('buildRows with peakStats', () => {
-  it('overrides speed and distance with peak values', () => {
-    const a = new Aircraft('aa');
-    a.update({ hex: 'aa', lat: 30, lon: 110, speed: 100 }, 1000);
-    const peakStats = new Map<string, PeakStats>([['aa', { maxSpeed: 300, maxDist: 50 }]]);
-    const rows = buildRows(
-      [a],
-      {
-        query: '',
-        filter: 'all',
-        sortKey: 'speed',
-        sortDir: 'desc',
-        inViewOnly: false,
-        extent: null,
-      },
-      peakStats,
-    );
-    expect(rows[0].speed).toBe(300);
-    expect(rows[0].distance).toBe(50);
-  });
-});
-
 describe('toRow route integration', () => {
   beforeEach(() => {
     routeService.clear();
@@ -518,7 +596,7 @@ describe('toRow route integration', () => {
   it('propagates route to buildRows when routeApiEnabled is true', async () => {
     await seedRoute('CCA1234', 'PEK - SHA');
     const fleet = [ac('abc123', { flight: 'CCA1234', lat: 39.9, lon: 116.4, altitude: 10000 })];
-    const rows = buildRows(fleet, { ...base, query: '' }, null, true);
+    const rows = buildRows(fleet, { ...base, query: '' }, true);
     expect(rows[0].route).toBe('PEK - SHA');
   });
 });

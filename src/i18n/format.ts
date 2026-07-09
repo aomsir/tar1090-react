@@ -32,3 +32,38 @@ export function formatShortTime(tsSec: number, language: string | undefined): st
     minute: '2-digit',
   });
 }
+
+export function formatPassTimeRange(
+  startTime: number,
+  endTime: number,
+  language: string | undefined,
+): string {
+  const formatter = new Intl.DateTimeFormat(formatLocaleForLanguage(language), {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+  const start = new Date(startTime * 1000);
+  const end = new Date(endTime * 1000);
+  const parts = (date: Date) =>
+    Object.fromEntries(
+      formatter
+        .formatToParts(date)
+        .filter((part) => ['month', 'day', 'hour', 'minute'].includes(part.type))
+        .map((part) => [part.type, part.value]),
+    );
+  const startParts = parts(start);
+  const endParts = parts(end);
+  const startLabel = `${startParts.month}-${startParts.day} ${startParts.hour}:${startParts.minute}`;
+  if (startTime === endTime) return startLabel;
+  const sameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+  const endLabel = sameDay
+    ? `${endParts.hour}:${endParts.minute}`
+    : `${endParts.month}-${endParts.day} ${endParts.hour}:${endParts.minute}`;
+  return `${startLabel}–${endLabel}`;
+}

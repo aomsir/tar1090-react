@@ -20,8 +20,8 @@ function rowBackground(row: AircraftRow, selected: boolean, index: number): stri
   return index % 2 === 0 ? 'bg-white/[0.03]' : '';
 }
 
-export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
-  const { t } = useTranslation();
+export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
+  const { t, i18n } = useTranslation();
   const rows = useAircraftRows();
   const filter = useListControls((s) => s.filter);
   const setFilter = useListControls((s) => s.setFilter);
@@ -30,6 +30,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const toggleSort = useListControls((s) => s.toggleSort);
   const inViewOnly = useToolbarStore((s) => s.inViewOnly);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
+  const selectedPassId = useSelectionStore((s) => s.selectedPassId);
   const hiddenColumns = useListControls((s) => s.hiddenColumns);
   const toggleColumn = useListControls((s) => s.toggleColumn);
   const isHistory = usePlaybackStore((s) => s.mode) === 'history';
@@ -37,7 +38,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
   const setListWidth = useToolbarStore((s) => s.setListWidth);
   const isDragging = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
-  const columns = useMemo(() => createListColumns(t), [t]);
+  const columns = useMemo(() => createListColumns(t, i18n.language), [t, i18n.language]);
   const filters = useMemo<{ id: FilterKey; label: string }[]>(
     () => [
       { id: 'all', label: t('list.filters.all') },
@@ -47,7 +48,8 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
     ],
     [t],
   );
-  const visibleColumns = columns.filter((c) => !hiddenColumns.has(c.id));
+  const modeColumns = columns.filter((c) => isHistory || c.id !== 'pass_time');
+  const visibleColumns = modeColumns.filter((c) => !hiddenColumns.has(c.id));
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
 
   const handleMouseDown = useCallback(
@@ -90,6 +92,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
 
   const historyLabel = (col: ListColumn): string => {
     if (!isHistory) return col.label;
+    if (col.id === 'altitude') return t('list.history.maxAltitude');
     if (col.id === 'speed') return t('list.history.maxSpeed');
     if (col.id === 'distance') return t('list.history.maxDistance');
     return col.label;
@@ -144,7 +147,7 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
             {t('list.columnOptions')}
           </summary>
           <div className="mt-1 flex flex-wrap gap-1">
-            {columns.map((c) => {
+            {modeColumns.map((c) => {
               const checked = !hiddenColumns.has(c.id);
               const label = c.id === 'flag' ? t('list.flag') : historyLabel(c);
               return (
@@ -213,12 +216,12 @@ export function ListPanel({ onSelect }: { onSelect: (hex: string) => void }) {
           </thead>
           <tbody>
             {rows.map((r, index) => {
-              const selected = r.hex === selectedHex;
+              const selected = isHistory ? selectedPassId === r.passId : r.hex === selectedHex;
               return (
                 <tr
-                  key={r.hex}
-                  data-testid={`row-${r.hex}`}
-                  onClick={() => onSelect(r.hex)}
+                  key={r.rowId}
+                  data-testid={`row-${r.rowId}`}
+                  onClick={() => onSelect(r.rowId)}
                   className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, index)}`}
                 >
                   {visibleColumns.map((c) => {

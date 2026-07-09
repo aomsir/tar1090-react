@@ -51,7 +51,7 @@ describe('useAircraftRows', () => {
     expect(result.current.map((r) => r.hex)).toEqual(['A2']);
   });
 
-  it('uses all history aircraft with peak stats in history mode', () => {
+  it('projects history passes instead of collapsing repeated hex aircraft', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -64,11 +64,11 @@ describe('useAircraftRows', () => {
         aircraft: [{ hex: 'H1', flight: 'HIST1', lat: 31, lon: 111, speed: 300 }],
       },
     ]);
-    historyStore.buildPTracksData(30, 110);
+    await historyStore.buildPassData(30, 110);
     act(() => usePlaybackStore.getState().setMode('history'));
 
     const { result } = renderHook(() => useAircraftRows());
-    expect(result.current.map((r) => r.hex)).toEqual(['H1']);
+    expect(result.current.map((r) => r.rowId)).toEqual(['h1:100']);
     expect(result.current[0].speed).toBe(300);
     expect(result.current[0].distance).toBeGreaterThan(0);
   });

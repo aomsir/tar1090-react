@@ -5,6 +5,8 @@ import { useListControls } from '@/store/listControls';
 import { useStatsStore } from '@/store/statsStore';
 import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { useHistoryStatsStore } from '@/store/historyStatsStore';
 
 vi.mock('@/ui/mobile/MobileAircraftList', () => ({
   MobileAircraftList: ({ onSelect }: { onSelect: (hex: string) => void }) => (
@@ -25,6 +27,8 @@ describe('MobileTopBar', () => {
     useListControls.setState({ query: '' });
     useStatsStore.setState({ count: 42 });
     useSelectionStore.setState({ selectedHex: null });
+    usePlaybackStore.getState().reset();
+    useHistoryStatsStore.getState().clear();
   });
 
   it('writes the search input into listControls.query', async () => {
@@ -39,6 +43,14 @@ describe('MobileTopBar', () => {
     await setTestLanguage('en');
     render(<MobileTopBar />);
     expect(screen.getByTestId('mobile-top-bar')).toHaveTextContent('42');
+  });
+
+  it('shows the history pass count in history mode', async () => {
+    await setTestLanguage('en');
+    useHistoryStatsStore.getState().setStats({ totalPasses: 7 } as never);
+    usePlaybackStore.getState().setMode('history');
+    render(<MobileTopBar />);
+    expect(screen.getByTestId('mobile-top-bar')).toHaveTextContent('Aircraft 7');
   });
 
   it('renders translated placeholder in zh-CN', async () => {

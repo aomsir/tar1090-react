@@ -82,8 +82,10 @@ const zhCN: TranslationResource = {
     referenceOnly: '（仅参考）',
     emptyState: '无匹配飞机',
     history: {
+      maxAltitude: '最大高度 (ft)',
       maxSpeed: '最大速度 (kt)',
       maxDistance: '最大距离 (nmi)',
+      passTime: '经过时间',
     },
     values: {
       yes: '是',
@@ -111,6 +113,7 @@ const zhCN: TranslationResource = {
       windDirection: '风向',
       wind: '风速 (kt)',
       lastSeen: '最后可见',
+      passTime: '经过时间',
     },
     dataSources: {
       other: '其他',
@@ -124,10 +127,14 @@ const zhCN: TranslationResource = {
     military: '军机',
     exportKml: '导出 KML',
     dragHandle: '拖动展开或收起',
+    passTime: '经过时间',
     stats: {
       altitude: '高度',
       speed: '速度',
       track: '航向',
+      maxAltitude: '最大高度',
+      maxSpeed: '最大速度',
+      maxDistance: '最大距离',
     },
     groups: {
       identity: '身份',

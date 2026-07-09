@@ -12,6 +12,7 @@ const { useAircraftRows } = await import('@/features/list/useAircraftRows');
 
 function row(overrides: Partial<AircraftRow>): AircraftRow {
   return {
+    rowId: 'abc123',
     hex: 'abc123',
     flight: '',
     route: '',
@@ -193,7 +194,9 @@ describe('MobileAircraftList', () => {
   it('renders all rows without a cap', async () => {
     await setTestLanguage('en');
     vi.mocked(useAircraftRows).mockReturnValue(
-      Array.from({ length: 30 }, (_, index) => row({ hex: `hex${index}`, flight: `FLT${index}` })),
+      Array.from({ length: 30 }, (_, index) =>
+        row({ rowId: `hex${index}`, hex: `hex${index}`, flight: `FLT${index}` }),
+      ),
     );
     render(<MobileAircraftList onSelect={vi.fn()} />);
     expect(screen.getAllByRole('option')).toHaveLength(30);
@@ -236,6 +239,27 @@ describe('MobileAircraftList', () => {
     render(<MobileAircraftList onSelect={onSelect} />);
     fireEvent.click(screen.getByRole('option', { name: /CCA123/i }));
     expect(onSelect).toHaveBeenCalledWith('abc123');
+  });
+
+  it('shows a localized pass time and selects the pass row id', async () => {
+    await setTestLanguage('en');
+    const onSelect = vi.fn();
+    const start = new Date(2026, 6, 10, 8, 12).getTime() / 1000;
+    const end = new Date(2026, 6, 10, 8, 37).getTime() / 1000;
+    vi.mocked(useAircraftRows).mockReturnValue([
+      row({
+        rowId: 'abc123:1000',
+        passId: 'abc123:1000',
+        flight: 'CCA123',
+        passStartTime: start,
+        passEndTime: end,
+      }),
+    ]);
+
+    render(<MobileAircraftList onSelect={onSelect} />);
+    expect(screen.getByText('07-10 08:12–08:37')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('option', { name: /CCA123/i }));
+    expect(onSelect).toHaveBeenCalledWith('abc123:1000');
   });
 
   it('exposes listbox semantics with an accessible label', async () => {

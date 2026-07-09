@@ -13,6 +13,18 @@ describe('selectionStore', () => {
     expect(useSelectionStore.getState().selectedHex).toBeNull();
   });
 
+  it('selects a pass and clears its identity for live selection and reset', () => {
+    useSelectionStore.getState().selectPass('abc123:1000', 'abc123');
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'abc123:1000',
+      selectedHex: 'abc123',
+    });
+    useSelectionStore.getState().select('def456');
+    expect(useSelectionStore.getState().selectedPassId).toBeNull();
+    useSelectionStore.getState().clearAll();
+    expect(useSelectionStore.getState().selectedPassId).toBeNull();
+  });
+
   it('toggleSelect adds and removes from selectedHexes', () => {
     const { toggleSelect } = useSelectionStore.getState();
     toggleSelect('abc123');

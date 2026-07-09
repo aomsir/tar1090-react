@@ -7,7 +7,7 @@ import { useMapViewStore } from '@/store/mapViewStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { useReceiverStore } from '@/store/receiverStore';
 import { usePlaybackStore } from '@/store/playbackStore';
-import { buildRows, type AircraftRow } from './aircraftRows';
+import { buildPassRows, buildRows, type AircraftRow } from './aircraftRows';
 
 export function useAircraftRows(): AircraftRow[] {
   const mode = usePlaybackStore((s) => s.mode);
@@ -24,14 +24,10 @@ export function useAircraftRows(): AircraftRow[] {
 
   return useMemo(
     () => {
-      const list = mode === 'history' ? historyStore.allAircraft : aircraftStore.list();
-      const peakStats = mode === 'history' ? historyStore.peakStats : null;
-      return buildRows(
-        list,
-        { query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon },
-        peakStats,
-        routeApiEnabled,
-      );
+      const rowQuery = { query, filter, sortKey, sortDir, inViewOnly, extent, siteLat, siteLon };
+      return mode === 'history'
+        ? buildPassRows(historyStore.passes, rowQuery, routeApiEnabled)
+        : buildRows(aircraftStore.list(), rowQuery, routeApiEnabled);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [

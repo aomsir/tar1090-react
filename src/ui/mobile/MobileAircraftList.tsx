@@ -4,13 +4,14 @@ import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import { formatAltitude } from '@/domain/format';
 import type { AircraftRow } from '@/features/list/aircraftRows';
+import { formatPassTimeRange } from '@/i18n/format';
 
 function formatSpeed(speed: AircraftRow['speed']): string {
   return typeof speed === 'number' ? `${speed} kt` : '—';
 }
 
-export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => void }) {
-  const { t } = useTranslation();
+export function MobileAircraftList({ onSelect }: { onSelect: (rowId: string) => void }) {
+  const { t, i18n } = useTranslation();
   const rows = useAircraftRows();
 
   if (rows.length === 0) return null;
@@ -28,12 +29,12 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
         const secondary = identityParts.length > 0 ? identityParts.join(' · ') : row.hex;
         return (
           <button
-            key={row.hex}
+            key={row.rowId}
             type="button"
             role="option"
             className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left active:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50"
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onSelect(row.hex)}
+            onClick={() => onSelect(row.rowId)}
           >
             {row.flagPath ? (
               <img
@@ -62,6 +63,11 @@ export function MobileAircraftList({ onSelect }: { onSelect: (hex: string) => vo
                   {secondary}
                 </span>
               )}
+              {row.passStartTime !== undefined && row.passEndTime !== undefined ? (
+                <span className="block text-[11px] text-slate-500">
+                  {formatPassTimeRange(row.passStartTime, row.passEndTime, i18n.language)}
+                </span>
+              ) : null}
             </span>
             <span className="shrink-0 text-right font-mono text-[11px] text-slate-300">
               <span className="block">{formatAltitude(row.altitude)}</span>

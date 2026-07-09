@@ -3,6 +3,7 @@ import {
   asSupportedLanguage,
   formatInteger,
   formatLocaleForLanguage,
+  formatPassTimeRange,
   formatShortTime,
   formatTimeOfDay,
 } from '@/i18n/format';
@@ -75,6 +76,23 @@ describe('i18n format helpers', () => {
     it('returns an empty string for falsy timestamps', () => {
       expect(formatShortTime(0, 'en')).toBe('');
       expect(formatShortTime(0, 'zh-CN')).toBe('');
+    });
+  });
+
+  describe('formatPassTimeRange', () => {
+    const localSeconds = (day: number, hour: number, minute: number) =>
+      new Date(2026, 6, day, hour, minute).getTime() / 1000;
+
+    it('formats same-day, cross-day, and single-point pass ranges', () => {
+      expect(formatPassTimeRange(localSeconds(10, 8, 12), localSeconds(10, 8, 37), 'en')).toBe(
+        '07-10 08:12–08:37',
+      );
+      expect(formatPassTimeRange(localSeconds(10, 23, 50), localSeconds(11, 0, 15), 'en')).toBe(
+        '07-10 23:50–07-11 00:15',
+      );
+      expect(formatPassTimeRange(localSeconds(10, 8, 12), localSeconds(10, 8, 12), 'zh-CN')).toBe(
+        '07-10 08:12',
+      );
     });
   });
 });

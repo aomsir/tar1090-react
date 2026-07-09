@@ -10,6 +10,7 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
+import { historyStore } from '@/store/historyStore';
 
 function seed(hex: string, fields: Partial<Aircraft>): void {
   const a = new Aircraft(hex);
@@ -20,6 +21,7 @@ function seed(hex: string, fields: Partial<Aircraft>): void {
 describe('ListPanel', () => {
   beforeEach(() => {
     aircraftStore.reset();
+    historyStore.reset();
     usePlaybackStore.getState().reset();
     useLiveTick.setState({ version: 0 });
     useListControls.setState({
@@ -31,6 +33,7 @@ describe('ListPanel', () => {
     useToolbarStore.setState({ inViewOnly: false });
     useListControls.getState().resetColumns();
     useMapViewStore.setState({ extent: null });
+    useSelectionStore.setState({ selectedHex: null, selectedPassId: null });
   });
 
   it('renders rows from the store and calls onSelect on row click', async () => {
@@ -106,8 +109,30 @@ describe('ListPanel', () => {
 
     expect(screen.getByRole('columnheader', { name: 'Max. Spd. (kt)' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Max. Dist. (nmi)' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^Max\. Alt\. \(ft\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Pass Time' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Spd. (kt)' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Dist. (nmi)' })).not.toBeInTheDocument();
+  });
+
+  it('uses pass row ids for history selection and only highlights the selected pass', async () => {
+    historyStore.setFrames([
+      { now: 1000, messages: 1, aircraft: [{ hex: 'abc123', flight: 'FIRST1' }] },
+      { now: 1000 + 12 * 60 * 60, messages: 1, aircraft: [{ hex: 'abc123', flight: 'SECOND2' }] },
+    ]);
+    await historyStore.buildPassData();
+    act(() => usePlaybackStore.getState().setMode('history'));
+    useSelectionStore.setState({ selectedPassId: 'abc123:1000', selectedHex: 'abc123' });
+    const onSelect = vi.fn();
+
+    await renderWithI18n(<ListPanel onSelect={onSelect} />);
+
+    expect(screen.getByTestId('row-abc123:1000').className).toContain('border-indigo');
+    expect(screen.getByTestId(`row-abc123:${1000 + 12 * 60 * 60}`).className).not.toContain(
+      'border-indigo',
+    );
+    fireEvent.click(screen.getByText('SECOND2'));
+    expect(onSelect).toHaveBeenCalledWith(`abc123:${1000 + 12 * 60 * 60}`);
   });
 
   it('truncated cells expose full value via title attribute', async () => {
