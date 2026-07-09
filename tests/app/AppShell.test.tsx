@@ -91,7 +91,7 @@ import { Aircraft } from '@/domain/Aircraft';
 describe('AppShell', () => {
   beforeEach(async () => {
     await setTestLanguage('en');
-    useSelectionStore.setState({ selectedHex: null, selectedHexes: new Set() });
+    useSelectionStore.setState({ selectedHex: null, selectedPassId: null, selectedHexes: new Set() });
     useToolbarStore.setState({
       onlyMilitary: false,
       isolation: false,
@@ -200,13 +200,14 @@ describe('AppShell', () => {
     ]);
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
+    await historyStore.buildPassData();
 
     render(<AppShell />);
     act(() => {
       capturedOnReady!(fakeController);
     });
     await act(async () => {
-      capturedSelectCb!('781860');
+      useSelectionStore.getState().selectPass('781860:100', '781860');
       await Promise.resolve();
     });
     await waitFor(() => expect(fakeController.showTrack).toHaveBeenCalled());
@@ -235,10 +236,67 @@ describe('AppShell', () => {
 
     expect(capturedListOnSelect).toBeTypeOf('function');
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
+  });
+
+  it('selects the exact duplicate-hex history pass from the desktop list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'FIRST', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'SECOND', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setCursor(44000);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('781860:44000');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:44000',
+      selectedHex: '781860',
+    });
+    expect(fakeController.centerOn).toHaveBeenCalledWith(150, 50);
+  });
+
+  it('does not change selection when a history list pass id is missing', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('missing:100');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
+    });
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
   it('centers on current-frame position in history mode, not last-seen', async () => {
@@ -269,7 +327,7 @@ describe('AppShell', () => {
     });
 
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(100, 10);
@@ -303,7 +361,7 @@ describe('AppShell', () => {
     });
 
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:200');
     });
 
     expect(fakeController.centerOn).not.toHaveBeenCalled();
@@ -321,7 +379,7 @@ describe('AppShell', () => {
       capturedListOnSelect!('781860');
     });
 
-    expect(useSelectionStore.getState().selectedHex).toBe('781860');
+    expect(useSelectionStore.getState().selectedHex).toBeNull();
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
@@ -350,7 +408,7 @@ describe('AppShell', () => {
 
     fakeController.syncAircraft.mockClear();
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
     // After selection: only the selected aircraft

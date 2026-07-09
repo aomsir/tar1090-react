@@ -175,17 +175,20 @@ export function AppShell() {
     c.showPTracks(tracks);
   }, [allTracks, mode, liveVersion]);
 
-  const handleSelectFromList = useCallback((hex: string) => {
-    useSelectionStore.getState().select(hex);
+  const handleSelectFromList = useCallback((rowId: string) => {
     const state = usePlaybackStore.getState();
     if (state.mode === 'history') {
+      const pass = historyStore.getPass(rowId);
+      if (!pass) return;
+      useSelectionStore.getState().selectPass(pass.passId, pass.hex);
       const frame = historyStore.frameAt(state.cursorTime);
-      const dto = (frame?.aircraft ?? []).find((a) => a.hex === hex);
+      const dto = (frame?.aircraft ?? []).find((a) => a.hex === pass.hex);
       if (dto && typeof dto.lon === 'number' && typeof dto.lat === 'number') {
         controllerRef.current?.centerOn(dto.lon, dto.lat);
       }
     } else {
-      const ac = aircraftStore.map.get(hex);
+      useSelectionStore.getState().select(rowId);
+      const ac = aircraftStore.map.get(rowId);
       if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
         controllerRef.current?.centerOn(ac.lon, ac.lat);
       }
