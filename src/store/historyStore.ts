@@ -70,6 +70,7 @@ export class HistoryStore {
     // Enrich all aircraft with registration, type, etc. from the client-side
     // database. History frames from the backend don't contain these fields.
     await Promise.all(this.allAircraft.map((ac) => enrichAircraft(ac)));
+    useLiveTick.getState().bump();
   }
 
   clearPassData(): void {

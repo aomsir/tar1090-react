@@ -3,7 +3,8 @@ import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import type { AircraftSnapshot } from '@/data/types';
 
-const { routeService } = vi.hoisted(() => ({
+const { enrichAircraft, routeService } = vi.hoisted(() => ({
+  enrichAircraft: vi.fn(async () => {}),
   routeService: {
     enqueue: vi.fn(),
     flush: vi.fn(async () => {}),
@@ -11,7 +12,7 @@ const { routeService } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/domain/enrich', () => ({
-  enrichAircraft: vi.fn(async () => {}),
+  enrichAircraft,
 }));
 
 vi.mock('@/data/routeService', () => ({ routeService }));
@@ -55,6 +56,8 @@ describe('historyStore', () => {
 describe('pTracks data', () => {
   beforeEach(() => {
     historyStore.reset();
+    enrichAircraft.mockReset();
+    enrichAircraft.mockResolvedValue(undefined);
     routeService.enqueue.mockClear();
     routeService.flush.mockClear();
   });
@@ -73,6 +76,8 @@ describe('pTracks data', () => {
     expect(historyStore.pTracksData!.size).toBe(1);
     expect(historyStore.peakStats).not.toBeNull();
     expect(historyStore.allAircraft.length).toBe(1);
+    expect(historyStore.passes).toHaveLength(1);
+    expect(historyStore.passTracksData?.size).toBe(1);
   });
 
   it('buildPassData stores canonical passes, pass keyed tracks, and supports pass lookup', async () => {
@@ -154,5 +159,28 @@ describe('pTracks data', () => {
     await historyStore.buildPTracksData();
     const after = useLiveTick.getState().version;
     expect(after).toBeGreaterThan(before);
+  });
+
+  it('notifies legacy consumers after compatibility aircraft enrichment completes', async () => {
+    let resolveLegacyEnrichment: (() => void) | undefined;
+    enrichAircraft
+      .mockResolvedValueOnce(undefined)
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveLegacyEnrichment = resolve;
+          }),
+      );
+    historyStore.setFrames([frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000 }])]);
+    const before = useLiveTick.getState().version;
+    const build = historyStore.buildPTracksData();
+
+    await vi.waitFor(() => expect(enrichAircraft).toHaveBeenCalledTimes(2));
+    expect(useLiveTick.getState().version).toBe(before + 1);
+
+    resolveLegacyEnrichment?.();
+    await build;
+
+    expect(useLiveTick.getState().version).toBe(before + 2);
   });
 });
