@@ -32,18 +32,27 @@ describe('useSelectedAircraft', () => {
     expect(result.current?.flight).toBe('CCA101');
   });
 
-  it('returns detail from history store in history mode', () => {
-    const ac = new Aircraft('AABBCC');
-    ac.flight = 'HIST01';
-    historyStore.allAircraft = [ac];
-    aircraftStore.map.clear();
+  it('returns the exact selected history pass detail in history mode', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'FIRST', altitude: 1000, speed: 100 }] },
+      { now: 44000, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 2000, speed: 200 }] },
+      { now: 44030, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 39000, speed: 490 }] },
+    ] as never);
+    await historyStore.buildPassData();
 
     act(() => usePlaybackStore.getState().setMode('history'));
-    act(() => useSelectionStore.getState().select('AABBCC'));
+    act(() => useSelectionStore.getState().selectPass('aabbcc:44000', 'aabbcc'));
 
     const { result } = renderHook(() => useSelectedAircraft());
-    expect(result.current?.hex).toBe('AABBCC');
-    expect(result.current?.flight).toBe('HIST01');
+    expect(result.current?.hex).toBe('aabbcc');
+    expect(result.current).toMatchObject({
+      passId: 'aabbcc:44000',
+      flight: 'SECOND',
+      altitude: 39000,
+      speed: 490,
+      passStartTime: 44000,
+      passEndTime: 44030,
+    });
   });
 
   it('returns null in history mode when hex is missing from history but present in live store', () => {
@@ -52,7 +61,19 @@ describe('useSelectedAircraft', () => {
     aircraftStore.map.set('DEAD01', liveAc);
 
     act(() => usePlaybackStore.getState().setMode('history'));
-    act(() => useSelectionStore.getState().select('DEAD01'));
+    act(() => useSelectionStore.getState().selectPass('DEAD01:100', 'DEAD01'));
+
+    const { result } = renderHook(() => useSelectedAircraft());
+    expect(result.current).toBeNull();
+  });
+
+  it('does not fall back to a matching hex when the selected pass is missing', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'FIRST', altitude: 1000 }] },
+    ] as never);
+    await historyStore.buildPassData();
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useSelectionStore.getState().selectPass('aabbcc:missing', 'aabbcc'));
 
     const { result } = renderHook(() => useSelectedAircraft());
     expect(result.current).toBeNull();

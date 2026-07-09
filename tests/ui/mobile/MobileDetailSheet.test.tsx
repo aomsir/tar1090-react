@@ -4,6 +4,8 @@ import { MobileDetailSheet } from '@/ui/mobile/MobileDetailSheet';
 import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
 import type { AircraftDetail } from '@/features/detail/aircraftDetail';
+import { historyStore } from '@/store/historyStore';
+import { formatPassTimeRange } from '@/i18n/format';
 
 const detail: AircraftDetail = {
   hex: 'abc123',
@@ -43,6 +45,7 @@ describe('MobileDetailSheet', () => {
     await setTestLanguage('en');
     selectedAircraftMock.mockReturnValue(detail);
     useSelectionStore.setState({ selectedHex: 'abc123', selectedHexes: new Set() });
+    historyStore.reset();
   });
 
   it('renders nothing when no aircraft selected', () => {
@@ -90,6 +93,27 @@ describe('MobileDetailSheet', () => {
     expect(sheet).toHaveTextContent('274°');
   });
 
+  it('renders pass time and maximum pass stats', () => {
+    selectedAircraftMock.mockReturnValue({
+      ...detail,
+      passId: 'abc123:100',
+      passStartTime: 100,
+      passEndTime: 160,
+      maxDistance: 42.34,
+      altitude: 39000,
+      speed: 490,
+    });
+    render(<MobileDetailSheet />);
+
+    expect(screen.getByText(formatPassTimeRange(100, 160, 'en'))).toBeInTheDocument();
+    const stats = screen.getByTestId('key-stats');
+    expect(stats).toHaveTextContent('Max Altitude');
+    expect(stats).toHaveTextContent('Max Speed');
+    expect(stats).toHaveTextContent('Max Distance');
+    expect(stats).toHaveTextContent('42.3');
+    expect(stats).not.toHaveTextContent('Track');
+  });
+
   it('closes when close button pressed', () => {
     render(<MobileDetailSheet />);
     fireEvent.click(screen.getByRole('button', { name: 'Close details' }));
@@ -107,6 +131,27 @@ describe('MobileDetailSheet', () => {
     expect(screen.getByText('Identity')).toBeInTheDocument();
     expect(screen.getByText('ABC123')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Export KML' })).toBeInTheDocument();
+  });
+
+  it('exports only selected pass points when the detail identifies a pass', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'abc123', lat: 1, lon: 10, altitude: 1000 }] },
+      { now: 44000, messages: 0, aircraft: [{ hex: 'abc123', lat: 3, lon: 30, altitude: 2000 }] },
+      { now: 44030, messages: 0, aircraft: [{ hex: 'abc123', lat: 4, lon: 40, altitude: 2000 }] },
+    ] as never);
+    await historyStore.buildPassData();
+    selectedAircraftMock.mockReturnValue({ ...detail, passId: 'abc123:44000' });
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<MobileDetailSheet />);
+    fireEvent.click(screen.getByRole('button', { name: 'Export KML' }));
+
+    const xml = await (createSpy.mock.calls[0][0] as Blob).text();
+    expect(xml).toContain('30 3');
+    expect(xml).toContain('40 4');
+    expect(xml).not.toContain('10 1');
   });
 
   it('keeps a visual drag handle', () => {

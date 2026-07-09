@@ -10,6 +10,8 @@ import { extractTrackPoints } from '@/features/track/track';
 import { buildTrackKml } from '@/features/track/kml';
 import { historyStore } from '@/store/historyStore';
 import { formatAltitude } from '@/domain/format';
+import { formatDistanceNm } from '@/domain/units';
+import { formatPassTimeRange } from '@/i18n/format';
 
 const SNAP_PEEK = '272px';
 const SNAP_EXPANDED = 0.85;
@@ -54,7 +56,9 @@ export function MobileDetailSheet() {
   if (!d) return null;
 
   const handleExportKml = () => {
-    const points = extractTrackPoints(historyStore.frames, d.hex);
+    const points = d.passId
+      ? (historyStore.getPass(d.passId)?.trackPoints ?? [])
+      : extractTrackPoints(historyStore.frames, d.hex);
     const xml = buildTrackKml({ hex: d.hex, registration: d.registration }, points);
     const blob = new Blob([xml], { type: 'application/vnd.google-earth.kml+xml' });
     const url = URL.createObjectURL(blob);
@@ -116,6 +120,11 @@ export function MobileDetailSheet() {
                     ) : null}
                     {d.typeCode ? <span>{d.typeCode}</span> : null}
                   </div>
+                  {d.passId && d.passStartTime != null && d.passEndTime != null ? (
+                    <div className="mt-1 text-xs text-slate-400">
+                      {formatPassTimeRange(d.passStartTime, d.passEndTime, i18n.language)}
+                    </div>
+                  ) : null}
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {d.isMilitary ? (
                       <Chip color="danger" size="sm" variant="secondary">
@@ -142,7 +151,7 @@ export function MobileDetailSheet() {
               <div data-testid="key-stats" className="mt-3 grid grid-cols-3 gap-2">
                 <div className="rounded-lg bg-white/5 p-2 text-center">
                   <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('detail.stats.altitude')}
+                    {t(d.passId ? 'detail.stats.maxAltitude' : 'detail.stats.altitude')}
                   </div>
                   <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
                     {(() => {
@@ -155,7 +164,7 @@ export function MobileDetailSheet() {
                 </div>
                 <div className="rounded-lg bg-white/5 p-2 text-center">
                   <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('detail.stats.speed')}
+                    {t(d.passId ? 'detail.stats.maxSpeed' : 'detail.stats.speed')}
                   </div>
                   <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
                     {typeof d.speed === 'number' && Number.isFinite(d.speed)
@@ -166,14 +175,16 @@ export function MobileDetailSheet() {
                 </div>
                 <div className="rounded-lg bg-white/5 p-2 text-center">
                   <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {t('detail.stats.track')}
+                    {t(d.passId ? 'detail.stats.maxDistance' : 'detail.stats.track')}
                   </div>
                   <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
-                    {typeof d.track === 'number' && Number.isFinite(d.track)
-                      ? `${Math.round(d.track)}°`
-                      : '—'}
+                    {d.passId
+                      ? formatDistanceNm(d.maxDistance) || '—'
+                      : typeof d.track === 'number' && Number.isFinite(d.track)
+                        ? `${Math.round(d.track)}°`
+                        : '—'}
                   </div>
-                  <div className="text-[10px] text-slate-500"></div>
+                  <div className="text-[10px] text-slate-500">{d.passId ? 'nmi' : ''}</div>
                 </div>
               </div>
 

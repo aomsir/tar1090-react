@@ -7,6 +7,9 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { setTestLanguage } from '@/i18n/testUtils';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
+import { historyStore } from '@/store/historyStore';
+
+const { mobileListRowId } = vi.hoisted(() => ({ mobileListRowId: { value: 'abc123' } }));
 
 vi.mock('@/ui/mobile/MobileAircraftList', () => ({
   MobileAircraftList: ({ onSelect }: { onSelect: (hex: string) => void }) => (
@@ -14,7 +17,7 @@ vi.mock('@/ui/mobile/MobileAircraftList', () => ({
       <button
         type="button"
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onSelect('abc123')}
+        onClick={() => onSelect(mobileListRowId.value)}
       >
         CCA123
       </button>
@@ -29,6 +32,8 @@ describe('MobileTopBar', () => {
     useSelectionStore.setState({ selectedHex: null });
     usePlaybackStore.getState().reset();
     useHistoryStatsStore.getState().clear();
+    historyStore.reset();
+    mobileListRowId.value = 'abc123';
   });
 
   it('writes the search input into listControls.query', async () => {
@@ -81,6 +86,24 @@ describe('MobileTopBar', () => {
     fireEvent.focus(screen.getByPlaceholderText('Flight / registration / ICAO'));
     fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
     expect(useSelectionStore.getState().selectedHex).toBe('abc123');
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
+
+  it('selects the history pass identity and closes the list in history mode', async () => {
+    await setTestLanguage('en');
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'abc123', flight: 'PASS', altitude: 1000 }] },
+    ] as never);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    mobileListRowId.value = 'abc123:100';
+    render(<MobileTopBar />);
+    fireEvent.focus(screen.getByPlaceholderText('Flight / registration / ICAO'));
+    fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedHex: 'abc123',
+      selectedPassId: 'abc123:100',
+    });
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 
