@@ -96,8 +96,47 @@ const DEFAULTS = {
   historyTrackLimit: 1000 as HistoryTrackLimit,
 };
 
+const PERSISTED_TOOLBAR_KEYS = [
+  'mapDim',
+  'enableLabels',
+  'extendedLabels',
+  'trackLabels',
+  'allTracks',
+  'persistence',
+  'isolation',
+  'multiSelect',
+  'inViewOnly',
+  'onlyMilitary',
+  'follow',
+  'units',
+  'filterGroundVehicles',
+  'filterBlockedMLAT',
+  'coloredPlanes',
+  'coloredTrails',
+  'labelScale',
+  'iconScale',
+  'detailWidth',
+  'listWidth',
+  'routeApiEnabled',
+  'historyTrackLimit',
+] as const satisfies readonly (keyof typeof DEFAULTS)[];
+
+type PersistedToolbarState = Pick<typeof DEFAULTS, (typeof PERSISTED_TOOLBAR_KEYS)[number]>;
+
+function getPersistedToolbarState(state: unknown): Partial<PersistedToolbarState> {
+  if (typeof state !== 'object' || state === null || Array.isArray(state)) return {};
+
+  const source = state as Record<string, unknown>;
+  return Object.fromEntries(
+    PERSISTED_TOOLBAR_KEYS.filter((key) => key in source).map((key) => [key, source[key]]),
+  ) as Partial<PersistedToolbarState>;
+}
+
 export function migrateToolbarState(persisted: unknown): Record<string, unknown> {
-  const state = { ...((persisted ?? {}) as Record<string, unknown>) };
+  const state =
+    typeof persisted === 'object' && persisted !== null && !Array.isArray(persisted)
+      ? { ...(persisted as Record<string, unknown>) }
+      : {};
   delete state.routeApiUrl;
   state.historyTrackLimit = normalizeHistoryTrackLimit(state.historyTrackLimit);
   return state;
@@ -126,18 +165,15 @@ export const useToolbarStore = create<ToolbarState>()(
       version: 4,
       migrate: (persisted: unknown): ToolbarState =>
         migrateToolbarState(persisted) as unknown as ToolbarState,
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<ToolbarState>),
-        historyTrackLimit: normalizeHistoryTrackLimit(
-          (persisted as Partial<ToolbarState>).historyTrackLimit,
-        ),
-      }),
-      partialize: (state) => {
-        // Exclude transient UI state from persistence
-        const { settingsOpen: _sf, fullscreen: _fs, statsDashboardOpen: _sd, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
-        return persisted;
+      merge: (persisted, current) => {
+        const persistedState = getPersistedToolbarState(persisted);
+        return {
+          ...current,
+          ...persistedState,
+          historyTrackLimit: normalizeHistoryTrackLimit(persistedState.historyTrackLimit),
+        };
       },
+      partialize: (state) => getPersistedToolbarState(state),
     },
   ),
 );

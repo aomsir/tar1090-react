@@ -119,6 +119,23 @@ describe('toolbarStore', () => {
     expect(migrateToolbarState(persisted).historyTrackLimit).toBe(expected);
   });
 
+  it('removes legacy routeApiUrl while preserving persisted toolbar fields', () => {
+    expect(
+      migrateToolbarState({
+        routeApiUrl: 'https://legacy.example',
+        units: 'metric',
+        enableLabels: true,
+      }),
+    ).toMatchObject({
+      units: 'metric',
+      enableLabels: true,
+      historyTrackLimit: 1000,
+    });
+    expect(
+      migrateToolbarState({ routeApiUrl: 'https://legacy.example' }).routeApiUrl,
+    ).toBeUndefined();
+  });
+
   it('normalizes an invalid current-version historyTrackLimit during hydration', async () => {
     localStorage.setItem(
       'toolbar-settings',
@@ -139,6 +156,35 @@ describe('toolbarStore', () => {
     await useToolbarStore.persist.rehydrate();
 
     expect(useToolbarStore.getState().historyTrackLimit).toBe('all');
+  });
+
+  it('hydrates only persisted toolbar fields from current-version storage', async () => {
+    localStorage.setItem(
+      'toolbar-settings',
+      JSON.stringify({
+        state: {
+          historyTrackLimit: 500,
+          units: 'metric',
+          settingsOpen: true,
+          fullscreen: true,
+          statsDashboardOpen: true,
+          toggle: 'corrupted action',
+          unexpected: 'ignored',
+        },
+        version: 4,
+      }),
+    );
+
+    await useToolbarStore.persist.rehydrate();
+
+    const state = useToolbarStore.getState();
+    expect(state.historyTrackLimit).toBe(500);
+    expect(state.units).toBe('metric');
+    expect(state.settingsOpen).toBe(false);
+    expect(state.fullscreen).toBe(false);
+    expect(state.statsDashboardOpen).toBe(false);
+    expect(state.toggle).toBeTypeOf('function');
+    expect('unexpected' in state).toBe(false);
   });
 });
 
