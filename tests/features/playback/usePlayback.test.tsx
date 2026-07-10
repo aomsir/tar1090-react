@@ -2,8 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { usePlayback } from '@/features/playback/usePlayback';
+import { Aircraft } from '@/domain/Aircraft';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { buildDrawablePassIndex } from '@/features/playback/historyTracks';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
+import { useSelectionStore } from '@/store/selectionStore';
+import { useToolbarStore } from '@/store/toolbarStore';
 import type { MapController } from '@/map/MapController';
 import type { AircraftSnapshot } from '@/data/types';
 
@@ -17,41 +22,125 @@ function Harness({ controller }: { controller: MapController }) {
   return null;
 }
 
+function indexedPass(passId: string, endTime: number): AircraftPass {
+  const hex = passId.split(':')[0]!;
+  return {
+    passId,
+    hex,
+    startTime: endTime - 10,
+    endTime,
+    aircraft: new Aircraft(hex),
+    trackPoints: [
+      { lon: 0, lat: 0, ts: endTime - 1 },
+      { lon: 1, lat: 1, ts: endTime },
+    ],
+    hadAltitude: false,
+    hadGround: false,
+    hadEmergency: false,
+    hadSquawk: false,
+  };
+}
+
+function seedIndexedPasses(count: number): void {
+  historyStore.drawablePassesRecentFirst = buildDrawablePassIndex(
+    Array.from({ length: count }, (_, i) => indexedPass(`hex${i}:${i}`, i)),
+  );
+}
+
+function makeController(): MapController {
+  return {
+    syncAircraft: vi.fn(),
+    showPTracks: vi.fn(),
+    clearPTracks: vi.fn(),
+    clearTrack: vi.fn(),
+  } as unknown as MapController;
+}
+
 describe('usePlayback', () => {
   beforeEach(() => {
     historyStore.reset();
     usePlaybackStore.getState().reset();
+    useToolbarStore.setState({ historyTrackLimit: 1000 });
+    useSelectionStore.setState({ selectedHex: null, selectedPassId: null });
   });
 
-  it('shows pass-keyed tracks after asynchronous history data construction', async () => {
-    historyStore.setFrames([
-      {
-        now: 100,
-        messages: 0,
-        aircraft: [
-          { hex: 'abc', lat: 0, lon: 0, altitude: 1000 },
-          { hex: 'abc', lat: 1, lon: 1, altitude: 2000 },
-        ] as unknown as AircraftSnapshot['aircraft'],
-      },
-    ]);
-    const controller = {
-      syncAircraft: vi.fn(),
-      showPTracks: vi.fn(),
-      clearPTracks: vi.fn(),
-      clearTrack: vi.fn(),
-    } as unknown as MapController;
-
+  it('shows only the configured recent history tracks', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 100 });
+    const controller = makeController();
     render(<Harness controller={controller} />);
-    await act(async () => {
-      usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
-      usePlaybackStore.getState().setMode('history');
-      await historyStore.buildPassData();
-    });
+    act(() => usePlaybackStore.getState().setMode('history'));
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(100);
+    expect(tracks.has('hex100:100')).toBe(true);
+    expect(tracks.has('hex0:0')).toBe(false);
+  });
 
-    expect(controller.showPTracks).toHaveBeenCalledWith(
-      historyStore.passTracksData,
-      expect.any(Number),
+  it('resynchronizes immediately when the limit changes', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 100 });
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useToolbarStore.getState().setHistoryTrackLimit('all'));
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(historyStore.drawablePassesRecentFirst.length);
+  });
+
+  it('adds an older selected pass outside the numeric limit', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 100 });
+    const oldest = historyStore.drawablePassesRecentFirst.at(-1)!;
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() =>
+      useSelectionStore.setState({ selectedPassId: oldest.passId, selectedHex: oldest.hex }),
     );
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(101);
+    expect(tracks.has(oldest.passId)).toBe(true);
+  });
+
+  it('removes the extra older pass when selection is cleared', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 100 });
+    const oldest = historyStore.drawablePassesRecentFirst.at(-1)!;
+    useSelectionStore.setState({ selectedPassId: oldest.passId, selectedHex: oldest.hex });
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useSelectionStore.setState({ selectedPassId: null, selectedHex: null }));
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(100);
+    expect(tracks.has(oldest.passId)).toBe(false);
+  });
+
+  it('removes the extra older pass when selection moves inside the limit', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 100 });
+    const oldest = historyStore.drawablePassesRecentFirst.at(-1)!;
+    const newest = historyStore.drawablePassesRecentFirst[0]!;
+    useSelectionStore.setState({ selectedPassId: oldest.passId, selectedHex: oldest.hex });
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() =>
+      useSelectionStore.setState({ selectedPassId: newest.passId, selectedHex: newest.hex }),
+    );
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(100);
+    expect(tracks.has(oldest.passId)).toBe(false);
+  });
+
+  it('shows every indexed pass when the limit is all', () => {
+    seedIndexedPasses(101);
+    useToolbarStore.setState({ historyTrackLimit: 'all' });
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(101);
   });
 
   it('clears pTracks outside history mode', () => {
