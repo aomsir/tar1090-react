@@ -826,7 +826,9 @@ describe('AppShell mobile layout', () => {
       {
         now: 100,
         messages: 0,
-        aircraft: [{ hex: '781860', flight: 'PASS', altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+        aircraft: [
+          { hex: '781860', flight: 'PASS', altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
     await historyStore.buildPassData();
