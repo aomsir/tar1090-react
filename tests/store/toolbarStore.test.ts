@@ -118,6 +118,28 @@ describe('toolbarStore', () => {
   ] as const)('normalizes migrated historyTrackLimit %#', (persisted, expected) => {
     expect(migrateToolbarState(persisted).historyTrackLimit).toBe(expected);
   });
+
+  it('normalizes an invalid current-version historyTrackLimit during hydration', async () => {
+    localStorage.setItem(
+      'toolbar-settings',
+      JSON.stringify({ state: { historyTrackLimit: 1234 }, version: 4 }),
+    );
+
+    await useToolbarStore.persist.rehydrate();
+
+    expect(useToolbarStore.getState().historyTrackLimit).toBe(1000);
+  });
+
+  it('preserves a valid current-version historyTrackLimit during hydration', async () => {
+    localStorage.setItem(
+      'toolbar-settings',
+      JSON.stringify({ state: { historyTrackLimit: 'all' }, version: 4 }),
+    );
+
+    await useToolbarStore.persist.rehydrate();
+
+    expect(useToolbarStore.getState().historyTrackLimit).toBe('all');
+  });
 });
 
 describe('detailWidth', () => {

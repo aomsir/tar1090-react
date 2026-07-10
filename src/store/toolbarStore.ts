@@ -126,6 +126,13 @@ export const useToolbarStore = create<ToolbarState>()(
       version: 4,
       migrate: (persisted: unknown): ToolbarState =>
         migrateToolbarState(persisted) as unknown as ToolbarState,
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<ToolbarState>),
+        historyTrackLimit: normalizeHistoryTrackLimit(
+          (persisted as Partial<ToolbarState>).historyTrackLimit,
+        ),
+      }),
       partialize: (state) => {
         // Exclude transient UI state from persistence
         const { settingsOpen: _sf, fullscreen: _fs, statsDashboardOpen: _sd, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
