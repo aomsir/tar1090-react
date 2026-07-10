@@ -171,7 +171,13 @@ describe('useReplay', () => {
       selectedHex: 'abc123',
       selectedHexes: new Set(['abc123']),
     });
-    render(<Harness onReady={(r) => { replay = r; }} />);
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
 
     await act(async () => {
       await expect(replay!.enterHistory('1d')).rejects.toThrow('load failed');
@@ -187,7 +193,13 @@ describe('useReplay', () => {
 
   it('clears complete pass selection and pass data when exiting to live', async () => {
     let replay: ReturnType<typeof useReplay> | null = null;
-    render(<Harness onReady={(r) => { replay = r; }} />);
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
     useSelectionStore.getState().select('abc123');
     const clearPassData = vi.spyOn(historyStore, 'clearPassData');
 

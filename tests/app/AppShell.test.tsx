@@ -92,7 +92,11 @@ import { Aircraft } from '@/domain/Aircraft';
 describe('AppShell', () => {
   beforeEach(async () => {
     await setTestLanguage('en');
-    useSelectionStore.setState({ selectedHex: null, selectedPassId: null, selectedHexes: new Set() });
+    useSelectionStore.setState({
+      selectedHex: null,
+      selectedPassId: null,
+      selectedHexes: new Set(),
+    });
     useToolbarStore.setState({
       onlyMilitary: false,
       isolation: false,
@@ -403,9 +407,7 @@ describe('AppShell', () => {
       {
         now: 200,
         messages: 0,
-        aircraft: [
-          { hex: '781860', altitude: 2000 },
-        ] as unknown as AircraftSnapshot['aircraft'],
+        aircraft: [{ hex: '781860', altitude: 2000 }] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
     await historyStore.buildPassData();
