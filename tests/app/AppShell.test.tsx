@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import type { AircraftSnapshot } from '@/data/types';
 import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
@@ -47,6 +47,9 @@ vi.mock('@/map/MapView', () => ({
 vi.mock('@/features/live/useLiveData', () => ({ useLiveData: () => {} }));
 vi.mock('@/app/useUrlSync', () => ({ useUrlSync: () => {} }));
 vi.mock('@/features/playback/usePlayback', () => ({ usePlayback: () => {} }));
+vi.mock('@/ui/mobile/MobileDetailSheet', () => ({
+  MobileDetailSheet: () => <div data-testid="mobile-detail-sheet" />,
+}));
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: {
     ensureLoaded: vi.fn(async () => {
@@ -734,6 +737,7 @@ describe('AppShell mobile layout', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
   });
 
@@ -780,5 +784,88 @@ describe('AppShell mobile layout', () => {
       usePlaybackStore.setState({ loading: true, progress: { done: 1, total: 10 } });
     });
     expect(screen.getByTestId('mobile-history-loading')).toBeInTheDocument();
+  });
+
+  it('centers on the final position after selecting a history pass from the mobile list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'PASS', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'PASS', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /PASS/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.centerOn).toHaveBeenCalledWith(150, 50);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
+
+  it('does not center after selecting an unpositioned history pass from the mobile list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: '781860', flight: 'PASS', altitude: 1000 }] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /PASS/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('keeps live mobile selection behavior unchanged', () => {
+    const ac = new Aircraft('a00001');
+    ac.update(
+      { hex: 'a00001', flight: 'LIVE', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('a00001', ac);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /LIVE/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: 'a00001',
+    });
+    expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 });

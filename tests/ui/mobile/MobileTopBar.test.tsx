@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MobileTopBar } from '@/ui/mobile/MobileTopBar';
+import { MobileTopBar as MobileTopBarComponent } from '@/ui/mobile/MobileTopBar';
 import { useListControls } from '@/store/listControls';
 import { useStatsStore } from '@/store/statsStore';
 import { useSelectionStore } from '@/store/selectionStore';
@@ -10,6 +10,11 @@ import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import { historyStore } from '@/store/historyStore';
 
 const { mobileListRowId } = vi.hoisted(() => ({ mobileListRowId: { value: 'abc123' } }));
+const onSelect = vi.fn();
+
+function MobileTopBar() {
+  return <MobileTopBarComponent onSelect={onSelect} />;
+}
 
 vi.mock('@/ui/mobile/MobileAircraftList', () => ({
   MobileAircraftList: ({ onSelect }: { onSelect: (hex: string) => void }) => (
@@ -34,6 +39,7 @@ describe('MobileTopBar', () => {
     useHistoryStatsStore.getState().clear();
     historyStore.reset();
     mobileListRowId.value = 'abc123';
+    onSelect.mockClear();
   });
 
   it('writes the search input into listControls.query', async () => {
@@ -85,7 +91,7 @@ describe('MobileTopBar', () => {
     render(<MobileTopBar />);
     fireEvent.focus(screen.getByPlaceholderText('Flight / registration / ICAO'));
     fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
-    expect(useSelectionStore.getState().selectedHex).toBe('abc123');
+    expect(onSelect).toHaveBeenCalledWith('abc123');
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 
@@ -100,10 +106,7 @@ describe('MobileTopBar', () => {
     render(<MobileTopBar />);
     fireEvent.focus(screen.getByPlaceholderText('Flight / registration / ICAO'));
     fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
-    expect(useSelectionStore.getState()).toMatchObject({
-      selectedHex: 'abc123',
-      selectedPassId: 'abc123:100',
-    });
+    expect(onSelect).toHaveBeenCalledWith('abc123:100');
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 
@@ -201,7 +204,7 @@ describe('MobileTopBar', () => {
     const button = screen.getByRole('button', { name: 'Show aircraft list' });
     fireEvent.click(button);
     fireEvent.click(screen.getByRole('button', { name: 'CCA123' }));
-    expect(useSelectionStore.getState().selectedHex).toBe('abc123');
+    expect(onSelect).toHaveBeenCalledWith('abc123');
     expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });

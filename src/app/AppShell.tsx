@@ -240,7 +240,7 @@ export function AppShell() {
       />
       {isMobile ? (
         <>
-          <MobileTopBar />
+          <MobileTopBar onSelect={handleSelectFromList} />
           <MobileToolbar onResetView={handleResetView} />
           <MobileDetailSheet />
           <MobileHistoryLoading />

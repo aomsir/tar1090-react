@@ -4,13 +4,11 @@ import { List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStatsStore } from '@/store/statsStore';
 import { useListControls } from '@/store/listControls';
-import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
-import { historyStore } from '@/store/historyStore';
 import { MobileAircraftList } from './MobileAircraftList';
 
-export function MobileTopBar() {
+export function MobileTopBar({ onSelect }: { onSelect: (rowId: string) => void }) {
   const { t } = useTranslation();
   const liveCount = useStatsStore((s) => s.count);
   const historyCount = useHistoryStatsStore((s) => s.stats?.totalPasses ?? 0);
@@ -18,7 +16,6 @@ export function MobileTopBar() {
   const count = mode === 'history' ? historyCount : liveCount;
   const query = useListControls((s) => s.query);
   const setQuery = useListControls((s) => s.setQuery);
-  const select = useSelectionStore((s) => s.select);
   const [focused, setFocused] = useState(false);
   const [listPinned, setListPinned] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -27,12 +24,7 @@ export function MobileTopBar() {
   const showList = (searchDriven || listPinned) && !dismissed;
 
   const handleSelect = (rowId: string) => {
-    if (mode === 'history') {
-      const pass = historyStore.getPass(rowId);
-      if (pass) useSelectionStore.getState().selectPass(rowId, pass.hex);
-    } else {
-      select(rowId);
-    }
+    onSelect(rowId);
     setFocused(false);
     setListPinned(false);
   };
