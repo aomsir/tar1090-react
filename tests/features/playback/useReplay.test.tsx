@@ -163,6 +163,28 @@ describe('useReplay', () => {
     expect(historyLoader.reset).toHaveBeenCalled();
   });
 
+  it('clears selection and loading when history loading fails', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    ensureLoadedMock.mockRejectedValueOnce(new Error('load failed'));
+    useSelectionStore.setState({
+      selectedPassId: 'abc123:100',
+      selectedHex: 'abc123',
+      selectedHexes: new Set(['abc123']),
+    });
+    render(<Harness onReady={(r) => { replay = r; }} />);
+
+    await act(async () => {
+      await expect(replay!.enterHistory('1d')).rejects.toThrow('load failed');
+    });
+
+    expect(usePlaybackStore.getState()).toMatchObject({ loading: false, mode: 'live' });
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: null,
+    });
+    expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
+  });
+
   it('clears selection before exposing history mode and clears pass data on exit', async () => {
     let replay: ReturnType<typeof useReplay> | null = null;
     render(<Harness onReady={(r) => { replay = r; }} />);

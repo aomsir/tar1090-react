@@ -67,6 +67,21 @@ describe('usePlayback', () => {
     expect(controller.clearPTracks).toHaveBeenCalled();
   });
 
+  it('clears pTracks when history pass data is unavailable', () => {
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
+    usePlaybackStore.getState().setMode('history');
+
+    render(<Harness controller={controller} />);
+
+    expect(controller.showPTracks).not.toHaveBeenCalled();
+    expect(controller.clearPTracks).toHaveBeenCalled();
+  });
+
   it('auto-pauses at the upper bound during playback', () => {
     historyStore.setFrames([
       {
