@@ -185,7 +185,7 @@ describe('useReplay', () => {
     expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
   });
 
-  it('clears selection before exposing history mode and clears pass data on exit', async () => {
+  it('clears complete pass selection and pass data when exiting to live', async () => {
     let replay: ReturnType<typeof useReplay> | null = null;
     render(<Harness onReady={(r) => { replay = r; }} />);
     useSelectionStore.getState().select('abc123');
@@ -196,8 +196,20 @@ describe('useReplay', () => {
     });
 
     expect(useSelectionStore.getState().selectedHex).toBeNull();
+    useSelectionStore.setState({
+      selectedPassId: 'abc123:100',
+      selectedHex: 'abc123',
+      selectedHexes: new Set(['abc123']),
+    });
     act(() => replay!.exitToLive());
-    expect(useSelectionStore.getState().selectedHex).toBeNull();
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: null,
+    });
+    expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
     expect(clearPassData).toHaveBeenCalledOnce();
+    expect(historyStore.passes).toEqual([]);
+    expect(historyStore.passTracksData).toBeNull();
+    expect(usePlaybackStore.getState().mode).toBe('live');
   });
 });

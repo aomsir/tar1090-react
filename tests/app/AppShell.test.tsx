@@ -244,7 +244,7 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
   });
 
-  it('selects the exact duplicate-hex history pass from the desktop list', async () => {
+  it('switches duplicate-hex history passes from the desktop list', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -270,6 +270,22 @@ describe('AppShell', () => {
       capturedOnReady!(fakeController);
     });
 
+    fakeController.syncAircraft.mockClear();
+    fakeController.setSelectedTrackKey.mockClear();
+    fakeController.centerOn.mockClear();
+
+    act(() => {
+      capturedListOnSelect!('781860:100');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
+    expect(fakeController.centerOn).toHaveBeenLastCalledWith(100, 10);
+    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'FIRST' }]);
+
     act(() => {
       capturedListOnSelect!('781860:44000');
     });
@@ -278,8 +294,9 @@ describe('AppShell', () => {
       selectedPassId: '781860:44000',
       selectedHex: '781860',
     });
-    expect(fakeController.centerOn).toHaveBeenCalledWith(150, 50);
-    expect(fakeController.setSelectedTrackKey).toHaveBeenCalledWith('781860:44000');
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:44000');
+    expect(fakeController.centerOn).toHaveBeenLastCalledWith(150, 50);
+    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
   });
 
   it('keeps the current pass selection when its history marker is clicked', async () => {
