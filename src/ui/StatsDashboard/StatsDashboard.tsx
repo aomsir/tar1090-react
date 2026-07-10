@@ -85,9 +85,11 @@ export function StatsDashboard() {
         </div>
 
         <SummaryCards
-          totalAircraft={stats.totalAircraft}
+          totalPasses={stats.totalPasses}
+          uniqueAircraft={stats.uniqueAircraft}
           uniqueCallsigns={stats.uniqueCallsigns}
-          militaryCount={stats.militaryCount}
+          callsignPasses={stats.otherStats.identified.callsign}
+          militaryPasses={stats.militaryPasses}
           peakOnline={stats.peakOnline}
           peakTime={stats.peakTime}
         />
@@ -112,7 +114,7 @@ export function StatsDashboard() {
           <AirlineChart data={stats.airlineDistribution} />
           <OtherCard
             data={stats.sourceDistribution}
-            totalAircraft={stats.totalAircraft}
+            totalPasses={stats.totalPasses}
             otherStats={stats.otherStats}
           />
         </div>

@@ -3,9 +3,19 @@ import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import type { AircraftSnapshot } from '@/data/types';
 
-vi.mock('@/domain/enrich', () => ({
+const { enrichAircraft, routeService } = vi.hoisted(() => ({
   enrichAircraft: vi.fn(async () => {}),
+  routeService: {
+    enqueue: vi.fn(),
+    flush: vi.fn(async () => {}),
+  },
 }));
+
+vi.mock('@/domain/enrich', () => ({
+  enrichAircraft,
+}));
+
+vi.mock('@/data/routeService', () => ({ routeService }));
 
 const frame = (now: number, ac: Record<string, unknown>[] = []): AircraftSnapshot => ({
   now,
@@ -43,26 +53,16 @@ describe('historyStore', () => {
   });
 });
 
-describe('pTracks data', () => {
-  beforeEach(() => historyStore.reset());
-
-  it('buildPTracksData populates pTracksData, peakStats, allAircraft', async () => {
-    const frames: AircraftSnapshot[] = [
-      {
-        now: 1000,
-        messages: 1,
-        aircraft: [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }],
-      },
-    ];
-    historyStore.setFrames(frames);
-    await historyStore.buildPTracksData();
-    expect(historyStore.pTracksData).not.toBeNull();
-    expect(historyStore.pTracksData!.size).toBe(1);
-    expect(historyStore.peakStats).not.toBeNull();
-    expect(historyStore.allAircraft.length).toBe(1);
+describe('pass data', () => {
+  beforeEach(() => {
+    historyStore.reset();
+    enrichAircraft.mockReset();
+    enrichAircraft.mockResolvedValue(undefined);
+    routeService.enqueue.mockClear();
+    routeService.flush.mockClear();
   });
 
-  it('clearPTracksData resets all pTracks fields', async () => {
+  it('buildPassData populates only canonical pass data', async () => {
     const frames: AircraftSnapshot[] = [
       {
         now: 1000,
@@ -71,11 +71,67 @@ describe('pTracks data', () => {
       },
     ];
     historyStore.setFrames(frames);
-    await historyStore.buildPTracksData();
-    historyStore.clearPTracksData();
-    expect(historyStore.pTracksData).toBeNull();
-    expect(historyStore.peakStats).toBeNull();
-    expect(historyStore.allAircraft).toEqual([]);
+    await historyStore.buildPassData();
+    expect(historyStore.passes).toHaveLength(1);
+    expect(historyStore.passTracksData?.size).toBe(1);
+  });
+
+  it('buildPassData stores canonical passes, pass keyed tracks, and supports pass lookup', async () => {
+    historyStore.setFrames([
+      frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }]),
+      frame(1000 + 12 * 60 * 60, [{ hex: 'aa', lat: 31, lon: 111, altitude: 11000, speed: 220 }]),
+    ]);
+
+    await historyStore.buildPassData();
+
+    expect(historyStore.passes).toHaveLength(2);
+    expect(historyStore.passTracksData).toBeInstanceOf(Map);
+    expect(historyStore.passTracksData?.size).toBe(2);
+    expect(historyStore.getPass(historyStore.passes[0].passId)).toBe(historyStore.passes[0]);
+    expect(historyStore.getPass(null)).toBeNull();
+    expect(historyStore.getPass('missing')).toBeNull();
+  });
+
+  it('clearPassData resets canonical pass fields', async () => {
+    const frames: AircraftSnapshot[] = [
+      {
+        now: 1000,
+        messages: 1,
+        aircraft: [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000, speed: 200 }],
+      },
+    ];
+    historyStore.setFrames(frames);
+    await historyStore.buildPassData();
+    historyStore.clearPassData();
+    expect(historyStore.passes).toEqual([]);
+    expect(historyStore.passTracksData).toBeNull();
+  });
+
+  it('clearPassData resets canonical pass fields and history statistics', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000 }])]);
+    await historyStore.buildPassData();
+
+    historyStore.clearPassData();
+
+    expect(historyStore.passes).toEqual([]);
+    expect(historyStore.passTracksData).toBeNull();
+    expect(historyStore.getPass('aa:1000')).toBeNull();
+  });
+
+  it('queues each non-empty normalized callsign once across passes', async () => {
+    historyStore.setFrames([
+      frame(1000, [{ hex: 'aa', flight: ' test100 ' }]),
+      frame(1000 + 12 * 60 * 60, [
+        { hex: 'aa', flight: 'TEST100' },
+        { hex: 'bb', flight: ' ' },
+      ]),
+    ]);
+
+    await historyStore.buildPassData(undefined, undefined, true);
+
+    expect(routeService.enqueue).toHaveBeenCalledTimes(1);
+    expect(routeService.enqueue).toHaveBeenCalledWith('TEST100');
+    expect(routeService.flush).toHaveBeenCalledTimes(1);
   });
 
   it('frameInterval returns median gap between consecutive frames', () => {
@@ -88,7 +144,7 @@ describe('pTracks data', () => {
     expect(historyStore.frameInterval()).toBe(30);
   });
 
-  it('bumps liveTick after buildPTracksData so useAircraftRows re-renders', async () => {
+  it('bumps liveTick once after buildPassData so pass views re-render', async () => {
     const before = useLiveTick.getState().version;
     const frames: AircraftSnapshot[] = [
       {
@@ -98,8 +154,8 @@ describe('pTracks data', () => {
       },
     ];
     historyStore.setFrames(frames);
-    await historyStore.buildPTracksData();
+    await historyStore.buildPassData();
     const after = useLiveTick.getState().version;
-    expect(after).toBeGreaterThan(before);
+    expect(after).toBe(before + 1);
   });
 });

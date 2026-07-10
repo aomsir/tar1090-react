@@ -3,6 +3,7 @@ import { render, act } from '@testing-library/react';
 import { useReplay } from '@/features/playback/useReplay';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
+import { useSelectionStore } from '@/store/selectionStore';
 import type { AircraftSnapshot } from '@/data/types';
 
 const { ensureLoadedMock } = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ describe('useReplay', () => {
     usePlaybackStore.getState().reset();
     historyStore.reset();
     ensureLoadedMock.mockClear();
+    useSelectionStore.getState().clearAll();
   });
 
   it('does not call ensureLoaded twice when enterHistory is invoked while loading', async () => {
@@ -159,5 +161,67 @@ describe('useReplay', () => {
     });
 
     expect(historyLoader.reset).toHaveBeenCalled();
+  });
+
+  it('clears selection and loading when history loading fails', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    ensureLoadedMock.mockRejectedValueOnce(new Error('load failed'));
+    useSelectionStore.setState({
+      selectedPassId: 'abc123:100',
+      selectedHex: 'abc123',
+      selectedHexes: new Set(['abc123']),
+    });
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await expect(replay!.enterHistory('1d')).rejects.toThrow('load failed');
+    });
+
+    expect(usePlaybackStore.getState()).toMatchObject({ loading: false, mode: 'live' });
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: null,
+    });
+    expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
+  });
+
+  it('clears complete pass selection and pass data when exiting to live', async () => {
+    let replay: ReturnType<typeof useReplay> | null = null;
+    render(
+      <Harness
+        onReady={(r) => {
+          replay = r;
+        }}
+      />,
+    );
+    useSelectionStore.getState().select('abc123');
+    const clearPassData = vi.spyOn(historyStore, 'clearPassData');
+
+    await act(async () => {
+      await replay!.enterHistory('1d');
+    });
+
+    expect(useSelectionStore.getState().selectedHex).toBeNull();
+    useSelectionStore.setState({
+      selectedPassId: 'abc123:100',
+      selectedHex: 'abc123',
+      selectedHexes: new Set(['abc123']),
+    });
+    act(() => replay!.exitToLive());
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: null,
+    });
+    expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
+    expect(clearPassData).toHaveBeenCalledOnce();
+    expect(historyStore.passes).toEqual([]);
+    expect(historyStore.passTracksData).toBeNull();
+    expect(usePlaybackStore.getState().mode).toBe('live');
   });
 });

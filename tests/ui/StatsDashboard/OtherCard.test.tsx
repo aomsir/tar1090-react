@@ -17,7 +17,7 @@ const otherStats: OtherStats = {
 
 describe('OtherCard', () => {
   it('uses Data Source as the card title', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     expect(screen.getByText('Data Source')).toBeInTheDocument();
@@ -25,14 +25,14 @@ describe('OtherCard', () => {
   });
 
   it('keeps the donut accessible as the Data Source image', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
   });
 
   it('strokes donut segments with distinct palette colors', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     const svg = screen.getByRole('img', { name: 'Data Source' });
@@ -44,7 +44,7 @@ describe('OtherCard', () => {
   });
 
   it('renders matching legend swatch colors', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     const swatches = screen.getAllByTestId('source-legend-swatch');
@@ -53,7 +53,7 @@ describe('OtherCard', () => {
   });
 
   it('renders Identified, Positioned, and Status metric groups', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     expect(screen.getByText('Identified')).toBeInTheDocument();
@@ -62,15 +62,15 @@ describe('OtherCard', () => {
   });
 
   it('shows No emergency text when emergency count is zero', async () => {
-    await renderWithI18n(<OtherCard data={data} totalAircraft={40} otherStats={otherStats} />, {
+    await renderWithI18n(<OtherCard data={data} totalPasses={40} otherStats={otherStats} />, {
       language: 'en',
     });
     expect(screen.getByText('No emergency')).toBeInTheDocument();
   });
 
-  it('renders metric percentages as -- and never NaN/Infinity when totalAircraft is 0', async () => {
+  it('renders metric percentages as -- and never NaN/Infinity when totalPasses is 0', async () => {
     const { container } = await renderWithI18n(
-      <OtherCard data={[{ name: 'ADS-B', count: 1 }]} totalAircraft={0} otherStats={otherStats} />,
+      <OtherCard data={[{ name: 'ADS-B', count: 1 }]} totalPasses={0} otherStats={otherStats} />,
       { language: 'en' },
     );
 

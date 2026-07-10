@@ -1,5 +1,6 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 import type { TFunction } from 'i18next';
 import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
@@ -38,6 +39,10 @@ export interface AircraftDetail {
   lon: number | undefined;
   hasPosition: boolean;
   groups: DetailGroup[];
+  passId?: string;
+  passStartTime?: number;
+  passEndTime?: number;
+  maxDistance?: number;
 }
 
 const dash = (v: string | undefined) => (v && v !== '' ? v : '\u2014');
@@ -69,6 +74,22 @@ export function toDetail(ac: Aircraft, t: TFunction, language: string | undefine
     lon: ac.lon,
     hasPosition: ac.hasPosition(),
     groups: buildGroups(ac, t, language),
+  };
+}
+
+export function toPassDetail(
+  pass: AircraftPass,
+  t: TFunction,
+  language: string | undefined,
+): AircraftDetail {
+  return {
+    ...toDetail(pass.aircraft, t, language),
+    altitude: pass.maxAltitude ?? (pass.hadGround ? 'ground' : undefined),
+    speed: pass.maxSpeed,
+    passId: pass.passId,
+    passStartTime: pass.startTime,
+    passEndTime: pass.endTime,
+    maxDistance: pass.maxDistance,
   };
 }
 

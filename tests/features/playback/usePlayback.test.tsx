@@ -23,7 +23,7 @@ describe('usePlayback', () => {
     usePlaybackStore.getState().reset();
   });
 
-  it('shows pTracks in history mode', async () => {
+  it('shows pass-keyed tracks after asynchronous history data construction', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -34,7 +34,6 @@ describe('usePlayback', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    await historyStore.buildPTracksData();
     const controller = {
       syncAircraft: vi.fn(),
       showPTracks: vi.fn(),
@@ -42,12 +41,15 @@ describe('usePlayback', () => {
       clearTrack: vi.fn(),
     } as unknown as MapController;
 
-    usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
-    usePlaybackStore.getState().setMode('history');
     render(<Harness controller={controller} />);
+    await act(async () => {
+      usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
+      usePlaybackStore.getState().setMode('history');
+      await historyStore.buildPassData();
+    });
 
     expect(controller.showPTracks).toHaveBeenCalledWith(
-      historyStore.pTracksData,
+      historyStore.passTracksData,
       expect.any(Number),
     );
   });
@@ -62,6 +64,21 @@ describe('usePlayback', () => {
 
     render(<Harness controller={controller} />);
 
+    expect(controller.clearPTracks).toHaveBeenCalled();
+  });
+
+  it('clears pTracks when history pass data is unavailable', () => {
+    const controller = {
+      syncAircraft: vi.fn(),
+      showPTracks: vi.fn(),
+      clearPTracks: vi.fn(),
+      clearTrack: vi.fn(),
+    } as unknown as MapController;
+    usePlaybackStore.getState().setMode('history');
+
+    render(<Harness controller={controller} />);
+
+    expect(controller.showPTracks).not.toHaveBeenCalled();
     expect(controller.clearPTracks).toHaveBeenCalled();
   });
 

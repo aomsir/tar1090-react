@@ -10,6 +10,7 @@ import {
 } from '@/domain/units';
 import type { TFunction } from 'i18next';
 import type { AircraftRow } from './aircraftRows';
+import { formatPassTimeRange } from '@/i18n/format';
 
 export type ColumnId =
   | 'icao'
@@ -33,7 +34,8 @@ export type ColumnId =
   | 'military'
   | 'wd'
   | 'ws'
-  | 'last_seen';
+  | 'last_seen'
+  | 'pass_time';
 
 export interface ListColumn {
   id: ColumnId;
@@ -240,6 +242,12 @@ export const LIST_COLUMNS: ListColumn[] = [
     format: (r) => formatTimestamp(r.lastSeenTime),
     sortValue: (r) => missing(r.lastSeenTime),
   },
+  {
+    id: 'pass_time',
+    label: 'Pass Time',
+    format: () => '',
+    sortValue: (r) => r.passStartTime ?? null,
+  },
 ];
 
 export function visibleColumnIds(hidden: Set<ColumnId>): ColumnId[] {
@@ -269,9 +277,10 @@ const COLUMN_HEADER_KEYS: Record<ColumnId, string> = {
   wd: 'windDirection',
   ws: 'wind',
   last_seen: 'lastSeen',
+  pass_time: 'passTime',
 };
 
-export function createListColumns(t: TFunction): ListColumn[] {
+export function createListColumns(t: TFunction, language?: string): ListColumn[] {
   return LIST_COLUMNS.map((col) => {
     const headerKey = COLUMN_HEADER_KEYS[col.id];
     const label = headerKey ? t(`list.columnHeaders.${headerKey}`) : '';
@@ -298,6 +307,16 @@ export function createListColumns(t: TFunction): ListColumn[] {
           const formatted = formatAltitude(r.altitude);
           return formatted === ALTITUDE_GROUND ? t('list.ground') : formatted.replace(' ft', '');
         },
+      };
+    }
+    if (col.id === 'pass_time') {
+      return {
+        ...col,
+        label,
+        format: (r: AircraftRow) =>
+          r.passStartTime !== undefined && r.passEndTime !== undefined
+            ? formatPassTimeRange(r.passStartTime, r.passEndTime, language)
+            : '',
       };
     }
     return { ...col, label };

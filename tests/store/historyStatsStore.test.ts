@@ -3,9 +3,10 @@ import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import type { HistoryStatistics } from '@/features/stats/historyStats';
 
 const mockStats: HistoryStatistics = {
-  totalAircraft: 5,
+  totalPasses: 5,
+  uniqueAircraft: 4,
   uniqueCallsigns: 4,
-  militaryCount: 1,
+  militaryPasses: 1,
   peakOnline: 3,
   peakTime: 1000,
   typeDistribution: [{ name: 'B738', count: 3 }],
@@ -16,6 +17,11 @@ const mockStats: HistoryStatistics = {
   speedBins: [{ range: '400-450', count: 2 }],
   distanceBins: [{ range: '50-75', count: 1 }],
   trafficTimeline: [{ time: 1000, count: 3 }],
+  otherStats: {
+    identified: { any: 4, callsign: 4, type: 3, registration: 2 },
+    positioned: { position: 4, speed: 3, altitude: 4 },
+    status: { ground: 1, emergency: 0, squawk: 1 },
+  },
 };
 
 describe('historyStatsStore', () => {

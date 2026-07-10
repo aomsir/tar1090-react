@@ -1,6 +1,5 @@
 import type { AircraftSnapshot } from '@/data/types';
-import type { Aircraft } from '@/domain/Aircraft';
-import type { PeakStats } from '@/features/playback/pTracks';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 
 export interface OtherStats {
   identified: {
@@ -22,9 +21,10 @@ export interface OtherStats {
 }
 
 export interface HistoryStatistics {
-  totalAircraft: number;
+  totalPasses: number;
+  uniqueAircraft: number;
   uniqueCallsigns: number;
-  militaryCount: number;
+  militaryPasses: number;
   peakOnline: number;
   peakTime: number;
 
@@ -42,12 +42,6 @@ export interface HistoryStatistics {
 }
 
 const MAX_TRAFFIC_TIMELINE_POINTS = 200;
-
-function isEmergency(value: string | undefined): boolean {
-  if (!value) return false;
-  const normalized = value.trim().toLowerCase();
-  return normalized !== '' && normalized !== 'none' && normalized !== 'no emergency';
-}
 
 function downsampleTimeline(
   points: { time: number; count: number }[],
@@ -117,10 +111,9 @@ function classifySource(addrType: string | undefined): string {
   }
 }
 
-function altitudeBinLabel(alt: number | 'ground' | undefined): string | null {
-  if (alt === 'ground') return 'Ground';
-  if (typeof alt !== 'number') return null;
-  if (alt < 0) return 'Ground';
+function altitudeBinLabel(alt: number | undefined): string | null {
+  if (typeof alt !== 'number' || !Number.isFinite(alt)) return null;
+  if (alt < 0) return null;
   if (alt >= 40000) return '40k+';
   const lower = Math.floor(alt / 5000) * 5;
   const upper = lower + 5;
@@ -128,7 +121,6 @@ function altitudeBinLabel(alt: number | 'ground' | undefined): string | null {
 }
 
 const ALTITUDE_BIN_ORDER = [
-  'Ground',
   '0-5k',
   '5-10k',
   '10-15k',
@@ -169,12 +161,12 @@ function buildHistogram(
 
 export function computeHistoryStats(
   frames: AircraftSnapshot[],
-  allAircraft: Aircraft[],
-  peakStats: Map<string, PeakStats> | null,
+  passes: AircraftPass[],
 ): HistoryStatistics {
-  const totalAircraft = allAircraft.length;
+  const totalPasses = passes.length;
+  const aircraft = new Set<string>();
   const callsigns = new Set<string>();
-  let militaryCount = 0;
+  let militaryPasses = 0;
 
   const typeMap = new Map<string, number>();
   const airlineMap = new Map<string, number>();
@@ -193,9 +185,14 @@ export function computeHistoryStats(
   let statusEmergency = 0;
   let statusSquawk = 0;
 
-  for (const ac of allAircraft) {
-    if (ac.flight) callsigns.add(ac.flight);
-    if (ac.isMilitary) militaryCount++;
+  const speeds: number[] = [];
+  const distances: number[] = [];
+  for (const pass of passes) {
+    const ac = pass.aircraft;
+    aircraft.add(pass.hex);
+    const callsign = ac.flight?.trim();
+    if (callsign) callsigns.add(callsign);
+    if (ac.isMilitary) militaryPasses++;
 
     if (ac.typeCode) {
       typeMap.set(ac.typeCode, (typeMap.get(ac.typeCode) ?? 0) + 1);
@@ -213,12 +210,12 @@ export function computeHistoryStats(
     const src = classifySource(ac.addrType);
     sourceMap.set(src, (sourceMap.get(src) ?? 0) + 1);
 
-    const binLabel = altitudeBinLabel(ac.altitude);
+    const binLabel = altitudeBinLabel(pass.maxAltitude);
     if (binLabel) {
       altBinMap.set(binLabel, (altBinMap.get(binLabel) ?? 0) + 1);
     }
 
-    const hasCallsign = Boolean(ac.flight);
+    const hasCallsign = Boolean(callsign);
     const hasType = Boolean(ac.typeCode);
     const hasRegistration = Boolean(ac.registration);
     if (hasCallsign) identifiedCallsign++;
@@ -226,28 +223,22 @@ export function computeHistoryStats(
     if (hasRegistration) identifiedRegistration++;
     if (hasCallsign || hasType || hasRegistration) identifiedAny++;
 
-    if (ac.hasPosition()) positionedPosition++;
-    if (ac.speed !== undefined) positionedSpeed++;
-    if (ac.altitude !== undefined) positionedAltitude++;
+    if (pass.trackPoints.length > 0) positionedPosition++;
+    if (pass.maxSpeed !== undefined) positionedSpeed++;
+    if (pass.hadAltitude) positionedAltitude++;
 
-    if (ac.altitude === 'ground') statusGround++;
-    if (isEmergency(ac.emergency)) statusEmergency++;
-    if (ac.squawk && ac.squawk.trim() !== '') statusSquawk++;
+    if (pass.hadGround) statusGround++;
+    if (pass.hadEmergency) statusEmergency++;
+    if (pass.hadSquawk) statusSquawk++;
+
+    if (pass.maxSpeed !== undefined) speeds.push(pass.maxSpeed);
+    if (pass.maxDistance !== undefined) distances.push(pass.maxDistance);
   }
 
   const altitudeBins = ALTITUDE_BIN_ORDER.filter((label) => altBinMap.has(label)).map((label) => ({
     range: label,
     count: altBinMap.get(label)!,
   }));
-
-  const speeds: number[] = [];
-  const distances: number[] = [];
-  if (peakStats) {
-    for (const ps of peakStats.values()) {
-      if (ps.maxSpeed !== undefined) speeds.push(ps.maxSpeed);
-      if (ps.maxDist !== undefined) distances.push(ps.maxDist);
-    }
-  }
 
   let peakOnline = 0;
   let peakTime = 0;
@@ -262,9 +253,10 @@ export function computeHistoryStats(
   }
 
   return {
-    totalAircraft,
+    totalPasses,
+    uniqueAircraft: aircraft.size,
     uniqueCallsigns: callsigns.size,
-    militaryCount,
+    militaryPasses,
     peakOnline,
     peakTime,
     typeDistribution: rankAll(typeMap),

@@ -21,9 +21,10 @@ vi.mock('recharts', async () => {
 });
 
 const mockStats: HistoryStatistics = {
-  totalAircraft: 42,
+  totalPasses: 42,
+  uniqueAircraft: 40,
   uniqueCallsigns: 35,
-  militaryCount: 3,
+  militaryPasses: 3,
   peakOnline: 20,
   peakTime: 1000,
   typeDistribution: [{ name: 'B738', count: 10 }],
@@ -49,6 +50,7 @@ describe('StatsDashboard', () => {
   it('renders summary cards with correct values', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getAllByText('40')).toHaveLength(2);
     expect(screen.getByText('35')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('20')).toBeInTheDocument();
@@ -111,7 +113,7 @@ describe('StatsDashboard', () => {
   it('renders translated dashboard text in Chinese', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'zh-CN' });
     expect(screen.getByText('历史统计')).toBeInTheDocument();
-    expect(screen.getByText('飞机总数')).toBeInTheDocument();
+    expect(screen.getByText('经过架次')).toBeInTheDocument();
   });
 
   it('renders summary context lines', async () => {
@@ -189,7 +191,7 @@ describe('StatsDashboard', () => {
   it('renders donut total and legend percentages for data source', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
     expect(screen.getByRole('img', { name: 'Data Source' })).toBeInTheDocument();
-    expect(screen.getByText('40')).toBeInTheDocument(); // donut center total
+    expect(screen.getAllByText('40')).toHaveLength(2); // unique aircraft and donut center
     expect(screen.getByText(/100%/)).toBeInTheDocument(); // legend share
   });
 
@@ -208,7 +210,7 @@ describe('StatsDashboard', () => {
 
   it('renders a semantic icon on each summary card', async () => {
     await renderWithI18n(<StatsDashboard />, { language: 'en' });
-    expect(screen.getAllByTestId('kpi-icon')).toHaveLength(4);
+    expect(screen.getAllByTestId('kpi-icon')).toHaveLength(5);
   });
 
   it('renders unit suffixes on histogram cards instead of axis titles', async () => {

@@ -4,20 +4,15 @@ import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
-import {
-  extractTrackPoints,
-  buildTrackSegments,
-  type TrackPoint,
-  type TrackSegment,
-} from './track';
+import { buildTrackSegments, type TrackPoint, type TrackSegment } from './track';
 import { loadAircraftTrace, mergeTracePoints } from './aircraftTrace';
 import { getHistorySeed, useSeedVersion } from '@/data/liveHistorySeeder';
 
 export function useSelectedTrack(): TrackSegment[] {
   const hex = useSelectionStore((s) => s.selectedHex);
+  const selectedPassId = useSelectionStore((s) => s.selectedPassId);
   const version = useLiveTick((s) => s.version);
   const mode = usePlaybackStore((s) => s.mode);
-  const bounds = usePlaybackStore((s) => s.bounds);
   const [tailByHex, setTailByHex] = useState<Record<string, TrackPoint[]>>({});
   const [traceByHex, setTraceByHex] = useState<Record<string, TrackPoint[]>>({});
   const prevHexRef = useRef<string | null>(null);
@@ -28,7 +23,7 @@ export function useSelectedTrack(): TrackSegment[] {
   // When a new aircraft is selected, seed tail from its accumulated positionHistory
   // so the track renders immediately without waiting for polling ticks.
   useEffect(() => {
-    if (!hex || hex === prevHexRef.current) return;
+    if (mode !== 'live' || !hex || hex === prevHexRef.current) return;
     prevHexRef.current = hex;
     const ac = aircraftStore.map.get(hex);
     if (!ac || ac.positionHistory.length === 0) return;
@@ -43,7 +38,7 @@ export function useSelectedTrack(): TrackSegment[] {
     }));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTailByHex((prev) => ({ ...prev, [hex]: seed }));
-  }, [hex]);
+  }, [hex, mode]);
 
   useEffect(() => {
     if (!hex || mode !== 'live') return;
@@ -72,16 +67,14 @@ export function useSelectedTrack(): TrackSegment[] {
   }, [hex, mode]);
 
   useEffect(() => {
-    if (!hex) return;
+    if (mode !== 'live' || !hex) return;
     const ac = aircraftStore.map.get(hex);
     if (!ac) {
       // Aircraft pruned from store – clear cached track data so the trail disappears
-      if (usePlaybackStore.getState().mode === 'live') {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setTailByHex((prev) => (hex in prev ? {} : prev));
-        setTraceByHex((prev) => (hex in prev ? {} : prev));
-        loadedTraceHexesRef.current.delete(hex);
-      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTailByHex((prev) => (hex in prev ? {} : prev));
+      setTraceByHex((prev) => (hex in prev ? {} : prev));
+      loadedTraceHexesRef.current.delete(hex);
       return;
     }
     if (typeof ac.lon !== 'number' || typeof ac.lat !== 'number') return;
@@ -104,23 +97,19 @@ export function useSelectedTrack(): TrackSegment[] {
       };
       return { ...prev, [hex]: [...prevPts, next] };
     });
-  }, [hex, version]);
+  }, [hex, mode, version]);
 
   return useMemo(() => {
+    if (mode === 'history') {
+      return buildTrackSegments(historyStore.getPass(selectedPassId)?.trackPoints ?? []);
+    }
     if (!hex) return [];
     const tracePts = traceByHex[hex];
-    const basePts =
-      mode === 'history'
-        ? extractTrackPoints(historyStore.frames, hex)
-        : tracePts && tracePts.length > 0
-          ? tracePts
-          : (getHistorySeed(hex) ?? []);
+    const basePts = tracePts && tracePts.length > 0 ? tracePts : (getHistorySeed(hex) ?? []);
     const tailPts = tailByHex[hex] ?? [];
     const merged = mergeTracePoints([...basePts, ...tailPts]);
-    const gapThresholdSec =
-      mode === 'history' && bounds ? historyStore.frameInterval() * 3 : undefined;
-    return buildTrackSegments(merged, { gapThresholdSec });
+    return buildTrackSegments(merged);
     // seedVersion is intentionally in deps to re-evaluate when history seed becomes available
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hex, mode, bounds, traceByHex, tailByHex, seedVersion]);
+  }, [hex, selectedPassId, mode, traceByHex, tailByHex, seedVersion]);
 }

@@ -8,6 +8,9 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { formatPassTimeRange } from '@/i18n/format';
+import { formatDistanceNm } from '@/domain/units';
 import type { AircraftSnapshot } from '@/data/types';
 
 describe('DetailCard', () => {
@@ -15,6 +18,7 @@ describe('DetailCard', () => {
     aircraftStore.reset();
     useLiveTick.setState({ version: 0 });
     useSelectionStore.setState({ selectedHex: null });
+    usePlaybackStore.getState().reset();
     useToolbarStore.setState(useToolbarStore.getInitialState());
   });
 
@@ -111,6 +115,43 @@ describe('DetailCard', () => {
     expect(statsSection.textContent).toContain('247°');
   });
 
+  it('renders selected pass time and maxima instead of live labels', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'FIRST', lat: 1, lon: 10, altitude: 1000, speed: 100 }],
+      },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 3, lon: 30, altitude: 2000, speed: 200 }],
+      },
+      {
+        now: 44030,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 4, lon: 40, altitude: 39000, speed: 490 }],
+      },
+    ] as never);
+    await historyStore.buildPassData(0, 0);
+    usePlaybackStore.getState().setMode('history');
+    useSelectionStore.getState().selectPass('abc:44000', 'abc');
+
+    await renderWithI18n(<DetailCard />);
+
+    const stats = screen.getByTestId('key-stats');
+    expect(screen.getByText(formatPassTimeRange(44000, 44030, 'en'))).toBeInTheDocument();
+    expect(stats).toHaveTextContent('Max Altitude');
+    expect(stats).toHaveTextContent('Max Speed');
+    expect(stats).toHaveTextContent('Max Distance');
+    expect(stats).toHaveTextContent('39,000');
+    expect(stats).toHaveTextContent('490');
+    expect(stats).toHaveTextContent(
+      formatDistanceNm(historyStore.getPass('abc:44000')?.maxDistance),
+    );
+    expect(stats).not.toHaveTextContent('Track');
+  });
+
   it('renders registration and type code in subtitle line', async () => {
     const a = new Aircraft('780ABC');
     Object.assign(a, {
@@ -190,6 +231,30 @@ describe('DetailCard', () => {
     expect(createSpy).toHaveBeenCalledTimes(1);
     expect(createSpy.mock.calls[0][0]).toBeInstanceOf(Blob);
     expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('exports only the selected history pass coordinates', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'abc', lat: 1, lon: 10, altitude: 1000 }] },
+      { now: 130, messages: 0, aircraft: [{ hex: 'abc', lat: 2, lon: 20, altitude: 1000 }] },
+      { now: 44000, messages: 0, aircraft: [{ hex: 'abc', lat: 3, lon: 30, altitude: 2000 }] },
+      { now: 44030, messages: 0, aircraft: [{ hex: 'abc', lat: 4, lon: 40, altitude: 2000 }] },
+    ] as never);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    useSelectionStore.getState().selectPass('abc:44000', 'abc');
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    await renderWithI18n(<DetailCard />);
+    fireEvent.click(screen.getByRole('button', { name: /Export KML/ }));
+
+    const xml = await (createSpy.mock.calls[0][0] as Blob).text();
+    expect(xml).toContain('30 3');
+    expect(xml).toContain('40 4');
+    expect(xml).not.toContain('10 1');
+    expect(xml).not.toContain('20 2');
   });
 
   it('renders a resize handle on the right edge', async () => {

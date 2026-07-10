@@ -82,8 +82,10 @@ const en: TranslationResource = {
     referenceOnly: '(reference only)',
     emptyState: 'No matching aircraft',
     history: {
+      maxAltitude: 'Max. Alt. (ft)',
       maxSpeed: 'Max. Spd. (kt)',
       maxDistance: 'Max. Dist. (nmi)',
+      passTime: 'Pass Time',
     },
     values: {
       yes: 'yes',
@@ -111,6 +113,7 @@ const en: TranslationResource = {
       windDirection: 'Wind D.',
       wind: 'Wind (kt)',
       lastSeen: 'Last Seen',
+      passTime: 'Pass Time',
     },
     dataSources: {
       other: 'Other',
@@ -124,10 +127,14 @@ const en: TranslationResource = {
     military: 'Military',
     exportKml: 'Export KML',
     dragHandle: 'Drag to expand or collapse',
+    passTime: 'Pass Time',
     stats: {
       altitude: 'Altitude',
       speed: 'Speed',
       track: 'Track',
+      maxAltitude: 'Max Altitude',
+      maxSpeed: 'Max Speed',
+      maxDistance: 'Max Distance',
     },
     groups: {
       identity: 'Identity',
@@ -194,9 +201,10 @@ const en: TranslationResource = {
     pastDays: 'PAST {{d}} D',
     pastDaysHours: 'PAST {{d}} D {{h}} H',
     summary: {
-      totalAircraft: 'Total Aircraft',
+      totalPasses: 'Aircraft Passes',
+      uniqueAircraft: 'Unique Aircraft',
       uniqueCallsigns: 'Unique Callsigns',
-      military: 'Military',
+      militaryPasses: 'Military Passes',
       peakOnline: 'Peak Online',
       withCallsign: '{{percent}} with callsign',
       ofTotal: '{{percent}} of total',

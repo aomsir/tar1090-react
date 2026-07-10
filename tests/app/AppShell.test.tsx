@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import type { AircraftSnapshot } from '@/data/types';
 import { historyStore } from '@/store/historyStore';
 import { usePlaybackStore } from '@/store/playbackStore';
@@ -20,6 +20,7 @@ const fakeController = {
     capturedSelectCb = cb;
   }),
   setSelected: vi.fn(),
+  setSelectedTrackKey: vi.fn(),
   syncAircraft: vi.fn(),
   centerOn: vi.fn(),
   onViewChange: vi.fn(),
@@ -46,6 +47,9 @@ vi.mock('@/map/MapView', () => ({
 vi.mock('@/features/live/useLiveData', () => ({ useLiveData: () => {} }));
 vi.mock('@/app/useUrlSync', () => ({ useUrlSync: () => {} }));
 vi.mock('@/features/playback/usePlayback', () => ({ usePlayback: () => {} }));
+vi.mock('@/ui/mobile/MobileDetailSheet', () => ({
+  MobileDetailSheet: () => <div data-testid="mobile-detail-sheet" />,
+}));
 vi.mock('@/data/historyLoader', () => ({
   historyLoader: {
     ensureLoaded: vi.fn(async () => {
@@ -91,7 +95,11 @@ import { Aircraft } from '@/domain/Aircraft';
 describe('AppShell', () => {
   beforeEach(async () => {
     await setTestLanguage('en');
-    useSelectionStore.setState({ selectedHex: null, selectedHexes: new Set() });
+    useSelectionStore.setState({
+      selectedHex: null,
+      selectedPassId: null,
+      selectedHexes: new Set(),
+    });
     useToolbarStore.setState({
       onlyMilitary: false,
       isolation: false,
@@ -111,6 +119,7 @@ describe('AppShell', () => {
     capturedListOnSelect = null;
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
+    fakeController.setSelectedTrackKey.mockClear();
     fakeController.centerOn.mockClear();
     fakeController.onViewChange.mockClear();
     fakeController.getViewExtentLonLat.mockClear();
@@ -200,13 +209,14 @@ describe('AppShell', () => {
     ]);
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
+    await historyStore.buildPassData();
 
     render(<AppShell />);
     act(() => {
       capturedOnReady!(fakeController);
     });
     await act(async () => {
-      capturedSelectCb!('781860');
+      useSelectionStore.getState().selectPass('781860:100', '781860');
       await Promise.resolve();
     });
     await waitFor(() => expect(fakeController.showTrack).toHaveBeenCalled());
@@ -224,7 +234,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    await historyStore.buildPTracksData();
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
 
@@ -235,13 +245,126 @@ describe('AppShell', () => {
 
     expect(capturedListOnSelect).toBeTypeOf('function');
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(120, 25);
   });
 
-  it('centers on current-frame position in history mode, not last-seen', async () => {
+  it('switches duplicate-hex history passes from the desktop list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'FIRST', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'SECOND', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setCursor(44000);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    fakeController.syncAircraft.mockClear();
+    fakeController.setSelectedTrackKey.mockClear();
+    fakeController.centerOn.mockClear();
+
+    act(() => {
+      capturedListOnSelect!('781860:100');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
+    expect(fakeController.centerOn).toHaveBeenLastCalledWith(100, 10);
+    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'FIRST' }]);
+
+    act(() => {
+      capturedListOnSelect!('781860:44000');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:44000',
+      selectedHex: '781860',
+    });
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:44000');
+    expect(fakeController.centerOn).toHaveBeenLastCalledWith(150, 50);
+    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
+  });
+
+  it('keeps the current pass selection when its history marker is clicked', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: '781860', lat: 25, lon: 120, altitude: 1000 }],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      useSelectionStore.getState().selectPass('781860:100', '781860');
+      capturedSelectCb!('781860');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+  });
+
+  it('clears all selection when the map background is clicked', () => {
+    useSelectionStore.getState().selectPass('781860:100', '781860');
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      capturedSelectCb!(null);
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: null,
+    });
+  });
+
+  it('does not change selection when a history list pass id is missing', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    act(() => {
+      capturedListOnSelect!('missing:100');
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
+    });
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('centers on the selected pass final position in history mode', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -258,7 +381,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    await historyStore.buildPTracksData();
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setCursor(100);
@@ -269,13 +392,13 @@ describe('AppShell', () => {
     });
 
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
-    expect(fakeController.centerOn).toHaveBeenCalledWith(100, 10);
+    expect(fakeController.centerOn).toHaveBeenCalledWith(150, 50);
   });
 
-  it('does not center when selected aircraft is absent from current frame', async () => {
+  it('does not center when the selected pass has no position', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -287,12 +410,10 @@ describe('AppShell', () => {
       {
         now: 200,
         messages: 0,
-        aircraft: [
-          { hex: '781860', lat: 50, lon: 150, altitude: 2000 },
-        ] as unknown as AircraftSnapshot['aircraft'],
+        aircraft: [{ hex: '781860', altitude: 2000 }] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    await historyStore.buildPTracksData();
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
     usePlaybackStore.getState().setCursor(100);
@@ -303,7 +424,7 @@ describe('AppShell', () => {
     });
 
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:200');
     });
 
     expect(fakeController.centerOn).not.toHaveBeenCalled();
@@ -321,7 +442,7 @@ describe('AppShell', () => {
       capturedListOnSelect!('781860');
     });
 
-    expect(useSelectionStore.getState().selectedHex).toBe('781860');
+    expect(useSelectionStore.getState().selectedHex).toBeNull();
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
@@ -336,7 +457,7 @@ describe('AppShell', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
-    await historyStore.buildPTracksData();
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
 
@@ -350,7 +471,7 @@ describe('AppShell', () => {
 
     fakeController.syncAircraft.mockClear();
     act(() => {
-      capturedListOnSelect!('781860');
+      capturedListOnSelect!('781860:100');
     });
 
     // After selection: only the selected aircraft
@@ -359,6 +480,7 @@ describe('AppShell', () => {
     const lastList = calls[calls.length - 1][0] as { hex: string }[];
     expect(lastList.length).toBe(1);
     expect(lastList[0].hex).toBe('781860');
+    expect(fakeController.setSelectedTrackKey).toHaveBeenCalledWith('781860:100');
   });
 
   it('centers map on live aircraft when selected from list in live mode', () => {
@@ -615,6 +737,7 @@ describe('AppShell mobile layout', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
   });
 
@@ -661,5 +784,90 @@ describe('AppShell mobile layout', () => {
       usePlaybackStore.setState({ loading: true, progress: { done: 1, total: 10 } });
     });
     expect(screen.getByTestId('mobile-history-loading')).toBeInTheDocument();
+  });
+
+  it('centers on the final position after selecting a history pass from the mobile list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'PASS', lat: 10, lon: 100, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'PASS', lat: 50, lon: 150, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /PASS/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.centerOn).toHaveBeenCalledWith(150, 50);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
+  });
+
+  it('does not center after selecting an unpositioned history pass from the mobile list', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', flight: 'PASS', altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /PASS/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('keeps live mobile selection behavior unchanged', () => {
+    const ac = new Aircraft('a00001');
+    ac.update(
+      { hex: 'a00001', flight: 'LIVE', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number],
+      Date.now(),
+    );
+    aircraftStore.map.set('a00001', ac);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show aircraft list' }));
+    fireEvent.click(screen.getByRole('option', { name: /LIVE/ }));
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: null,
+      selectedHex: 'a00001',
+    });
+    expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
+    expect(screen.queryByTestId('mobile-aircraft-list')).not.toBeInTheDocument();
   });
 });

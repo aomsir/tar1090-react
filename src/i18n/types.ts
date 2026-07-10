@@ -91,8 +91,10 @@ export interface ListResource {
   referenceOnly: string;
   emptyState: string;
   history: {
+    maxAltitude: string;
     maxSpeed: string;
     maxDistance: string;
+    passTime: string;
   };
   values: {
     yes: string;
@@ -120,6 +122,7 @@ export interface ListResource {
     windDirection: string;
     wind: string;
     lastSeen: string;
+    passTime: string;
   };
   dataSources: {
     other: string;
@@ -134,10 +137,14 @@ export interface DetailResource {
   military: string;
   exportKml: string;
   dragHandle: string;
+  passTime: string;
   stats: {
     altitude: string;
     speed: string;
     track: string;
+    maxAltitude: string;
+    maxSpeed: string;
+    maxDistance: string;
   };
   groups: {
     identity: string;
@@ -206,9 +213,10 @@ export interface StatsResource {
   pastDays: string;
   pastDaysHours: string;
   summary: {
-    totalAircraft: string;
+    totalPasses: string;
+    uniqueAircraft: string;
     uniqueCallsigns: string;
-    military: string;
+    militaryPasses: string;
     peakOnline: string;
     withCallsign: string;
     ofTotal: string;

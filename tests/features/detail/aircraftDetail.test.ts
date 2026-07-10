@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import i18n from '@/i18n';
-import { toDetail } from '@/features/detail/aircraftDetail';
+import { toDetail, toPassDetail } from '@/features/detail/aircraftDetail';
 import { Aircraft } from '@/domain/Aircraft';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 
 function makeAircraft(overrides: Partial<Aircraft> = {}): Aircraft {
   const ac = new Aircraft('780ABC');
@@ -45,6 +46,51 @@ describe('aircraftDetail', () => {
     expect(labels).not.toContain('Altitude');
     expect(labels).not.toContain('Ground speed');
     expect(labels).not.toContain('Track');
+  });
+
+  it('builds pass detail from pass maxima rather than the final aircraft sample', () => {
+    const pass: AircraftPass = {
+      passId: '780abc:100',
+      hex: '780abc',
+      startTime: 100,
+      endTime: 160,
+      aircraft: makeAircraft({ altitude: 1200, speed: 180 }),
+      trackPoints: [],
+      maxAltitude: 38000,
+      maxSpeed: 490,
+      maxDistance: 42.34,
+      hadAltitude: true,
+      hadGround: false,
+      hadEmergency: false,
+      hadSquawk: false,
+    };
+
+    expect(toPassDetail(pass, i18n.t, i18n.language)).toMatchObject({
+      passId: '780abc:100',
+      passStartTime: 100,
+      passEndTime: 160,
+      maxDistance: 42.34,
+      altitude: 38000,
+      speed: 490,
+    });
+  });
+
+  it('keeps ground-only passes aligned with the existing ground altitude detail', () => {
+    const pass: AircraftPass = {
+      passId: '780abc:100',
+      hex: '780abc',
+      startTime: 100,
+      endTime: 100,
+      aircraft: makeAircraft({ altitude: 'ground', speed: 0 }),
+      trackPoints: [],
+      maxSpeed: 0,
+      hadAltitude: true,
+      hadGround: true,
+      hadEmergency: false,
+      hadSquawk: false,
+    };
+
+    expect(toPassDetail(pass, i18n.t, i18n.language).altitude).toBe('ground');
   });
 });
 

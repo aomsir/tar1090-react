@@ -1,7 +1,7 @@
 import type { Aircraft } from '@/domain/Aircraft';
 import type { RawAltitude } from '@/data/types';
 import { distanceNm } from '@/domain/distance';
-import type { PeakStats } from '@/features/playback/pTracks';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 import { LIST_COLUMNS } from './columns';
 import type { ColumnId } from './columns';
 import { routeService } from '@/data/routeService';
@@ -14,6 +14,10 @@ export type SortDir = 'asc' | 'desc';
 export type Extent = [number, number, number, number];
 
 export interface AircraftRow {
+  rowId: string;
+  passId?: string;
+  passStartTime?: number;
+  passEndTime?: number;
   hex: string;
   flight: string;
   route: string;
@@ -53,6 +57,7 @@ export interface RowQuery {
 
 export function toRow(ac: Aircraft, distance?: number, routeApiEnabled = false): AircraftRow {
   return {
+    rowId: ac.hex,
     hex: ac.hex,
     flight: ac.flight ?? '',
     route: routeApiEnabled ? (routeService.lookup(normalizeCallsign(ac.flight ?? '')) ?? '') : '',
@@ -77,6 +82,20 @@ export function toRow(ac: Aircraft, distance?: number, routeApiEnabled = false):
     windDirection: ac.windDirection,
     windSpeed: ac.windSpeed,
     lastSeenTime: ac.lastUpdated === 0 ? undefined : ac.lastUpdated,
+  };
+}
+
+function toPassRow(pass: AircraftPass, routeApiEnabled = false): AircraftRow {
+  const row = toRow(pass.aircraft, pass.maxDistance, routeApiEnabled);
+  return {
+    ...row,
+    rowId: pass.passId,
+    passId: pass.passId,
+    passStartTime: pass.startTime,
+    passEndTime: pass.endTime,
+    altitude: pass.maxAltitude ?? (pass.hadGround ? 'ground' : undefined),
+    speed: pass.maxSpeed,
+    distance: pass.maxDistance,
   };
 }
 
@@ -124,36 +143,19 @@ function sortValue(row: AircraftRow, key: SortKey): number | string | null {
   return SORT_COLUMNS.get(key)?.sortValue(row) ?? null;
 }
 
-export function buildRows(
-  list: Aircraft[],
-  q: RowQuery,
-  peakStats?: Map<string, PeakStats> | null,
-  routeApiEnabled = false,
-): AircraftRow[] {
-  const rows = list
-    .map((ac) => {
-      const row = toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon), routeApiEnabled);
-      if (peakStats) {
-        const peak = peakStats.get(ac.hex);
-        if (peak) {
-          if (peak.maxSpeed !== undefined) row.speed = peak.maxSpeed;
-          if (peak.maxDist !== undefined) row.distance = peak.maxDist;
-        }
-      }
-      return row;
-    })
-    .filter(
-      (r) =>
-        matchesQuery(r, q.query) &&
-        matchesFilter(r, q.filter) &&
-        (!q.inViewOnly || isInExtent(r.lon, r.lat, q.extent)),
-    );
+function filterAndSortRows(rows: AircraftRow[], q: RowQuery): AircraftRow[] {
+  const filtered = rows.filter(
+    (r) =>
+      matchesQuery(r, q.query) &&
+      matchesFilter(r, q.filter) &&
+      (!q.inViewOnly || isInExtent(r.lon, r.lat, q.extent)),
+  );
   const dir = q.sortDir === 'asc' ? 1 : -1;
-  rows.sort((a, b) => {
+  filtered.sort((a, b) => {
     const av = sortValue(a, q.sortKey);
     const bv = sortValue(b, q.sortKey);
     // Missing values always sort last, regardless of direction.
-    if (av === null && bv === null) return a.hex.localeCompare(b.hex);
+    if (av === null && bv === null) return a.rowId.localeCompare(b.rowId);
     if (av === null) return 1;
     if (bv === null) return -1;
     const c =
@@ -161,7 +163,25 @@ export function buildRows(
         ? av - bv
         : String(av).localeCompare(String(bv));
     if (c !== 0) return c * dir;
-    return a.hex.localeCompare(b.hex);
+    return a.rowId.localeCompare(b.rowId);
   });
-  return rows;
+  return filtered;
+}
+
+export function buildRows(list: Aircraft[], q: RowQuery, routeApiEnabled = false): AircraftRow[] {
+  return filterAndSortRows(
+    list.map((ac) => toRow(ac, distanceNm(q.siteLat, q.siteLon, ac.lat, ac.lon), routeApiEnabled)),
+    q,
+  );
+}
+
+export function buildPassRows(
+  passes: AircraftPass[],
+  q: RowQuery,
+  routeApiEnabled = false,
+): AircraftRow[] {
+  return filterAndSortRows(
+    passes.map((pass) => toPassRow(pass, routeApiEnabled)),
+    q,
+  );
 }

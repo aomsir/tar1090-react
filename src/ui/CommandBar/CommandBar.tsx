@@ -2,10 +2,15 @@ import { SearchField } from '@heroui/react';
 import { useTranslation } from 'react-i18next';
 import { useStatsStore } from '@/store/statsStore';
 import { useListControls } from '@/store/listControls';
+import { usePlaybackStore } from '@/store/playbackStore';
+import { useHistoryStatsStore } from '@/store/historyStatsStore';
 
 export function CommandBar() {
   const { t } = useTranslation();
-  const count = useStatsStore((s) => s.count);
+  const liveCount = useStatsStore((s) => s.count);
+  const historyCount = useHistoryStatsStore((s) => s.stats?.totalPasses ?? 0);
+  const mode = usePlaybackStore((s) => s.mode);
+  const count = mode === 'history' ? historyCount : liveCount;
   const rate = useStatsStore((s) => s.messageRate);
   const query = useListControls((s) => s.query);
   const setQuery = useListControls((s) => s.setQuery);

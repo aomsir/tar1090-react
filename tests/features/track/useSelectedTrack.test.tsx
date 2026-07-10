@@ -57,7 +57,7 @@ describe('useSelectedTrack', () => {
     historyStore.reset();
     aircraftStore.reset();
     usePlaybackStore.getState().reset();
-    useSelectionStore.setState({ selectedHex: null });
+    useSelectionStore.setState({ selectedHex: null, selectedPassId: null });
     useLiveTick.setState({ version: 0 });
     vi.mocked(historyLoader.ensureLoaded).mockClear();
     vi.mocked(loadAircraftTrace).mockReset();
@@ -71,7 +71,7 @@ describe('useSelectedTrack', () => {
     expect(captured).toEqual([]);
   });
 
-  it('builds segments from history points once loaded for the selected hex', () => {
+  it('builds segments from the selected history pass only', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -88,9 +88,10 @@ describe('useSelectedTrack', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
-    act(() => useSelectionStore.setState({ selectedHex: 'abc' }));
+    act(() => useSelectionStore.getState().selectPass('abc:100', 'abc'));
     render(<Harness />);
     expect(captured.length).toBeGreaterThanOrEqual(1);
     expect(captured[0].coords.length).toBeGreaterThanOrEqual(2);
@@ -104,7 +105,7 @@ describe('useSelectedTrack', () => {
     expect(historyLoader.ensureLoaded).not.toHaveBeenCalled();
   });
 
-  it('appends a live tail point from aircraftStore and merges with history', () => {
+  it('does not append a live tail point to a selected history pass', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -114,6 +115,7 @@ describe('useSelectedTrack', () => {
         ] as unknown as AircraftSnapshot['aircraft'],
       },
     ]);
+    await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
     aircraftStore.applySnapshot({
@@ -123,7 +125,7 @@ describe('useSelectedTrack', () => {
         { hex: 'abc', lat: 0, lon: 5, altitude: 1000 },
       ] as unknown as AircraftSnapshot['aircraft'],
     });
-    act(() => useSelectionStore.setState({ selectedHex: 'abc' }));
+    act(() => useSelectionStore.getState().selectPass('abc:100', 'abc'));
     render(<Harness />);
     act(() => {
       useLiveTick.setState({ version: 1 });
@@ -131,7 +133,7 @@ describe('useSelectedTrack', () => {
     expect(captured.length).toBeGreaterThanOrEqual(1);
     const allCoords = captured.flatMap((s) => s.coords);
     expect(allCoords).toContainEqual([0, 0]);
-    expect(allCoords).toContainEqual([5, 0]);
+    expect(allCoords).not.toContainEqual([5, 0]);
   });
 
   it('does not append a duplicate when the live position is unchanged', async () => {
@@ -224,7 +226,7 @@ describe('useSelectedTrack', () => {
     });
   });
 
-  it('does not load aircraft trace files in history mode', () => {
+  it('does not load aircraft trace files in history mode', async () => {
     usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 130 });
     historyStore.setFrames([
@@ -237,11 +239,36 @@ describe('useSelectedTrack', () => {
       },
     ]);
 
-    act(() => useSelectionStore.setState({ selectedHex: 'abc123' }));
+    await historyStore.buildPassData();
+    act(() => useSelectionStore.getState().selectPass('abc123:100', 'abc123'));
     render(<Harness />);
 
     expect(loadAircraftTrace).not.toHaveBeenCalled();
     expect(captured.flatMap((s) => s.coords)).toContainEqual([2, 1]);
+  });
+
+  it('keeps duplicate-hex history pass tracks isolated', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 0, aircraft: [{ hex: 'abc', lat: 1, lon: 10, altitude: 1000 }] },
+      { now: 130, messages: 0, aircraft: [{ hex: 'abc', lat: 2, lon: 20, altitude: 1000 }] },
+      { now: 44000, messages: 0, aircraft: [{ hex: 'abc', lat: 3, lon: 30, altitude: 2000 }] },
+      { now: 44030, messages: 0, aircraft: [{ hex: 'abc', lat: 4, lon: 40, altitude: 2000 }] },
+    ] as never);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    render(<Harness />);
+
+    act(() => useSelectionStore.getState().selectPass('abc:44000', 'abc'));
+    expect(captured.flatMap((segment) => segment.coords)).toEqual([
+      [30, 3],
+      [40, 4],
+    ]);
+
+    act(() => useSelectionStore.getState().selectPass('abc:100', 'abc'));
+    expect(captured.flatMap((segment) => segment.coords)).toEqual([
+      [10, 1],
+      [20, 2],
+    ]);
   });
 
   it('uses history seed as fallback when trace returns empty in live mode', async () => {

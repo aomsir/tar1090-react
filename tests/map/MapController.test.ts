@@ -5,6 +5,7 @@ import {
   MAP_DIM_PERCENTAGE,
   MapController,
 } from '@/map/MapController';
+import type { PTracksLayerHandle } from '@/map/pTracksLayer';
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -43,6 +44,20 @@ describe('MapController controls', () => {
     const controller = new MapController(el);
     const map = (controller as unknown as { map: { getControls(): { getLength(): number } } }).map;
     expect(map.getControls().getLength()).toBe(0);
+    controller.dispose();
+  });
+
+  it('keeps marker selection separate from pass track selection', () => {
+    const controller = new MapController(document.createElement('div'));
+    const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
+      .pTracksHandle;
+    const setSelectedTrackKey = vi.spyOn(pTracksHandle, 'setSelectedKey');
+
+    controller.setSelected('abc123');
+    expect(setSelectedTrackKey).not.toHaveBeenCalled();
+
+    controller.setSelectedTrackKey('abc123:1000');
+    expect(setSelectedTrackKey).toHaveBeenCalledWith('abc123:1000');
     controller.dispose();
   });
 });
