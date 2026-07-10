@@ -114,7 +114,7 @@ export function DetailCard() {
             {flagSrc ? <img src={flagSrc} alt={d.country} className="h-4 w-6 rounded-sm" /> : null}
             <span className="text-lg font-bold tracking-wide">{d.flight || d.hex}</span>
           </div>
-           <div
+          <div
             data-testid="detail-subtitle"
             className="mt-1 flex items-center gap-1.5 text-xs text-slate-400"
           >
@@ -122,13 +122,13 @@ export function DetailCard() {
               <span className="font-mono text-slate-300">{d.registration}</span>
             ) : null}
             {d.registration && d.typeCode ? <span className="text-slate-600">·</span> : null}
-             {d.typeCode ? <span>{d.typeCode}</span> : null}
-           </div>
-           {d.passId && d.passStartTime != null && d.passEndTime != null ? (
-             <div className="mt-1 text-xs text-slate-400">
-               {formatPassTimeRange(d.passStartTime, d.passEndTime, i18n.language)}
-             </div>
-           ) : null}
+            {d.typeCode ? <span>{d.typeCode}</span> : null}
+          </div>
+          {d.passId && d.passStartTime != null && d.passEndTime != null ? (
+            <div className="mt-1 text-xs text-slate-400">
+              {formatPassTimeRange(d.passStartTime, d.passEndTime, i18n.language)}
+            </div>
+          ) : null}
           <div className="mt-1.5 flex flex-wrap gap-1">
             {d.isMilitary ? (
               <Chip color="danger" size="sm" variant="secondary">
@@ -174,7 +174,7 @@ export function DetailCard() {
       <div data-testid="key-stats" className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-lg bg-white/5 p-2 text-center">
           <div className="text-[10px] uppercase tracking-wide text-slate-500">
-             {t(d.passId ? 'detail.stats.maxAltitude' : 'detail.stats.altitude')}
+            {t(d.passId ? 'detail.stats.maxAltitude' : 'detail.stats.altitude')}
           </div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
             {(() => {
@@ -187,7 +187,7 @@ export function DetailCard() {
         </div>
         <div className="rounded-lg bg-white/5 p-2 text-center">
           <div className="text-[10px] uppercase tracking-wide text-slate-500">
-             {t(d.passId ? 'detail.stats.maxSpeed' : 'detail.stats.speed')}
+            {t(d.passId ? 'detail.stats.maxSpeed' : 'detail.stats.speed')}
           </div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
             {typeof d.speed === 'number' && Number.isFinite(d.speed) ? Math.round(d.speed) : '—'}
@@ -196,16 +196,16 @@ export function DetailCard() {
         </div>
         <div className="rounded-lg bg-white/5 p-2 text-center">
           <div className="text-[10px] uppercase tracking-wide text-slate-500">
-             {t(d.passId ? 'detail.stats.maxDistance' : 'detail.stats.track')}
+            {t(d.passId ? 'detail.stats.maxDistance' : 'detail.stats.track')}
           </div>
           <div className="mt-0.5 font-mono text-[17px] font-bold text-slate-50">
-             {d.passId
-               ? formatDistanceNm(d.maxDistance) || '—'
-               : typeof d.track === 'number' && Number.isFinite(d.track)
-                 ? `${Math.round(d.track)}°`
-                 : '—'}
-           </div>
-           <div className="text-[10px] text-slate-500">{d.passId ? 'nmi' : ''}</div>
+            {d.passId
+              ? formatDistanceNm(d.maxDistance) || '—'
+              : typeof d.track === 'number' && Number.isFinite(d.track)
+                ? `${Math.round(d.track)}°`
+                : '—'}
+          </div>
+          <div className="text-[10px] text-slate-500">{d.passId ? 'nmi' : ''}</div>
         </div>
       </div>
 

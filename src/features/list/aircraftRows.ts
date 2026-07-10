@@ -144,13 +144,12 @@ function sortValue(row: AircraftRow, key: SortKey): number | string | null {
 }
 
 function filterAndSortRows(rows: AircraftRow[], q: RowQuery): AircraftRow[] {
-  const filtered = rows
-    .filter(
-      (r) =>
-        matchesQuery(r, q.query) &&
-        matchesFilter(r, q.filter) &&
-        (!q.inViewOnly || isInExtent(r.lon, r.lat, q.extent)),
-    );
+  const filtered = rows.filter(
+    (r) =>
+      matchesQuery(r, q.query) &&
+      matchesFilter(r, q.filter) &&
+      (!q.inViewOnly || isInExtent(r.lon, r.lat, q.extent)),
+  );
   const dir = q.sortDir === 'asc' ? 1 : -1;
   filtered.sort((a, b) => {
     const av = sortValue(a, q.sortKey);
@@ -181,5 +180,8 @@ export function buildPassRows(
   q: RowQuery,
   routeApiEnabled = false,
 ): AircraftRow[] {
-  return filterAndSortRows(passes.map((pass) => toPassRow(pass, routeApiEnabled)), q);
+  return filterAndSortRows(
+    passes.map((pass) => toPassRow(pass, routeApiEnabled)),
+    q,
+  );
 }

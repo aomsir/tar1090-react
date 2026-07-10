@@ -101,7 +101,6 @@ export class HistoryStore {
       return ac;
     });
   }
-
 }
 
 export const historyStore = new HistoryStore();

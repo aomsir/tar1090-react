@@ -61,14 +61,20 @@ describe('syncPTracks', () => {
     syncPTracks(
       handle.source,
       new Map([
-        ['abc123:1000', [
-          { lon: 110, lat: 30, alt: 10000, ts: 1000, ground: false },
-          { lon: 110.1, lat: 30.1, alt: 11000, ts: 1010, ground: false },
-        ]],
-        ['abc123:50000', [
-          { lon: 111, lat: 31, alt: 5000, ts: 50000, ground: false },
-          { lon: 111.1, lat: 31.1, alt: 6000, ts: 50010, ground: false },
-        ]],
+        [
+          'abc123:1000',
+          [
+            { lon: 110, lat: 30, alt: 10000, ts: 1000, ground: false },
+            { lon: 110.1, lat: 30.1, alt: 11000, ts: 1010, ground: false },
+          ],
+        ],
+        [
+          'abc123:50000',
+          [
+            { lon: 111, lat: 31, alt: 5000, ts: 50000, ground: false },
+            { lon: 111.1, lat: 31.1, alt: 6000, ts: 50010, ground: false },
+          ],
+        ],
       ]),
     );
 

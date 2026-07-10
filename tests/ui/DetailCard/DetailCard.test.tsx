@@ -117,9 +117,21 @@ describe('DetailCard', () => {
 
   it('renders selected pass time and maxima instead of live labels', async () => {
     historyStore.setFrames([
-      { now: 100, messages: 0, aircraft: [{ hex: 'abc', flight: 'FIRST', lat: 1, lon: 10, altitude: 1000, speed: 100 }] },
-      { now: 44000, messages: 0, aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 3, lon: 30, altitude: 2000, speed: 200 }] },
-      { now: 44030, messages: 0, aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 4, lon: 40, altitude: 39000, speed: 490 }] },
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'FIRST', lat: 1, lon: 10, altitude: 1000, speed: 100 }],
+      },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 3, lon: 30, altitude: 2000, speed: 200 }],
+      },
+      {
+        now: 44030,
+        messages: 0,
+        aircraft: [{ hex: 'abc', flight: 'SECOND', lat: 4, lon: 40, altitude: 39000, speed: 490 }],
+      },
     ] as never);
     await historyStore.buildPassData(0, 0);
     usePlaybackStore.getState().setMode('history');

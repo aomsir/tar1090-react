@@ -242,7 +242,12 @@ export const LIST_COLUMNS: ListColumn[] = [
     format: (r) => formatTimestamp(r.lastSeenTime),
     sortValue: (r) => missing(r.lastSeenTime),
   },
-  { id: 'pass_time', label: 'Pass Time', format: () => '', sortValue: (r) => r.passStartTime ?? null },
+  {
+    id: 'pass_time',
+    label: 'Pass Time',
+    format: () => '',
+    sortValue: (r) => r.passStartTime ?? null,
+  },
 ];
 
 export function visibleColumnIds(hidden: Set<ColumnId>): ColumnId[] {

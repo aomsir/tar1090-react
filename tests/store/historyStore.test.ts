@@ -121,7 +121,10 @@ describe('pass data', () => {
   it('queues each non-empty normalized callsign once across passes', async () => {
     historyStore.setFrames([
       frame(1000, [{ hex: 'aa', flight: ' test100 ' }]),
-      frame(1000 + 12 * 60 * 60, [{ hex: 'aa', flight: 'TEST100' }, { hex: 'bb', flight: ' ' }]),
+      frame(1000 + 12 * 60 * 60, [
+        { hex: 'aa', flight: 'TEST100' },
+        { hex: 'bb', flight: ' ' },
+      ]),
     ]);
 
     await historyStore.buildPassData(undefined, undefined, true);
@@ -155,5 +158,4 @@ describe('pass data', () => {
     const after = useLiveTick.getState().version;
     expect(after).toBe(before + 1);
   });
-
 });

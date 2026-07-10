@@ -49,7 +49,8 @@ describe('MapController controls', () => {
 
   it('keeps marker selection separate from pass track selection', () => {
     const controller = new MapController(document.createElement('div'));
-    const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle }).pTracksHandle;
+    const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
+      .pTracksHandle;
     const setSelectedTrackKey = vi.spyOn(pTracksHandle, 'setSelectedKey');
 
     controller.setSelected('abc123');

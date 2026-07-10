@@ -34,9 +34,21 @@ describe('useSelectedAircraft', () => {
 
   it('returns the exact selected history pass detail in history mode', async () => {
     historyStore.setFrames([
-      { now: 100, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'FIRST', altitude: 1000, speed: 100 }] },
-      { now: 44000, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 2000, speed: 200 }] },
-      { now: 44030, messages: 0, aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 39000, speed: 490 }] },
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: 'aabbcc', flight: 'FIRST', altitude: 1000, speed: 100 }],
+      },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 2000, speed: 200 }],
+      },
+      {
+        now: 44030,
+        messages: 0,
+        aircraft: [{ hex: 'aabbcc', flight: 'SECOND', altitude: 39000, speed: 490 }],
+      },
     ] as never);
     await historyStore.buildPassData();
 

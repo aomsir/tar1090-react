@@ -305,10 +305,7 @@ describe('buildPassRows', () => {
 
   it('keeps repeated hex passes separate and uses pass start for sorting', () => {
     const rows = buildPassRows(
-      [
-        pass('abc123:2000', { startTime: 2000 }),
-        pass('abc123:1000', { startTime: 1000 }),
-      ],
+      [pass('abc123:2000', { startTime: 2000 }), pass('abc123:1000', { startTime: 1000 })],
       { ...base, sortKey: 'pass_time', sortDir: 'asc' },
     );
 
