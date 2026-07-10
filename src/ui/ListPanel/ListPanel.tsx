@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Chip } from '@heroui/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
 import { createListColumns } from '@/features/list/columns';
@@ -12,6 +13,8 @@ import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRo
 import type { ListColumn } from '@/features/list/columns';
 
 const EMERGENCY_SQUAWKS = new Set(['7500', '7600', '7700']);
+const ROW_HEIGHT = 32;
+const ROW_OVERSCAN = 10;
 
 function rowBackground(row: AircraftRow, selected: boolean, index: number): string {
   if (EMERGENCY_SQUAWKS.has(row.squawk)) return 'bg-red-500/25';
@@ -38,6 +41,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   const setListWidth = useToolbarStore((s) => s.setListWidth);
   const isDragging = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const columns = useMemo(() => createListColumns(t, i18n.language), [t, i18n.language]);
   const filters = useMemo<{ id: FilterKey; label: string }[]>(
     () => [
@@ -51,6 +55,22 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   const modeColumns = columns.filter((c) => isHistory || c.id !== 'pass_time');
   const visibleColumns = modeColumns.filter((c) => !hiddenColumns.has(c.id));
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
+  // TanStack owns the scroll subscription and does not support React Compiler memoization.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: ROW_OVERSCAN,
+    getItemKey: (index) => rows[index]!.rowId,
+    initialRect: { width: 640, height: 320 },
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const topPadding = virtualRows.length > 0 ? virtualRows[0]!.start : 0;
+  const bottomPadding =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1]!.end
+      : 0;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -180,7 +200,11 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
         </button>
       </div>
 
-      <div className="mt-2 min-h-0 flex-1 overflow-auto">
+      <div
+        ref={scrollRef}
+        data-testid="list-scroll-region"
+        className="mt-2 min-h-0 flex-1 overflow-auto"
+      >
         <table className="min-w-[640px] w-full text-[13px]">
           <thead className="sticky top-0 z-10 bg-zinc-950">
             <tr className="border-b border-white/10 text-[12px] text-slate-500">
@@ -215,14 +239,24 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, index) => {
+            {topPadding > 0 ? (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={visibleColumns.length}
+                  style={{ height: `${topPadding}px`, padding: 0 }}
+                />
+              </tr>
+            ) : null}
+            {virtualRows.map((virtualRow) => {
+              const r = rows[virtualRow.index]!;
               const selected = isHistory ? selectedPassId === r.passId : r.hex === selectedHex;
               return (
                 <tr
                   key={r.rowId}
                   data-testid={`row-${r.rowId}`}
                   onClick={() => onSelect(r.rowId)}
-                  className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, index)}`}
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                  className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
                 >
                   {visibleColumns.map((c) => {
                     const align = c.align ?? 'left';
@@ -277,6 +311,14 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                 </tr>
               );
             })}
+            {bottomPadding > 0 ? (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={visibleColumns.length}
+                  style={{ height: `${bottomPadding}px`, padding: 0 }}
+                />
+              </tr>
+            ) : null}
           </tbody>
         </table>
         {rows.length === 0 ? (

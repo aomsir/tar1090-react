@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
@@ -12,6 +12,28 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
 
+class ResizeObserverMock {
+  constructor(private readonly callback: ResizeObserverCallback) {}
+
+  observe(target: Element): void {
+    const contentRect = target.getBoundingClientRect();
+    this.callback(
+      [
+        {
+          target,
+          contentRect,
+          borderBoxSize: [{ inlineSize: contentRect.width, blockSize: contentRect.height }],
+        } as ResizeObserverEntry,
+      ],
+      this as unknown as ResizeObserver,
+    );
+  }
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+
 function seed(hex: string, fields: Partial<Aircraft>): void {
   const a = new Aircraft(hex);
   Object.assign(a, fields);
@@ -19,7 +41,37 @@ function seed(hex: string, fields: Partial<Aircraft>): void {
 }
 
 describe('ListPanel', () => {
+  let rectSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
+    rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function () {
+        if ((this as HTMLElement).dataset.testid === 'list-scroll-region') {
+          return {
+            width: 640,
+            height: 320,
+            top: 0,
+            left: 0,
+            right: 640,
+            bottom: 320,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          };
+        }
+        return {
+          width: 640,
+          height: 32,
+          top: 0,
+          left: 0,
+          right: 640,
+          bottom: 32,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        };
+      });
     aircraftStore.reset();
     historyStore.reset();
     usePlaybackStore.getState().reset();
@@ -35,6 +87,8 @@ describe('ListPanel', () => {
     useMapViewStore.setState({ extent: null });
     useSelectionStore.setState({ selectedHex: null, selectedPassId: null });
   });
+
+  afterEach(() => rectSpy.mockRestore());
 
   it('renders rows from the store and calls onSelect on row click', async () => {
     seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 35000 });
@@ -238,5 +292,67 @@ describe('ListPanel', () => {
   it('renders translated empty state when there are no rows', async () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />, { language: 'zh-CN' });
     expect(screen.getByText('无匹配飞机')).toBeInTheDocument();
+  });
+
+  it('mounts only a bounded virtual window for a large row set', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const mountedRows = screen.getAllByTestId(/^row-/);
+    expect(mountedRows.length).toBeGreaterThan(0);
+    expect(mountedRows.length).toBeLessThan(100);
+  });
+
+  it('changes the mounted window on scroll and keeps click identity', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    act(() => useLiveTick.getState().bump());
+    const onSelect = vi.fn();
+
+    await renderWithI18n(<ListPanel onSelect={onSelect} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const firstWindowIds = screen.getAllByTestId(/^row-/).map((row) => row.dataset.testid);
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    const secondWindowRows = screen.getAllByTestId(/^row-/);
+    expect(secondWindowRows.map((row) => row.dataset.testid)).not.toEqual(firstWindowIds);
+    fireEvent.click(secondWindowRows[0]!);
+    expect(onSelect).toHaveBeenCalledWith(
+      secondWindowRows[0]!.dataset.testid!.replace(/^row-/, ''),
+    );
+  });
+
+  it('keeps selected styling when the selected row enters the virtual window', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    useSelectionStore.setState({ selectedHex: 'A300', selectedPassId: null });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    expect(screen.getByTestId('row-A300').className).toContain('border-indigo');
   });
 });
