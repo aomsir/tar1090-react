@@ -2,6 +2,7 @@ import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import { buildAircraftPasses, type AircraftPass } from '@/features/playback/aircraftPasses';
+import { buildDrawablePassIndex } from '@/features/playback/historyTracks';
 import { enrichAircraft } from '@/domain/enrich';
 import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
@@ -13,6 +14,7 @@ import { useHistoryStatsStore } from './historyStatsStore';
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
   passes: AircraftPass[] = [];
+  drawablePassesRecentFirst: AircraftPass[] = [];
   passTracksData: Map<string, TrackPoint[]> | null = null;
   private passById = new Map<string, AircraftPass>();
 
@@ -32,6 +34,7 @@ export class HistoryStore {
 
   async buildPassData(siteLat?: number, siteLon?: number, routeApiEnabled = false): Promise<void> {
     this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
+    this.drawablePassesRecentFirst = buildDrawablePassIndex(this.passes);
     this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
     this.passById = new Map(this.passes.map((pass) => [pass.passId, pass]));
     await Promise.all(this.passes.map((pass) => enrichAircraft(pass.aircraft)));
@@ -52,6 +55,7 @@ export class HistoryStore {
 
   clearPassData(): void {
     this.passes = [];
+    this.drawablePassesRecentFirst = [];
     this.passTracksData = null;
     this.passById = new Map();
     useHistoryStatsStore.getState().clear();

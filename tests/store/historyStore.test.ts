@@ -92,6 +92,23 @@ describe('pass data', () => {
     expect(historyStore.getPass('missing')).toBeNull();
   });
 
+  it('buildPassData caches drawable passes with the most recent first', async () => {
+    historyStore.setFrames([
+      frame(1000, [{ hex: 'older', lat: 30, lon: 110 }]),
+      frame(1001, [{ hex: 'older', lat: 31, lon: 111 }]),
+      frame(1000 + 12 * 60 * 60, [{ hex: 'newer', lat: 40, lon: 120 }]),
+      frame(1001 + 12 * 60 * 60, [{ hex: 'newer', lat: 41, lon: 121 }]),
+      frame(1002 + 12 * 60 * 60, [{ hex: 'single', lat: 50, lon: 130 }]),
+    ]);
+
+    await historyStore.buildPassData();
+
+    expect(historyStore.drawablePassesRecentFirst.map(({ hex }) => hex)).toEqual([
+      'newer',
+      'older',
+    ]);
+  });
+
   it('clearPassData resets canonical pass fields', async () => {
     const frames: AircraftSnapshot[] = [
       {
@@ -105,6 +122,7 @@ describe('pass data', () => {
     historyStore.clearPassData();
     expect(historyStore.passes).toEqual([]);
     expect(historyStore.passTracksData).toBeNull();
+    expect(historyStore.drawablePassesRecentFirst).toEqual([]);
   });
 
   it('clearPassData resets canonical pass fields and history statistics', async () => {
