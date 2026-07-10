@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useToolbarStore } from '@/store/toolbarStore';
+import { migrateToolbarState, useToolbarStore } from '@/store/toolbarStore';
 
 describe('toolbarStore', () => {
   beforeEach(() => {
@@ -60,6 +60,16 @@ describe('toolbarStore', () => {
     expect(useToolbarStore.getState().iconScale).toBe(0.5);
   });
 
+  it('defaults historyTrackLimit to 1000 and persists changes', () => {
+    expect(useToolbarStore.getState().historyTrackLimit).toBe(1000);
+
+    useToolbarStore.getState().setHistoryTrackLimit(5000);
+
+    expect(useToolbarStore.getState().historyTrackLimit).toBe(5000);
+    const stored = JSON.parse(localStorage.getItem('toolbar-settings') ?? '{}');
+    expect(stored.state.historyTrackLimit).toBe(5000);
+  });
+
   it('toggles settings panel', () => {
     useToolbarStore.getState().toggleSettings();
     expect(useToolbarStore.getState().settingsOpen).toBe(true);
@@ -78,6 +88,13 @@ describe('toolbarStore', () => {
     expect(s.iconScale).toBe(1);
   });
 
+  it('resetAll restores historyTrackLimit to 1000', () => {
+    useToolbarStore.getState().setHistoryTrackLimit('all');
+    useToolbarStore.getState().resetAll();
+
+    expect(useToolbarStore.getState().historyTrackLimit).toBe(1000);
+  });
+
   it('persists toggle state to localStorage', () => {
     useToolbarStore.getState().toggle('enableLabels');
     const stored = JSON.parse(localStorage.getItem('toolbar-settings') ?? '{}');
@@ -90,6 +107,16 @@ describe('toolbarStore', () => {
     const stored = JSON.parse(localStorage.getItem('toolbar-settings') ?? '{}');
     expect(stored.state.settingsOpen).toBeUndefined();
     expect(stored.state.fullscreen).toBeUndefined();
+  });
+
+  it.each([
+    [{}, 1000],
+    [{ historyTrackLimit: 500 }, 500],
+    [{ historyTrackLimit: 'all' }, 'all'],
+    [{ historyTrackLimit: 1234 }, 1000],
+    [{ historyTrackLimit: 'invalid' }, 1000],
+  ] as const)('normalizes migrated historyTrackLimit %#', (persisted, expected) => {
+    expect(migrateToolbarState(persisted).historyTrackLimit).toBe(expected);
   });
 });
 

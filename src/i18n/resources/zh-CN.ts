@@ -24,6 +24,10 @@ const zhCN: TranslationResource = {
       metric: '公制',
       imperial: '英制',
     },
+    historyTracks: {
+      title: '历史航迹',
+      allWarning: '全部（可能影响性能）',
+    },
     scale: {
       title: '缩放',
       labelScale: '标签缩放',
