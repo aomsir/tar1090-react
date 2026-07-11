@@ -11,11 +11,19 @@ import { useToolbarStore } from '@/store/toolbarStore';
 import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
+import { LIST_COLUMNS } from '@/features/list/columns';
 
 class ResizeObserverMock {
+  static instances = new Set<ResizeObserverMock>();
+
   constructor(private readonly callback: ResizeObserverCallback) {}
 
   observe(target: Element): void {
+    ResizeObserverMock.instances.add(this);
+    this.emit(target);
+  }
+
+  emit(target: Element): void {
     const contentRect = target.getBoundingClientRect();
     this.callback(
       [
@@ -28,8 +36,16 @@ class ResizeObserverMock {
       this as unknown as ResizeObserver,
     );
   }
-  unobserve(): void {}
-  disconnect(): void {}
+  unobserve(): void {
+    ResizeObserverMock.instances.delete(this);
+  }
+  disconnect(): void {
+    ResizeObserverMock.instances.delete(this);
+  }
+
+  static emit(target: Element): void {
+    for (const observer of ResizeObserverMock.instances) observer.emit(target);
+  }
 }
 
 vi.stubGlobal('ResizeObserver', ResizeObserverMock);
@@ -44,6 +60,7 @@ describe('ListPanel', () => {
   let rectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    ResizeObserverMock.instances.clear();
     rectSpy = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockImplementation(function () {
@@ -55,6 +72,19 @@ describe('ListPanel', () => {
             left: 0,
             right: 640,
             bottom: 320,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          };
+        }
+        if ((this as HTMLElement).textContent?.includes('FLT000')) {
+          return {
+            width: 640,
+            height: 64,
+            top: 0,
+            left: 0,
+            right: 640,
+            bottom: 64,
             x: 0,
             y: 0,
             toJSON: () => ({}),
@@ -354,5 +384,50 @@ describe('ListPanel', () => {
     await act(async () => {});
 
     expect(screen.getByTestId('row-A300').className).toContain('border-indigo');
+  });
+
+  it('measures a taller mounted row before calculating the deep scroll spacer', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+    await act(async () => {});
+    act(() => ResizeObserverMock.emit(screen.getByTestId('row-A000')));
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    expect(screen.getByTestId('row-A289')).toBeInTheDocument();
+  });
+
+  it('keeps table rows structurally valid when all columns are hidden', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    useListControls.setState({ hiddenColumns: new Set(LIST_COLUMNS.map((column) => column.id)) });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const table = screen.getByRole('table');
+    const rows = Array.from(table.querySelectorAll('thead tr, tbody tr'));
+    const spacerRows = rows.filter((row) => row.getAttribute('aria-hidden') === 'true');
+
+    expect(spacerRows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const cells = row.querySelectorAll(':scope > th, :scope > td');
+      expect(cells.length).toBeGreaterThan(0);
+      for (const cell of cells) expect(cell.getAttribute('colspan')).not.toBe('0');
+    }
   });
 });

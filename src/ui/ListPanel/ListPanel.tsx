@@ -54,6 +54,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   );
   const modeColumns = columns.filter((c) => isHistory || c.id !== 'pass_time');
   const visibleColumns = modeColumns.filter((c) => !hiddenColumns.has(c.id));
+  const tableColumnCount = Math.max(visibleColumns.length, 1);
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
   // TanStack owns the scroll subscription and does not support React Compiler memoization.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -61,6 +62,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
+    measureElement: (element) => element.getBoundingClientRect().height,
     overscan: ROW_OVERSCAN,
     getItemKey: (index) => rows[index]!.rowId,
     initialRect: { width: 640, height: 320 },
@@ -236,15 +238,13 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   </th>
                 );
               })}
+              {visibleColumns.length === 0 ? <th aria-hidden="true" /> : null}
             </tr>
           </thead>
           <tbody>
             {topPadding > 0 ? (
               <tr aria-hidden="true">
-                <td
-                  colSpan={visibleColumns.length}
-                  style={{ height: `${topPadding}px`, padding: 0 }}
-                />
+                <td colSpan={tableColumnCount} style={{ height: `${topPadding}px`, padding: 0 }} />
               </tr>
             ) : null}
             {virtualRows.map((virtualRow) => {
@@ -254,8 +254,9 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                 <tr
                   key={r.rowId}
                   data-testid={`row-${r.rowId}`}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
                   onClick={() => onSelect(r.rowId)}
-                  style={{ height: `${ROW_HEIGHT}px` }}
                   className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
                 >
                   {visibleColumns.map((c) => {
@@ -308,13 +309,14 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                       </td>
                     );
                   })}
+                  {visibleColumns.length === 0 ? <td aria-hidden="true" /> : null}
                 </tr>
               );
             })}
             {bottomPadding > 0 ? (
               <tr aria-hidden="true">
                 <td
-                  colSpan={visibleColumns.length}
+                  colSpan={tableColumnCount}
                   style={{ height: `${bottomPadding}px`, padding: 0 }}
                 />
               </tr>
