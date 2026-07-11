@@ -331,6 +331,79 @@ describe('AppShell', () => {
     });
   });
 
+  it('selects the clicked history track without moving the playback cursor or centering', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 25, lon: 120, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 30, lon: 125, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setCursor(150);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.centerOn.mockClear();
+    fakeController.setSelectedTrackKey.mockClear();
+
+    act(() => {
+      capturedSelectCb!({ type: 'historyTrack', passId: '781860:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
+    expect(usePlaybackStore.getState().cursorTime).toBe(150);
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('ignores an unknown history track pass id', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      capturedSelectCb!({ type: 'historyTrack', passId: 'missing:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
+    });
+  });
+
+  it('ignores history track selection in live mode', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      capturedSelectCb!({ type: 'historyTrack', passId: '781860:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
+    });
+  });
+
   it('clears all selection when the map background is clicked', () => {
     useSelectionStore.getState().selectPass('781860:100', '781860');
     render(<AppShell />);

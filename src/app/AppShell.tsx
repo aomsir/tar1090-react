@@ -209,11 +209,17 @@ export function AppShell() {
               selection.clearAll();
               return;
             }
-            if (mapSelection.type === 'historyTrack') return;
+            const playback = usePlaybackStore.getState();
+            if (mapSelection.type === 'historyTrack') {
+              if (playback.mode !== 'history') return;
+              const pass = historyStore.getPass(mapSelection.passId);
+              if (pass) selection.selectPass(pass.passId, pass.hex);
+              return;
+            }
 
             const { hex } = mapSelection;
             if (
-              usePlaybackStore.getState().mode !== 'history' ||
+              playback.mode !== 'history' ||
               !selection.selectedPassId ||
               selection.selectedHex !== hex
             ) {
