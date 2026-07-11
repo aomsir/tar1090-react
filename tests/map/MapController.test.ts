@@ -65,9 +65,19 @@ describe('MapController selection helpers', () => {
   });
 
   it('selects the history track geometrically nearest to the click coordinate', () => {
-    const farther = new Feature({ geometry: new LineString([[0, 3], [10, 3]]) });
+    const farther = new Feature({
+      geometry: new LineString([
+        [0, 3],
+        [10, 3],
+      ]),
+    });
     farther.set('trackKey', 'farther-pass');
-    const nearer = new Feature({ geometry: new LineString([[0, 1], [10, 1]]) });
+    const nearer = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
     nearer.set('trackKey', 'nearer-pass');
 
     expect(closestHistoryTrackSelection([farther, nearer], [5, 0])).toEqual({
@@ -77,7 +87,12 @@ describe('MapController selection helpers', () => {
   });
 
   it('ignores history track features without a string track key or valid geometry', () => {
-    const missingKey = new Feature({ geometry: new LineString([[0, 1], [10, 1]]) });
+    const missingKey = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
     const missingGeometry = new Feature();
     missingGeometry.set('trackKey', 'pass-a');
     const unsupportedGeometry = {
@@ -93,7 +108,12 @@ describe('MapController selection helpers', () => {
   it('prefers an aircraft hit over history-track candidates', () => {
     const aircraft = new Feature();
     aircraft.setId('abc123');
-    const track = new Feature({ geometry: new LineString([[0, 0], [10, 0]]) });
+    const track = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
     track.set('trackKey', 'pass-a');
 
     expect(resolveMapSelection(aircraft, [track], [5, 0])).toEqual({
@@ -132,18 +152,30 @@ describe('MapController controls', () => {
 
   it('clicks the nearest visible history track after aircraft hit detection misses', () => {
     const controller = new MapController(document.createElement('div'));
-    const map = (controller as unknown as {
-      map: {
-        dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
-        forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
-      };
-      pTracksHandle: PTracksLayerHandle;
-    }).map;
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
     const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
       .pTracksHandle;
-    const visible = new Feature({ geometry: new LineString([[0, 1], [10, 1]]) });
+    const visible = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
     visible.set('trackKey', 'visible-pass');
-    const hidden = new Feature({ geometry: new LineString([[0, 0], [10, 0]]) });
+    const hidden = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
     hidden.set('trackKey', 'hidden-pass');
     pTracksHandle.setSelectedKey('visible-pass');
     const onSelect = vi.fn();
@@ -166,17 +198,24 @@ describe('MapController controls', () => {
 
   it('prefers an aircraft click over persistent-track candidates', () => {
     const controller = new MapController(document.createElement('div'));
-    const map = (controller as unknown as {
-      map: {
-        dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
-        forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
-      };
-      handle: { layer: unknown };
-      pTracksHandle: PTracksLayerHandle;
-    }).map;
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        handle: { layer: unknown };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
     const aircraft = new Feature();
     aircraft.setId('abc123');
-    const track = new Feature({ geometry: new LineString([[0, 0], [10, 0]]) });
+    const track = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
     track.set('trackKey', 'pass-a');
     const onSelect = vi.fn();
     controller.onSelect(onSelect);
@@ -200,18 +239,35 @@ describe('MapController controls', () => {
   it('shows a pointer only for aircraft or visible history-track hover hits', () => {
     const target = document.createElement('div');
     const controller = new MapController(target);
-    const map = (controller as unknown as {
-      map: {
-        dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[]; dragging: boolean }): void;
-        forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
-      };
-      pTracksHandle: PTracksLayerHandle;
-    }).map;
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: {
+            type: string;
+            pixel: number[];
+            coordinate: number[];
+            dragging: boolean;
+          }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
     const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
       .pTracksHandle;
-    const visible = new Feature({ geometry: new LineString([[0, 0], [10, 0]]) });
+    const visible = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
     visible.set('trackKey', 'visible-pass');
-    const hidden = new Feature({ geometry: new LineString([[0, 0], [10, 0]]) });
+    const hidden = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
     hidden.set('trackKey', 'hidden-pass');
     pTracksHandle.setSelectedKey('visible-pass');
 

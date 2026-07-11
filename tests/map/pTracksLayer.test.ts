@@ -61,7 +61,10 @@ describe('createPTracksLayer', () => {
     handle.setSelectedKey('pass-b');
 
     expect(
-      handle.source.getFeatures().filter(handle.isFeatureVisible).map((feature) => feature.get('trackKey')),
+      handle.source
+        .getFeatures()
+        .filter(handle.isFeatureVisible)
+        .map((feature) => feature.get('trackKey')),
     ).toEqual(['pass-b']);
   });
 });

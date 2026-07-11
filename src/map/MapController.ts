@@ -141,10 +141,14 @@ export class MapController {
 
     this.map.on('pointermove', (evt) => {
       if (evt.dragging) return;
-      const aircraftFeature = this.map.forEachFeatureAtPixel(evt.pixel, (feature: FeatureLike) => feature, {
-        hitTolerance: 5,
-        layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
-      });
+      const aircraftFeature = this.map.forEachFeatureAtPixel(
+        evt.pixel,
+        (feature: FeatureLike) => feature,
+        {
+          hitTolerance: 5,
+          layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
+        },
+      );
       let hit = selectionFromAircraftFeature(aircraftFeature) !== null;
       if (!hit) {
         this.map.forEachFeatureAtPixel(
