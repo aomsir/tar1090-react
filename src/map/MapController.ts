@@ -4,6 +4,7 @@ import TileLayer from 'ol/layer/Tile';
 import XYZ from 'ol/source/XYZ';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { getBottomLeft, getTopRight } from 'ol/extent';
+import type { Coordinate } from 'ol/coordinate';
 import type { FeatureLike } from 'ol/Feature';
 import type RenderEvent from 'ol/render/Event';
 import {
@@ -28,6 +29,48 @@ export function isAircraftHitLayer(layer: unknown, aircraftLayer: unknown): bool
   return layer === aircraftLayer;
 }
 
+export type MapSelection =
+  | { type: 'aircraft'; hex: string }
+  | { type: 'historyTrack'; passId: string }
+  | null;
+
+export function selectionFromAircraftFeature(feature: FeatureLike | undefined): MapSelection {
+  const id = feature?.getId();
+  return typeof id === 'string' ? { type: 'aircraft', hex: id } : null;
+}
+
+export function closestHistoryTrackSelection(
+  features: FeatureLike[],
+  coordinate: Coordinate,
+): MapSelection {
+  let nearest: { passId: string; distanceSq: number } | null = null;
+
+  for (const feature of features) {
+    const passId = feature.get('trackKey');
+    const geometry = feature.getGeometry();
+    if (typeof passId !== 'string' || !geometry) continue;
+
+    const point = geometry.getClosestPoint(coordinate);
+    const dx = point[0] - coordinate[0];
+    const dy = point[1] - coordinate[1];
+    const distanceSq = dx * dx + dy * dy;
+    if (!nearest || distanceSq < nearest.distanceSq) nearest = { passId, distanceSq };
+  }
+
+  return nearest ? { type: 'historyTrack', passId: nearest.passId } : null;
+}
+
+export function resolveMapSelection(
+  aircraftFeature: FeatureLike | undefined,
+  trackFeatures: FeatureLike[],
+  coordinate: Coordinate,
+): MapSelection {
+  return (
+    selectionFromAircraftFeature(aircraftFeature) ??
+    closestHistoryTrackSelection(trackFeatures, coordinate)
+  );
+}
+
 /** Dims tile renders with a Canvas postrender pass. */
 function dimTiles(evt: RenderEvent): void {
   const ctx = evt.context as CanvasRenderingContext2D | null;
@@ -45,7 +88,7 @@ export class MapController {
   private readonly trackHandle: TrackLayerHandle;
   private readonly pTracksHandle: PTracksLayerHandle;
   private selectedHex: string | null = null;
-  private selectCb: ((hex: string | null) => void) | null = null;
+  private selectCb: ((selection: MapSelection) => void) | null = null;
   private followEnabled = false;
   private dimEnabled = true;
 
@@ -65,20 +108,49 @@ export class MapController {
     });
 
     this.map.on('click', (evt) => {
-      const feature = this.map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike) => f, {
+      const aircraftFeature = this.map.forEachFeatureAtPixel(evt.pixel, (f: FeatureLike) => f, {
         hitTolerance: 5,
         layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
       });
-      const hex = feature ? ((feature.getId() as string | undefined) ?? null) : null;
-      this.selectCb?.(hex);
+      const aircraftSelection = selectionFromAircraftFeature(aircraftFeature);
+      if (aircraftSelection) {
+        this.selectCb?.(aircraftSelection);
+        return;
+      }
+
+      const trackFeatures: FeatureLike[] = [];
+      this.map.forEachFeatureAtPixel(
+        evt.pixel,
+        (feature: FeatureLike) => {
+          if (this.pTracksHandle.isFeatureVisible(feature)) trackFeatures.push(feature);
+        },
+        {
+          hitTolerance: 8,
+          layerFilter: (layer) => layer === this.pTracksHandle.layer,
+        },
+      );
+      this.selectCb?.(closestHistoryTrackSelection(trackFeatures, evt.coordinate));
     });
 
     this.map.on('pointermove', (evt) => {
       if (evt.dragging) return;
-      const hit = this.map.hasFeatureAtPixel(evt.pixel, {
+      const aircraftFeature = this.map.forEachFeatureAtPixel(evt.pixel, (feature: FeatureLike) => feature, {
         hitTolerance: 5,
         layerFilter: (layer) => isAircraftHitLayer(layer, this.handle.layer),
       });
+      let hit = selectionFromAircraftFeature(aircraftFeature) !== null;
+      if (!hit) {
+        this.map.forEachFeatureAtPixel(
+          evt.pixel,
+          (feature: FeatureLike) => {
+            if (this.pTracksHandle.isFeatureVisible(feature)) hit = true;
+          },
+          {
+            hitTolerance: 8,
+            layerFilter: (layer) => layer === this.pTracksHandle.layer,
+          },
+        );
+      }
       const el = this.map.getTargetElement();
       if (el) el.style.cursor = hit ? 'pointer' : '';
     });
@@ -145,7 +217,7 @@ export class MapController {
     this.pTracksHandle.setSelectedKey(key);
   }
 
-  onSelect(cb: (hex: string | null) => void): void {
+  onSelect(cb: (selection: MapSelection) => void): void {
     this.selectCb = cb;
   }
 
