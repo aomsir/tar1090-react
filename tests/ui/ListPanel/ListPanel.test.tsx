@@ -413,28 +413,72 @@ describe('ListPanel', () => {
     const scrollRegion = screen.getByTestId('list-scroll-region');
     const frame = scrollRegion.parentElement!;
     const header = frame.firstElementChild!;
-    const headerThead = header.querySelector('thead')!;
+    const headerTable = header.querySelector('table')!;
+    const headerThead = headerTable.querySelector('thead')!;
     const bodyTable = scrollRegion.querySelector('table')!;
+    const headerColumns = Array.from(headerTable.querySelectorAll('col'));
+    const bodyColumns = Array.from(bodyTable.querySelectorAll('col'));
+    const firstDataRow = screen.getAllByTestId(/^row-/)[0]!;
 
     expect(frame.className).toContain('list-table-frame');
+    expect(frame.className).toContain('overflow-x-auto');
     expect(header).toBe(frame.children[0]);
     expect(scrollRegion).toBe(frame.children[1]);
     expect(header.className).toContain('shrink-0');
+    expect(headerTable.className).toContain('table-fixed');
+    expect(bodyTable.className).toContain('table-fixed');
+    expect(scrollRegion.className).toContain('overflow-y-auto');
+    expect(scrollRegion.className).toContain('overflow-x-hidden');
     expect(headerThead.querySelector('tr')?.className).toContain('h-16');
     expect(scrollRegion.querySelector('thead')).toBeNull();
     expect(scrollRegion.querySelector('tbody')).toBeTruthy();
-    expect(
-      Array.from(header.querySelectorAll('col')).map((col) => col.getAttribute('style')),
-    ).toEqual(
-      Array.from(bodyTable.querySelectorAll('col')).map((col) => col.getAttribute('style')),
+    expect(headerTable.style.width).toBe(bodyTable.style.width);
+    expect(parseInt(headerTable.style.width, 10)).toBeGreaterThanOrEqual(640);
+    expect(headerColumns.map((col) => col.dataset.columnId)).toEqual(
+      bodyColumns.map((col) => col.dataset.columnId),
     );
+    expect(headerColumns.map((col) => col.getAttribute('style'))).toEqual(
+      bodyColumns.map((col) => col.getAttribute('style')),
+    );
+    expect(firstDataRow.cells).toHaveLength(headerColumns.length);
+    for (const cell of Array.from(firstDataRow.cells)) {
+      const headerId = cell.getAttribute('headers');
+      expect(headerId).toBeTruthy();
+      expect(headerTable.querySelector(`th#${headerId}`)).toBeTruthy();
+    }
 
     Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
     fireEvent.scroll(scrollRegion);
     await act(async () => {});
 
-    expect(header.querySelector('thead')).toBe(headerThead);
+    expect(headerTable.querySelector('thead')).toBe(headerThead);
     expect(Number(screen.getAllByTestId(/^row-/)[0]!.dataset.index)).toBeGreaterThan(0);
+  });
+
+  it('reserves vertical scrollbar gutter beside the body table', async () => {
+    const offsetWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+      .mockImplementation(function () {
+        return (this as HTMLElement).dataset.testid === 'list-scroll-region' ? 657 : 0;
+      });
+    const clientWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
+      .mockImplementation(function () {
+        return (this as HTMLElement).dataset.testid === 'list-scroll-region' ? 640 : 0;
+      });
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const header = scrollRegion.parentElement!.firstElementChild!;
+    const headerTable = header.querySelector('table')!;
+    const bodyTable = scrollRegion.querySelector('table')!;
+    expect(headerTable.style.width).toBe('640px');
+    expect(bodyTable.style.width).toBe('640px');
+    expect(scrollRegion.style.width).toBe('657px');
+
+    offsetWidthSpy.mockRestore();
+    clientWidthSpy.mockRestore();
   });
 
   it('changes the mounted window on scroll and keeps click identity', async () => {
@@ -530,6 +574,11 @@ describe('ListPanel', () => {
       expect(cells.length).toBeGreaterThan(0);
       for (const cell of cells) expect(cell.getAttribute('colspan')).not.toBe('0');
     }
+    const header = table.parentElement!.previousElementSibling!;
+    const placeholderHeader = header.querySelector('th')!;
+    const placeholderCell = table.querySelector('tbody tr:not([aria-hidden]) td')!;
+    expect(placeholderHeader.id).toBe('list-column-empty');
+    expect(placeholderCell.getAttribute('headers')).toBe(placeholderHeader.id);
   });
 
   it('virtualizes history pass rows with pass ids, selection, and valid spacers', async () => {

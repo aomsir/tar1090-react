@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Chip } from '@heroui/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +44,11 @@ function ListColgroup({ columns }: { columns: ListColumn[] }) {
   return (
     <colgroup>
       {columns.map((column) => (
-        <col key={column.id} style={{ width: `${COLUMN_WIDTH_PX[column.id]}px` }} />
+        <col
+          key={column.id}
+          data-column-id={column.id}
+          style={{ width: `${COLUMN_WIDTH_PX[column.id]}px` }}
+        />
       ))}
     </colgroup>
   );
@@ -76,6 +80,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   const isDragging = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollbarWidth, setScrollbarWidth] = useState(0);
   const columns = useMemo(() => createListColumns(t, i18n.language), [t, i18n.language]);
   const filters = useMemo<{ id: FilterKey; label: string }[]>(
     () => [
@@ -148,6 +153,18 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
       cleanupRef.current?.();
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const updateScrollbarWidth = () => {
+      const scrollElement = scrollRef.current;
+      if (scrollElement) setScrollbarWidth(scrollElement.offsetWidth - scrollElement.clientWidth);
+    };
+
+    updateScrollbarWidth();
+    const observer = new ResizeObserver(updateScrollbarWidth);
+    if (scrollRef.current) observer.observe(scrollRef.current);
+    return () => observer.disconnect();
+  }, [tableWidth]);
 
   const historyLabel = (col: ListColumn): string => {
     if (!isHistory) return col.label;
@@ -240,53 +257,61 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
       </div>
 
       <div className="list-table-frame mt-2 flex min-h-0 flex-1 flex-col overflow-x-auto">
-        <table
-          className="shrink-0 border-separate border-spacing-0 text-[13px]"
-          style={{ width: `${tableWidth}px` }}
+        <div
+          className="shrink-0"
+          style={{ width: `${tableWidth + scrollbarWidth}px`, paddingRight: `${scrollbarWidth}px` }}
         >
-          <ListColgroup columns={visibleColumns} />
-          <thead className="bg-zinc-950">
-            <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500">
-              {visibleColumns.map((c) => {
-                const sortable = c.id !== 'flag';
-                const isActive = sortKey === c.id;
-                const align = c.align ?? 'left';
-                return (
-                  <th
-                    key={c.id}
-                    role="columnheader"
-                    aria-sort={
-                      isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
-                    }
-                    className={`px-2 py-1.5 ${align === 'right' ? 'text-right' : 'text-left'} ${isActive ? 'border-b-2 border-white/25' : ''}`}
-                  >
-                    {sortable ? (
-                      <button
-                        type="button"
-                        className="hover:text-white"
-                        onClick={() => toggleSort(c.id as SortKey)}
-                      >
-                        {historyLabel(c)}
-                        {isActive ? (sortDir === 'asc' ? ' ▴' : ' ▾') : ''}
-                      </button>
-                    ) : (
-                      <span>{c.id === 'flag' ? t('list.flag') : historyLabel(c)}</span>
-                    )}
-                  </th>
-                );
-              })}
-              {visibleColumns.length === 0 ? <th aria-hidden="true" /> : null}
-            </tr>
-          </thead>
-        </table>
+          <table
+            className="table-fixed border-separate border-spacing-0 text-[13px]"
+            style={{ width: `${tableWidth}px` }}
+          >
+            <ListColgroup columns={visibleColumns} />
+            <thead className="bg-zinc-950">
+              <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500">
+                {visibleColumns.map((c) => {
+                  const sortable = c.id !== 'flag';
+                  const isActive = sortKey === c.id;
+                  const align = c.align ?? 'left';
+                  return (
+                    <th
+                      key={c.id}
+                      id={`list-column-${c.id}`}
+                      role="columnheader"
+                      aria-sort={
+                        isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
+                      }
+                      className={`px-2 py-1.5 ${align === 'right' ? 'text-right' : 'text-left'} ${isActive ? 'border-b-2 border-white/25' : ''}`}
+                    >
+                      {sortable ? (
+                        <button
+                          type="button"
+                          className="hover:text-white"
+                          onClick={() => toggleSort(c.id as SortKey)}
+                        >
+                          {historyLabel(c)}
+                          {isActive ? (sortDir === 'asc' ? ' ▴' : ' ▾') : ''}
+                        </button>
+                      ) : (
+                        <span>{c.id === 'flag' ? t('list.flag') : historyLabel(c)}</span>
+                      )}
+                    </th>
+                  );
+                })}
+                {visibleColumns.length === 0 ? (
+                  <th id="list-column-empty" aria-hidden="true" />
+                ) : null}
+              </tr>
+            </thead>
+          </table>
+        </div>
         <div
           ref={scrollRef}
           data-testid="list-scroll-region"
-          className="min-h-0 shrink-0 flex-1 overflow-y-auto"
-          style={{ width: `${tableWidth}px` }}
+          className="min-h-0 shrink-0 flex-1 overflow-x-hidden overflow-y-auto"
+          style={{ width: `${tableWidth + scrollbarWidth}px` }}
         >
           <table
-            className="border-separate border-spacing-0 text-[13px]"
+            className="table-fixed border-separate border-spacing-0 text-[13px]"
             style={{ width: `${tableWidth}px` }}
           >
             <ListColgroup columns={visibleColumns} />
@@ -317,6 +342,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                         return (
                           <td
                             key={c.id}
+                            headers={`list-column-${c.id}`}
                             className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
                           >
                             <span className="flex h-8 w-4 shrink-0 items-center justify-center">
@@ -345,7 +371,12 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                         .join(' ');
 
                       return (
-                        <td key={c.id} className={cellClass} {...(value ? { title: value } : {})}>
+                        <td
+                          key={c.id}
+                          headers={`list-column-${c.id}`}
+                          className={cellClass}
+                          {...(value ? { title: value } : {})}
+                        >
                           <span
                             className={`flex h-8 items-center whitespace-nowrap ${
                               c.id === 'flight'
@@ -376,7 +407,9 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                         </td>
                       );
                     })}
-                    {visibleColumns.length === 0 ? <td aria-hidden="true" /> : null}
+                    {visibleColumns.length === 0 ? (
+                      <td headers="list-column-empty" aria-hidden="true" />
+                    ) : null}
                   </tr>
                 );
               })}
