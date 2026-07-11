@@ -150,6 +150,28 @@ describe('MapController controls', () => {
     controller.dispose();
   });
 
+  it('does not query persistent tracks or select them by default after an aircraft miss', () => {
+    const controller = new MapController(document.createElement('div'));
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+      }
+    ).map;
+    const onSelect = vi.fn();
+    controller.onSelect(onSelect);
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockReturnValue(undefined);
+
+    map.dispatchEvent({ type: 'click', pixel: [5, 0], coordinate: [5, 0] });
+
+    expect(map.forEachFeatureAtPixel).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith(null);
+    controller.dispose();
+  });
+
   it('clicks the nearest visible history track after aircraft hit detection misses', () => {
     const controller = new MapController(document.createElement('div'));
     const map = (
@@ -180,6 +202,9 @@ describe('MapController controls', () => {
     pTracksHandle.setSelectedKey('visible-pass');
     const onSelect = vi.fn();
     controller.onSelect(onSelect);
+    (
+      controller as unknown as { setHistoryTrackSelectionEnabled(enabled: boolean): void }
+    ).setHistoryTrackSelectionEnabled(true);
 
     vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
       if (options?.hitTolerance === 5) return undefined;
@@ -270,6 +295,9 @@ describe('MapController controls', () => {
     });
     hidden.set('trackKey', 'hidden-pass');
     pTracksHandle.setSelectedKey('visible-pass');
+    (
+      controller as unknown as { setHistoryTrackSelectionEnabled(enabled: boolean): void }
+    ).setHistoryTrackSelectionEnabled(true);
 
     vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
       if (options?.hitTolerance === 5) return undefined;
@@ -286,6 +314,32 @@ describe('MapController controls', () => {
     map.dispatchEvent({ type: 'pointermove', pixel: [5, 0], coordinate: [5, 0], dragging: false });
 
     expect(target.style.cursor).toBe('pointer');
+    controller.dispose();
+  });
+
+  it('does not query persistent tracks or show a pointer by default after an aircraft hover miss', () => {
+    const target = document.createElement('div');
+    const controller = new MapController(target);
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: {
+            type: string;
+            pixel: number[];
+            coordinate: number[];
+            dragging: boolean;
+          }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+      }
+    ).map;
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockReturnValue(undefined);
+
+    map.dispatchEvent({ type: 'pointermove', pixel: [5, 0], coordinate: [5, 0], dragging: false });
+
+    expect(map.forEachFeatureAtPixel).toHaveBeenCalledTimes(1);
+    expect(target.style.cursor).toBe('');
     controller.dispose();
   });
 });

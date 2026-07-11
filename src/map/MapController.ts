@@ -98,6 +98,7 @@ export class MapController {
   private selectCb: ((selection: MapSelection) => void) | null = null;
   private followEnabled = false;
   private dimEnabled = true;
+  private historyTrackSelectionEnabled = false;
 
   constructor(target: HTMLElement) {
     this.handle = createAircraftLayer();
@@ -122,6 +123,11 @@ export class MapController {
       const aircraftSelection = selectionFromAircraftFeature(aircraftFeature);
       if (aircraftSelection) {
         this.selectCb?.(aircraftSelection);
+        return;
+      }
+
+      if (!this.historyTrackSelectionEnabled) {
+        this.selectCb?.(null);
         return;
       }
 
@@ -150,7 +156,7 @@ export class MapController {
         },
       );
       let hit = selectionFromAircraftFeature(aircraftFeature) !== null;
-      if (!hit) {
+      if (!hit && this.historyTrackSelectionEnabled) {
         this.map.forEachFeatureAtPixel(
           evt.pixel,
           (feature: FeatureLike) => {
@@ -226,6 +232,10 @@ export class MapController {
 
   setSelectedTrackKey(key: string | null): void {
     this.pTracksHandle.setSelectedKey(key);
+  }
+
+  setHistoryTrackSelectionEnabled(enabled: boolean): void {
+    this.historyTrackSelectionEnabled = enabled;
   }
 
   onSelect(cb: (selection: MapSelection) => void): void {

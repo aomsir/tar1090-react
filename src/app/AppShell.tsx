@@ -153,6 +153,10 @@ export function AppShell() {
   }, [mode, selectedHex, selectedPassId]);
 
   useEffect(() => {
+    controllerRef.current?.setHistoryTrackSelectionEnabled(mode === 'history');
+  }, [mode]);
+
+  useEffect(() => {
     if (mode !== 'live') return;
     const c = controllerRef.current;
     if (!c) return;
@@ -233,6 +237,7 @@ export function AppShell() {
               ? selection.selectedPassId
               : selection.selectedHex,
           );
+          controller.setHistoryTrackSelectionEnabled(usePlaybackStore.getState().mode === 'history');
 
           const toolbarState = useToolbarStore.getState();
           controller.setLabelConfig({

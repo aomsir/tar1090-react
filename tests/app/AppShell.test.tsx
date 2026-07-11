@@ -22,6 +22,7 @@ const fakeController = {
   }),
   setSelected: vi.fn(),
   setSelectedTrackKey: vi.fn(),
+  setHistoryTrackSelectionEnabled: vi.fn(),
   syncAircraft: vi.fn(),
   centerOn: vi.fn(),
   onViewChange: vi.fn(),
@@ -121,6 +122,7 @@ describe('AppShell', () => {
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.setSelectedTrackKey.mockClear();
+    fakeController.setHistoryTrackSelectionEnabled.mockClear();
     fakeController.centerOn.mockClear();
     fakeController.onViewChange.mockClear();
     fakeController.getViewExtentLonLat.mockClear();
@@ -189,6 +191,33 @@ describe('AppShell', () => {
       extended: 2,
       trackLabels: true,
     });
+  });
+
+  it('disables history-track selection when the live-mode controller becomes ready', () => {
+    render(<AppShell />);
+
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('enables history-track selection for a ready history-mode controller and disables it on return to live', () => {
+    usePlaybackStore.getState().setMode('history');
+    render(<AppShell />);
+
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenLastCalledWith(true);
+
+    act(() => {
+      usePlaybackStore.getState().setMode('live');
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenLastCalledWith(false);
   });
 
   it('draws the selected aircraft track when history is already loaded', async () => {
