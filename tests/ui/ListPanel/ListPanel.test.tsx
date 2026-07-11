@@ -12,6 +12,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
 import { LIST_COLUMNS } from '@/features/list/columns';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 
 class ResizeObserverMock {
   static instances = new Set<ResizeObserverMock>();
@@ -52,6 +53,31 @@ function seed(hex: string, fields: Partial<Aircraft>): void {
   const a = new Aircraft(hex);
   Object.assign(a, fields);
   aircraftStore.map.set(hex, a);
+}
+
+function seedHistoryPasses(count: number): AircraftPass[] {
+  return Array.from({ length: count }, (_, index) => {
+    const hex = `h${String(index).padStart(3, '0')}`;
+    const aircraft = new Aircraft(hex);
+    aircraft.flight = `HIST${String(index).padStart(3, '0')}`;
+    aircraft.altitude = 35_000 - index;
+    return {
+      passId: `${hex}:${1_000 + index}`,
+      hex,
+      startTime: 1_000 + index,
+      endTime: 1_001 + index,
+      aircraft,
+      trackPoints: [
+        { lon: index, lat: index, ts: 1_000 + index },
+        { lon: index + 1, lat: index + 1, ts: 1_001 + index },
+      ],
+      maxAltitude: 35_000 - index,
+      hadAltitude: true,
+      hadGround: false,
+      hadEmergency: false,
+      hadSquawk: false,
+    };
+  });
 }
 
 describe('ListPanel', () => {
@@ -445,5 +471,31 @@ describe('ListPanel', () => {
       expect(cells.length).toBeGreaterThan(0);
       for (const cell of cells) expect(cell.getAttribute('colspan')).not.toBe('0');
     }
+  });
+
+  it('virtualizes history pass rows with pass ids, selection, and valid spacers', async () => {
+    const passes = seedHistoryPasses(500);
+    const selectedPassId = passes[300]!.passId;
+    historyStore.passes = passes;
+    useSelectionStore.setState({ selectedHex: passes[300]!.hex, selectedPassId });
+    act(() => usePlaybackStore.getState().setMode('history'));
+    act(() => useLiveTick.getState().bump());
+    const onSelect = vi.fn();
+
+    await renderWithI18n(<ListPanel onSelect={onSelect} />);
+    expect(screen.getByRole('columnheader', { name: 'Pass Time' })).toBeInTheDocument();
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    const selectedRow = screen.getByTestId(`row-${selectedPassId}`);
+    expect(selectedRow.className).toContain('border-indigo');
+    fireEvent.click(selectedRow);
+    expect(onSelect).toHaveBeenCalledWith(selectedPassId);
+
+    const spacerCells = document.querySelectorAll('tbody tr[aria-hidden="true"] > td');
+    expect(spacerCells.length).toBeGreaterThan(0);
+    for (const cell of spacerCells) expect(cell.getAttribute('colspan')).not.toBe('0');
   });
 });

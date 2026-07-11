@@ -48,6 +48,19 @@ describe('history tracks', () => {
     expect(passes.map(({ passId }) => passId)).toEqual(['z', 'ignored', 'b', 'a', 'old']);
   });
 
+  it('uses code-unit ordering for tied end times', () => {
+    const result = buildDrawablePassIndex([
+      pass('a', 20),
+      pass('Z', 20),
+      pass('!', 20),
+      pass('0', 20),
+      pass('A', 20),
+      pass('z', 20),
+    ]);
+
+    expect(result.map(({ passId }) => passId)).toEqual(['!', '0', 'A', 'Z', 'a', 'z']);
+  });
+
   it('selects the most recent passes for a numeric limit', () => {
     const ordered = buildDrawablePassIndex(
       Array.from({ length: 101 }, (_, index) => pass(`pass-${index}`, index)),

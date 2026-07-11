@@ -15,7 +15,11 @@ export function buildDrawablePassIndex(passes: AircraftPass[]): AircraftPass[] {
   return passes
     .filter((pass) => pass.trackPoints.length >= 2)
     .slice()
-    .sort((a, b) => b.endTime - a.endTime || a.passId.localeCompare(b.passId));
+    .sort((a, b) => {
+      const endTimeOrder = b.endTime - a.endTime;
+      if (endTimeOrder !== 0) return endTimeOrder;
+      return a.passId < b.passId ? -1 : a.passId > b.passId ? 1 : 0;
+    });
 }
 
 export function selectHistoryTrackMap(

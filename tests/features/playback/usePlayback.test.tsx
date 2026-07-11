@@ -47,6 +47,29 @@ function seedIndexedPasses(count: number): void {
   );
 }
 
+function historyFrames(passCount: number): AircraftSnapshot[] {
+  return [
+    {
+      now: 100,
+      messages: passCount,
+      aircraft: Array.from({ length: passCount }, (_, index) => ({
+        hex: `hex${index}`,
+        lat: index,
+        lon: index,
+      })),
+    },
+    {
+      now: 101,
+      messages: passCount * 2,
+      aircraft: Array.from({ length: passCount }, (_, index) => ({
+        hex: `hex${index}`,
+        lat: index + 1,
+        lon: index + 1,
+      })),
+    },
+  ];
+}
+
 function makeController(): MapController {
   return {
     syncAircraft: vi.fn(),
@@ -74,6 +97,51 @@ describe('usePlayback', () => {
     expect(tracks.size).toBe(100);
     expect(tracks.has('hex100:100')).toBe(true);
     expect(tracks.has('hex0:0')).toBe(false);
+  });
+
+  it('synchronizes tracks built from history frames when buildPassData bumps the live tick', async () => {
+    historyStore.setFrames([
+      { now: 100, messages: 1, aircraft: [{ hex: 'abc123', lat: 1, lon: 2 }] },
+      { now: 101, messages: 2, aircraft: [{ hex: 'abc123', lat: 3, lon: 4 }] },
+      { now: 100_000, messages: 3, aircraft: [{ hex: 'def456', lat: 5, lon: 6 }] },
+      { now: 100_001, messages: 4, aircraft: [{ hex: 'def456', lat: 7, lon: 8 }] },
+    ]);
+    const controller = makeController();
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    await act(async () => {
+      await historyStore.buildPassData(undefined, undefined, false);
+    });
+
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect([...tracks.keys()]).toEqual(['def456:100000', 'abc123:100']);
+    expect(tracks.get('def456:100000')).toEqual([
+      expect.objectContaining({ lon: 6, lat: 5, ts: 100_000 }),
+      expect.objectContaining({ lon: 8, lat: 7, ts: 100_001 }),
+    ]);
+  });
+
+  it('resynchronizes built history tracks after a limit change without rebuilding passes', async () => {
+    historyStore.setFrames(historyFrames(101));
+    const controller = makeController();
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    await act(async () => {
+      await historyStore.buildPassData(undefined, undefined, false);
+    });
+    expect(vi.mocked(controller.showPTracks).mock.calls.at(-1)![0]).toHaveLength(101);
+    const index = historyStore.drawablePassesRecentFirst;
+    const buildPassData = vi.spyOn(historyStore, 'buildPassData');
+
+    act(() => useToolbarStore.getState().setHistoryTrackLimit(100));
+
+    const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
+    expect(tracks.size).toBe(100);
+    expect(historyStore.drawablePassesRecentFirst).toBe(index);
+    expect(buildPassData).not.toHaveBeenCalled();
+    buildPassData.mockRestore();
   });
 
   it('resynchronizes immediately when the limit changes', () => {
