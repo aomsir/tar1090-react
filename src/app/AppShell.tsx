@@ -237,7 +237,9 @@ export function AppShell() {
               ? selection.selectedPassId
               : selection.selectedHex,
           );
-          controller.setHistoryTrackSelectionEnabled(usePlaybackStore.getState().mode === 'history');
+          controller.setHistoryTrackSelectionEnabled(
+            usePlaybackStore.getState().mode === 'history',
+          );
 
           const toolbarState = useToolbarStore.getState();
           controller.setLabelConfig({
