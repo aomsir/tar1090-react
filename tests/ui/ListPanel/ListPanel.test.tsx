@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cleanup, screen, fireEvent, act } from '@testing-library/react';
+import { cleanup, screen, fireEvent, act, within } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
 import { aircraftStore } from '@/store/aircraftStore';
@@ -453,6 +453,35 @@ describe('ListPanel', () => {
 
     expect(headerTable.querySelector('thead')).toBe(headerThead);
     expect(Number(screen.getAllByTestId(/^row-/)[0]!.dataset.index)).toBeGreaterThan(0);
+  });
+
+  it('exposes split layout tables as one accessible table', async () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const table = screen.getByRole('table');
+    const columnHeaders = within(table).getAllByRole('columnheader');
+    const row = screen.getByTestId('row-A1');
+    const cells = within(row).getAllByRole('cell');
+
+    expect(screen.getAllByRole('table')).toHaveLength(1);
+    expect(table).toHaveAttribute('aria-rowcount', '2');
+    expect(table).toHaveAttribute('aria-colcount', String(columnHeaders.length));
+    expect(cells).toHaveLength(columnHeaders.length);
+    for (const cell of cells) {
+      const labelledBy = cell.getAttribute('aria-labelledby');
+      expect(labelledBy).toBeTruthy();
+      expect(table.querySelector(`[role="columnheader"]#${labelledBy}`)).toBeTruthy();
+    }
+  });
+
+  it('renders when ResizeObserver is unavailable', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+
+    await expect(renderWithI18n(<ListPanel onSelect={vi.fn()} />)).resolves.not.toThrow();
+    expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
   it('reserves vertical scrollbar gutter beside the body table', async () => {

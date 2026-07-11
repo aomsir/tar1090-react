@@ -108,6 +108,14 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
     overscan: ROW_OVERSCAN,
     getItemKey: (index) => rows[index]!.rowId,
     initialRect: { width: 640, height: 320 },
+    ...(typeof ResizeObserver === 'undefined'
+      ? {
+          observeElementRect: (_instance, callback) => {
+            callback(scrollRef.current?.getBoundingClientRect() ?? { width: 640, height: 320 });
+            return () => {};
+          },
+        }
+      : {}),
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
   const topPadding = virtualRows.length > 0 ? virtualRows[0]!.start : 0;
@@ -161,6 +169,8 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
     };
 
     updateScrollbarWidth();
+    if (typeof ResizeObserver === 'undefined') return;
+
     const observer = new ResizeObserver(updateScrollbarWidth);
     if (scrollRef.current) observer.observe(scrollRef.current);
     return () => observer.disconnect();
@@ -256,18 +266,25 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
         </button>
       </div>
 
-      <div className="list-table-frame mt-2 flex min-h-0 flex-1 flex-col overflow-x-auto">
+      <div
+        className="list-table-frame mt-2 flex min-h-0 flex-1 flex-col overflow-x-auto"
+        role="table"
+        aria-rowcount={rows.length + 1}
+        aria-colcount={tableColumnCount}
+      >
         <div
           className="shrink-0"
           style={{ width: `${tableWidth + scrollbarWidth}px`, paddingRight: `${scrollbarWidth}px` }}
+          role="presentation"
         >
           <table
             className="table-fixed border-separate border-spacing-0 text-[13px]"
             style={{ width: `${tableWidth}px` }}
+            role="presentation"
           >
             <ListColgroup columns={visibleColumns} />
-            <thead className="bg-zinc-950">
-              <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500">
+            <thead className="bg-zinc-950" role="rowgroup">
+              <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500" role="row">
                 {visibleColumns.map((c) => {
                   const sortable = c.id !== 'flag';
                   const isActive = sortKey === c.id;
@@ -298,7 +315,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   );
                 })}
                 {visibleColumns.length === 0 ? (
-                  <th id="list-column-empty" aria-hidden="true" />
+                  <th id="list-column-empty" role="columnheader" aria-hidden="true" />
                 ) : null}
               </tr>
             </thead>
@@ -309,15 +326,17 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
           data-testid="list-scroll-region"
           className="min-h-0 shrink-0 flex-1 overflow-x-hidden overflow-y-auto"
           style={{ width: `${tableWidth + scrollbarWidth}px` }}
+          role="presentation"
         >
           <table
             className="table-fixed border-separate border-spacing-0 text-[13px]"
             style={{ width: `${tableWidth}px` }}
+            role="presentation"
           >
             <ListColgroup columns={visibleColumns} />
-            <tbody>
+            <tbody role="rowgroup">
               {topPadding > 0 ? (
-                <tr aria-hidden="true">
+                <tr aria-hidden="true" role="presentation">
                   <td
                     colSpan={tableColumnCount}
                     style={{ height: `${topPadding}px`, padding: 0 }}
@@ -332,6 +351,8 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                     key={r.rowId}
                     data-testid={`row-${r.rowId}`}
                     data-index={virtualRow.index}
+                    role="row"
+                    aria-rowindex={virtualRow.index + 2}
                     onClick={() => onSelect(r.rowId)}
                     style={{ height: `${ROW_HEIGHT}px` }}
                     className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
@@ -343,6 +364,8 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                           <td
                             key={c.id}
                             headers={`list-column-${c.id}`}
+                            role="cell"
+                            aria-labelledby={`list-column-${c.id}`}
                             className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
                           >
                             <span className="flex h-8 w-4 shrink-0 items-center justify-center">
@@ -374,6 +397,8 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                         <td
                           key={c.id}
                           headers={`list-column-${c.id}`}
+                          role="cell"
+                          aria-labelledby={`list-column-${c.id}`}
                           className={cellClass}
                           {...(value ? { title: value } : {})}
                         >
@@ -408,13 +433,18 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                       );
                     })}
                     {visibleColumns.length === 0 ? (
-                      <td headers="list-column-empty" aria-hidden="true" />
+                      <td
+                        headers="list-column-empty"
+                        role="cell"
+                        aria-labelledby="list-column-empty"
+                        aria-hidden="true"
+                      />
                     ) : null}
                   </tr>
                 );
               })}
               {bottomPadding > 0 ? (
-                <tr aria-hidden="true">
+                <tr aria-hidden="true" role="presentation">
                   <td
                     colSpan={tableColumnCount}
                     style={{ height: `${bottomPadding}px`, padding: 0 }}
