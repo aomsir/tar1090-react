@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cleanup, screen, fireEvent, act } from '@testing-library/react';
+import { cleanup, screen, fireEvent, act, within } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
 import { aircraftStore } from '@/store/aircraftStore';
@@ -290,17 +290,17 @@ describe('ListPanel', () => {
   it('panel has a dedicated scroll region wrapping the table', async () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const panel = screen.getByTestId('list-panel');
-    const table = screen.getByRole('table');
-    const scrollRegion = table.parentElement;
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const table = scrollRegion.querySelector('table');
     expect(scrollRegion).toBeTruthy();
     expect(scrollRegion).not.toBe(panel);
+    expect(table).toBeTruthy();
   });
 
   it('table has minimum width for column stability', async () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
-    const table = screen.getByRole('table');
-    const cls = table.className;
-    expect(cls).toMatch(/min-w-/);
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
+    expect(table.style.width).toBeTruthy();
   });
 
   it('can show a hidden original column through column options', async () => {
@@ -351,8 +351,9 @@ describe('ListPanel', () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     const row = screen.getByTestId('row-A1');
-    expect(screen.getByRole('table').className).toContain('border-separate');
-    expect(screen.getByRole('table').className).toContain('border-spacing-0');
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
+    expect(table.className).toContain('border-separate');
+    expect(table.className).toContain('border-spacing-0');
     expect(screen.getByText('MIL')).toBeInTheDocument();
     expect(screen.getByText('MLAT')).toBeInTheDocument();
     for (const cell of Array.from(row.cells)) {
@@ -396,6 +397,147 @@ describe('ListPanel', () => {
     for (const row of mountedRows) {
       expect(row).toHaveStyle({ height: '32px' });
     }
+  });
+
+  it('keeps a fixed header outside the virtual scroll region for large lists', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const frame = scrollRegion.parentElement!;
+    const header = frame.firstElementChild!;
+    const headerTable = header.querySelector('table')!;
+    const headerThead = headerTable.querySelector('thead')!;
+    const bodyTable = scrollRegion.querySelector('table')!;
+    const headerColumns = Array.from(headerTable.querySelectorAll('col'));
+    const bodyColumns = Array.from(bodyTable.querySelectorAll('col'));
+    const firstDataRow = screen.getAllByTestId(/^row-/)[0]!;
+
+    expect(frame.className).toContain('list-table-frame');
+    expect(frame.className).toContain('overflow-x-auto');
+    expect(header).toBe(frame.children[0]);
+    expect(scrollRegion).toBe(frame.children[1]);
+    expect(header.className).toContain('shrink-0');
+    expect(headerTable.className).toContain('table-fixed');
+    expect(bodyTable.className).toContain('table-fixed');
+    expect(scrollRegion.className).toContain('overflow-y-auto');
+    expect(scrollRegion.className).toContain('overflow-x-hidden');
+    expect(headerThead.querySelector('tr')?.className).toContain('h-16');
+    expect(scrollRegion.querySelector('thead')).toBeNull();
+    expect(scrollRegion.querySelector('tbody')).toBeTruthy();
+    expect(headerTable.style.width).toBe(bodyTable.style.width);
+    expect(parseInt(headerTable.style.width, 10)).toBeGreaterThanOrEqual(640);
+    expect(headerColumns.map((col) => col.dataset.columnId)).toEqual(
+      bodyColumns.map((col) => col.dataset.columnId),
+    );
+    expect(headerColumns.map((col) => col.getAttribute('style'))).toEqual(
+      bodyColumns.map((col) => col.getAttribute('style')),
+    );
+    expect(firstDataRow.cells).toHaveLength(headerColumns.length);
+    for (const cell of Array.from(firstDataRow.cells)) {
+      const headerId = cell.getAttribute('headers');
+      expect(headerId).toBeTruthy();
+      expect(headerTable.querySelector(`th#${headerId}`)).toBeTruthy();
+    }
+
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    expect(headerTable.querySelector('thead')).toBe(headerThead);
+    expect(Number(screen.getAllByTestId(/^row-/)[0]!.dataset.index)).toBeGreaterThan(0);
+  });
+
+  it('exposes split layout tables as one accessible table', async () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const table = screen.getByRole('table', { name: 'Columns' });
+    const columnHeaders = within(table).getAllByRole('columnheader');
+    const row = screen.getByTestId('row-A1');
+    const cells = within(row).getAllByRole('cell');
+
+    expect(screen.getAllByRole('table', { name: 'Columns' })).toHaveLength(1);
+    expect(table).toHaveAttribute('aria-rowcount', '2');
+    expect(table).toHaveAttribute('aria-colcount', String(columnHeaders.length));
+    expect(within(table).getAllByRole('row')[0]).toHaveAttribute('aria-rowindex', '1');
+    expect(row).toHaveAttribute('aria-rowindex', '2');
+    expect(cells).toHaveLength(columnHeaders.length);
+    for (const cell of cells) {
+      const labelledBy = cell.getAttribute('aria-labelledby');
+      expect(labelledBy).toBeTruthy();
+      expect(table.querySelector(`[role="columnheader"]#${labelledBy}`)).toBeTruthy();
+    }
+  });
+
+  it('keeps accessible header references isolated across panel instances', async () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(
+      <>
+        <ListPanel onSelect={vi.fn()} />
+        <ListPanel onSelect={vi.fn()} />
+      </>,
+    );
+
+    const tables = screen.getAllByRole('table', { name: 'Columns' });
+    const headerIds = tables.flatMap((table) =>
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.id),
+    );
+
+    expect(new Set(headerIds).size).toBe(headerIds.length);
+    for (const table of tables) {
+      for (const cell of within(table).getAllByRole('cell')) {
+        const labelledBy = cell.getAttribute('aria-labelledby');
+        expect(labelledBy).toBeTruthy();
+        expect(table.querySelector(`[role="columnheader"]#${labelledBy}`)).toBeTruthy();
+      }
+    }
+  });
+
+  it('renders when ResizeObserver is unavailable', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+
+    await expect(renderWithI18n(<ListPanel onSelect={vi.fn()} />)).resolves.not.toThrow();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
+  it('reserves vertical scrollbar gutter beside the body table', async () => {
+    const offsetWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+      .mockImplementation(function () {
+        return (this as HTMLElement).dataset.testid === 'list-scroll-region' ? 657 : 0;
+      });
+    const clientWidthSpy = vi
+      .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
+      .mockImplementation(function () {
+        return (this as HTMLElement).dataset.testid === 'list-scroll-region' ? 640 : 0;
+      });
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const header = scrollRegion.parentElement!.firstElementChild!;
+    const headerTable = header.querySelector('table')!;
+    const bodyTable = scrollRegion.querySelector('table')!;
+    expect(headerTable.style.width).toBe('640px');
+    expect(bodyTable.style.width).toBe('640px');
+    expect(scrollRegion.style.width).toBe('657px');
+
+    offsetWidthSpy.mockRestore();
+    clientWidthSpy.mockRestore();
   });
 
   it('changes the mounted window on scroll and keeps click identity', async () => {
@@ -481,7 +623,7 @@ describe('ListPanel', () => {
 
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
-    const table = screen.getByRole('table');
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
     const rows = Array.from(table.querySelectorAll('thead tr, tbody tr'));
     const spacerRows = rows.filter((row) => row.getAttribute('aria-hidden') === 'true');
 
@@ -491,6 +633,11 @@ describe('ListPanel', () => {
       expect(cells.length).toBeGreaterThan(0);
       for (const cell of cells) expect(cell.getAttribute('colspan')).not.toBe('0');
     }
+    const header = table.parentElement!.previousElementSibling!;
+    const placeholderHeader = header.querySelector('th')!;
+    const placeholderCell = table.querySelector('tbody tr:not([aria-hidden]) td')!;
+    expect(placeholderHeader.id).toMatch(/^list-.+-column-empty$/);
+    expect(placeholderCell.getAttribute('headers')).toBe(placeholderHeader.id);
   });
 
   it('virtualizes history pass rows with pass ids, selection, and valid spacers', async () => {
