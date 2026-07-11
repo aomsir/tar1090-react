@@ -344,6 +344,26 @@ describe('ListPanel', () => {
     expect(row.textContent).toContain('MLAT');
   });
 
+  it('gives every data cell a fixed-height layout contract with inline status chips', async () => {
+    seed('A1', { flight: 'MIL01', altitude: 35000, isMilitary: true, isMlat: true });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const row = screen.getByTestId('row-A1');
+    expect(screen.getByRole('table').className).toContain('border-separate');
+    expect(screen.getByRole('table').className).toContain('border-spacing-0');
+    expect(screen.getByText('MIL')).toBeInTheDocument();
+    expect(screen.getByText('MLAT')).toBeInTheDocument();
+    for (const cell of Array.from(row.cells)) {
+      expect(cell.className).toContain('h-8');
+      expect(cell.className).toContain('py-0');
+      expect(cell.className).toContain('align-middle');
+      expect(cell.className).toContain('leading-4');
+      expect(cell.firstElementChild?.className).toContain('h-8');
+    }
+  });
+
   it('renders Simplified Chinese column headers and filters', async () => {
     seed('A1', { flight: 'CCA101', altitude: 35000 });
     act(() => useLiveTick.getState().bump());

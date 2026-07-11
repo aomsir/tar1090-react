@@ -206,7 +206,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
         data-testid="list-scroll-region"
         className="mt-2 min-h-0 flex-1 overflow-auto"
       >
-        <table className="min-w-[640px] w-full text-[13px]">
+        <table className="min-w-[640px] w-full border-separate border-spacing-0 text-[13px]">
           <thead className="sticky top-0 z-10 bg-zinc-950">
             <tr className="border-b border-white/10 text-[12px] text-slate-500">
               {visibleColumns.map((c) => {
@@ -262,8 +262,11 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                     const align = c.align ?? 'left';
                     if (c.id === 'flag') {
                       return (
-                        <td key={c.id} className="px-2 py-1.5">
-                          <span className="flex w-4 shrink-0 items-center justify-center">
+                        <td
+                          key={c.id}
+                          className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
+                        >
+                          <span className="flex h-8 w-4 shrink-0 items-center justify-center">
                             {r.flagPath ? (
                               <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
                             ) : (
@@ -279,7 +282,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                     const value = c.format(r);
                     const isNumeric = c.align === 'right';
                     const cellClass = [
-                      'px-2 py-1.5 truncate',
+                      'h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap',
                       align === 'right' ? 'text-right' : 'text-left',
                       isNumeric ? 'font-mono text-xs' : '',
                       c.id === 'flight' ? 'font-medium' : '',
@@ -290,21 +293,31 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
 
                     return (
                       <td key={c.id} className={cellClass} {...(value ? { title: value } : {})}>
-                        {c.id === 'aircraft_type' && value && value !== '—' ? (
-                          <span className="rounded bg-white/[0.08] px-1.5 text-xs">{value}</span>
-                        ) : (
-                          value || '—'
-                        )}
-                        {c.id === 'flight' && r.isMilitary ? (
-                          <Chip size="sm" color="danger" variant="soft" className="ml-1 scale-75">
-                            MIL
-                          </Chip>
-                        ) : null}
-                        {c.id === 'flight' && r.isMlat ? (
-                          <Chip size="sm" color="warning" variant="soft" className="ml-1 scale-75">
-                            MLAT
-                          </Chip>
-                        ) : null}
+                        <span
+                          className={`flex h-8 items-center whitespace-nowrap ${
+                            c.id === 'flight'
+                              ? 'min-w-max gap-1'
+                              : align === 'right'
+                                ? 'justify-end'
+                                : ''
+                          }`}
+                        >
+                          {c.id === 'aircraft_type' && value && value !== '—' ? (
+                            <span className="rounded bg-white/[0.08] px-1.5 text-xs">{value}</span>
+                          ) : (
+                            value || '—'
+                          )}
+                          {c.id === 'flight' && r.isMilitary ? (
+                            <Chip size="sm" color="danger" variant="soft" className="scale-75">
+                              MIL
+                            </Chip>
+                          ) : null}
+                          {c.id === 'flight' && r.isMlat ? (
+                            <Chip size="sm" color="warning" variant="soft" className="scale-75">
+                              MLAT
+                            </Chip>
+                          ) : null}
+                        </span>
                       </td>
                     );
                   })}
