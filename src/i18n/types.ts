@@ -31,6 +31,10 @@ export interface SettingsResource {
     metric: string;
     imperial: string;
   };
+  historyTracks: {
+    title: string;
+    allWarning: string;
+  };
   scale: {
     title: string;
     labelScale: string;

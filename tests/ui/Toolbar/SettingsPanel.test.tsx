@@ -27,6 +27,35 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Imperial')).toBeTruthy();
   });
 
+  it('shows history track limit presets and updates the setting', async () => {
+    const user = userEvent.setup();
+    await renderWithI18n(<SettingsPanel />, { language: 'en' });
+
+    await user.click(screen.getByRole('button', { name: /Historical tracks/i }));
+
+    expect(screen.getByRole('option', { name: '100' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '500' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '1000' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '2000' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '5000' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'All (may affect performance)' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('option', { name: '500' }));
+
+    expect(useToolbarStore.getState().historyTrackLimit).toBe(500);
+  });
+
+  it('shows the translated all-tracks warning in Chinese', async () => {
+    const user = userEvent.setup();
+    await renderWithI18n(<SettingsPanel />, { language: 'zh-CN' });
+
+    await user.click(screen.getByRole('button', { name: /历史航迹/ }));
+
+    expect(screen.getByRole('option', { name: '全部（可能影响性能）' })).toBeInTheDocument();
+  });
+
   it('closes when close button is clicked', async () => {
     const user = userEvent.setup();
     await renderWithI18n(<SettingsPanel />, { language: 'en' });

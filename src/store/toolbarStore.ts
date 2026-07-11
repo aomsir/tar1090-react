@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  normalizeHistoryTrackLimit,
+  type HistoryTrackLimit,
+} from '@/features/playback/historyTracks';
 
 export type Units = 'nautical' | 'metric' | 'imperial';
 
@@ -46,6 +50,7 @@ interface ToolbarState {
   detailWidth: number;
   listWidth: number;
   routeApiEnabled: boolean;
+  historyTrackLimit: HistoryTrackLimit;
 
   // Actions
   toggle: (key: ToggleKey) => void;
@@ -56,6 +61,7 @@ interface ToolbarState {
   setDetailWidth: (w: number) => void;
   setListWidth: (w: number) => void;
   setRouteApiEnabled: (enabled: boolean) => void;
+  setHistoryTrackLimit: (limit: HistoryTrackLimit) => void;
   toggleSettings: () => void;
   statsDashboardOpen: boolean;
   toggleStatsDashboard: () => void;
@@ -87,7 +93,54 @@ const DEFAULTS = {
   detailWidth: 320,
   listWidth: 384,
   routeApiEnabled: false,
+  historyTrackLimit: 1000 as HistoryTrackLimit,
 };
+
+const PERSISTED_TOOLBAR_KEYS = [
+  'mapDim',
+  'enableLabels',
+  'extendedLabels',
+  'trackLabels',
+  'allTracks',
+  'persistence',
+  'isolation',
+  'multiSelect',
+  'inViewOnly',
+  'onlyMilitary',
+  'follow',
+  'units',
+  'filterGroundVehicles',
+  'filterBlockedMLAT',
+  'coloredPlanes',
+  'coloredTrails',
+  'labelScale',
+  'iconScale',
+  'detailWidth',
+  'listWidth',
+  'routeApiEnabled',
+  'historyTrackLimit',
+] as const satisfies readonly (keyof typeof DEFAULTS)[];
+
+type PersistedToolbarState = Pick<typeof DEFAULTS, (typeof PERSISTED_TOOLBAR_KEYS)[number]>;
+
+function getPersistedToolbarState(state: unknown): Partial<PersistedToolbarState> {
+  if (typeof state !== 'object' || state === null || Array.isArray(state)) return {};
+
+  const source = state as Record<string, unknown>;
+  return Object.fromEntries(
+    PERSISTED_TOOLBAR_KEYS.filter((key) => key in source).map((key) => [key, source[key]]),
+  ) as Partial<PersistedToolbarState>;
+}
+
+export function migrateToolbarState(persisted: unknown): Record<string, unknown> {
+  const state =
+    typeof persisted === 'object' && persisted !== null && !Array.isArray(persisted)
+      ? { ...(persisted as Record<string, unknown>) }
+      : {};
+  delete state.routeApiUrl;
+  state.historyTrackLimit = normalizeHistoryTrackLimit(state.historyTrackLimit);
+  return state;
+}
 
 export const useToolbarStore = create<ToolbarState>()(
   persist(
@@ -101,24 +154,26 @@ export const useToolbarStore = create<ToolbarState>()(
       setDetailWidth: (w) => set({ detailWidth: Math.max(280, Math.min(480, w)) }),
       setListWidth: (w) => set({ listWidth: Math.max(300, Math.min(600, w)) }),
       setRouteApiEnabled: (enabled) => set({ routeApiEnabled: enabled }),
+      setHistoryTrackLimit: (historyTrackLimit) =>
+        set({ historyTrackLimit: normalizeHistoryTrackLimit(historyTrackLimit) }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       toggleStatsDashboard: () => set((s) => ({ statsDashboardOpen: !s.statsDashboardOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),
     {
       name: 'toolbar-settings',
-      version: 3,
-      migrate: (persisted: unknown): ToolbarState => {
-        const s = persisted as Record<string, unknown>;
-        // Clean up legacy routeApiUrl field
-        delete s.routeApiUrl;
-        return s as unknown as ToolbarState;
+      version: 4,
+      migrate: (persisted: unknown): ToolbarState =>
+        migrateToolbarState(persisted) as unknown as ToolbarState,
+      merge: (persisted, current) => {
+        const persistedState = getPersistedToolbarState(persisted);
+        return {
+          ...current,
+          ...persistedState,
+          historyTrackLimit: normalizeHistoryTrackLimit(persistedState.historyTrackLimit),
+        };
       },
-      partialize: (state) => {
-        // Exclude transient UI state from persistence
-        const { settingsOpen: _sf, fullscreen: _fs, statsDashboardOpen: _sd, ...persisted } = state; // eslint-disable-line @typescript-eslint/no-unused-vars
-        return persisted;
-      },
+      partialize: (state) => getPersistedToolbarState(state),
     },
   ),
 );

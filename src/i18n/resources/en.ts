@@ -24,6 +24,10 @@ const en: TranslationResource = {
       metric: 'Metric',
       imperial: 'Imperial',
     },
+    historyTracks: {
+      title: 'Historical tracks',
+      allWarning: 'All (may affect performance)',
+    },
     scale: {
       title: 'Scale',
       labelScale: 'Label scale',

@@ -1,4 +1,13 @@
-import { Button, ToggleButtonGroup, ToggleButton, Slider, Switch, Label } from '@heroui/react';
+import {
+  Button,
+  ListBox,
+  Select,
+  ToggleButtonGroup,
+  ToggleButton,
+  Slider,
+  Switch,
+  Label,
+} from '@heroui/react';
 import type { Key } from '@heroui/react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +15,10 @@ import { useToolbarStore } from '@/store/toolbarStore';
 import type { Units } from '@/store/toolbarStore';
 import { LANGUAGE_OPTIONS } from '@/i18n/types';
 import type { SupportedLanguage } from '@/i18n/types';
+import {
+  HISTORY_TRACK_LIMITS,
+  normalizeHistoryTrackLimit,
+} from '@/features/playback/historyTracks';
 
 function SectionLabel({ children }: { children: string }) {
   return <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-400">{children}</div>;
@@ -24,7 +37,9 @@ export function SettingsPanel() {
     filterBlockedMLAT,
     coloredPlanes,
     coloredTrails,
+    historyTrackLimit,
     toggle,
+    setHistoryTrackLimit,
     toggleSettings,
     resetAll,
   } = useToolbarStore();
@@ -165,6 +180,35 @@ export function SettingsPanel() {
           </Switch.Content>
         </Switch>
       </div>
+
+      <hr className="my-3 border-white/[0.08]" />
+
+      <SectionLabel>{t('settings.historyTracks.title')}</SectionLabel>
+      <Select
+        value={historyTrackLimit}
+        onChange={(value) => setHistoryTrackLimit(normalizeHistoryTrackLimit(value))}
+        variant="secondary"
+        className="mb-3 w-full"
+      >
+        <Label>{t('settings.historyTracks.title')}</Label>
+        <Select.Trigger>
+          <Select.Value />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            {HISTORY_TRACK_LIMITS.map((limit) => {
+              const text = limit === 'all' ? t('settings.historyTracks.allWarning') : String(limit);
+              return (
+                <ListBox.Item key={limit} id={limit} textValue={text}>
+                  {text}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              );
+            })}
+          </ListBox>
+        </Select.Popover>
+      </Select>
 
       <hr className="my-3 border-white/[0.08]" />
 
