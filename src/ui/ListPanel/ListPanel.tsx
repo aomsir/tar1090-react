@@ -255,6 +255,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   data-testid={`row-${r.rowId}`}
                   data-index={virtualRow.index}
                   onClick={() => onSelect(r.rowId)}
+                  style={{ height: `${ROW_HEIGHT}px` }}
                   className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
                 >
                   {visibleColumns.map((c) => {

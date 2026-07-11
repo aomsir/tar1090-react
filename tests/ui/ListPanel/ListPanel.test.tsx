@@ -347,6 +347,9 @@ describe('ListPanel', () => {
     const mountedRows = screen.getAllByTestId(/^row-/);
     expect(mountedRows.length).toBeGreaterThan(0);
     expect(mountedRows.length).toBeLessThan(100);
+    for (const row of mountedRows) {
+      expect(row).toHaveStyle({ height: '32px' });
+    }
   });
 
   it('changes the mounted window on scroll and keeps click identity', async () => {
