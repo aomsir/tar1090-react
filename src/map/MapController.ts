@@ -48,7 +48,14 @@ export function closestHistoryTrackSelection(
   for (const feature of features) {
     const passId = feature.get('trackKey');
     const geometry = feature.getGeometry();
-    if (typeof passId !== 'string' || !geometry) continue;
+    if (
+      typeof passId !== 'string' ||
+      !geometry ||
+      !('getClosestPoint' in geometry) ||
+      typeof geometry.getClosestPoint !== 'function'
+    ) {
+      continue;
+    }
 
     const point = geometry.getClosestPoint(coordinate);
     const dx = point[0] - coordinate[0];

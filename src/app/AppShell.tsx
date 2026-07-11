@@ -203,11 +203,16 @@ export function AppShell() {
       <MapView
         onReady={(controller) => {
           controllerRef.current = controller;
-          controller.onSelect((hex) => {
+          controller.onSelect((mapSelection) => {
             const selection = useSelectionStore.getState();
-            if (hex === null) {
+            if (mapSelection === null) {
               selection.clearAll();
-            } else if (
+              return;
+            }
+            if (mapSelection.type === 'historyTrack') return;
+
+            const { hex } = mapSelection;
+            if (
               usePlaybackStore.getState().mode !== 'history' ||
               !selection.selectedPassId ||
               selection.selectedHex !== hex

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import Feature from 'ol/Feature';
+import type { FeatureLike } from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 import {
   closestHistoryTrackSelection,
@@ -79,8 +80,14 @@ describe('MapController selection helpers', () => {
     const missingKey = new Feature({ geometry: new LineString([[0, 1], [10, 1]]) });
     const missingGeometry = new Feature();
     missingGeometry.set('trackKey', 'pass-a');
+    const unsupportedGeometry = {
+      get: (key: string) => (key === 'trackKey' ? 'pass-b' : undefined),
+      getGeometry: () => ({}),
+    } as unknown as FeatureLike;
 
-    expect(closestHistoryTrackSelection([missingKey, missingGeometry], [5, 0])).toBeNull();
+    expect(
+      closestHistoryTrackSelection([missingKey, missingGeometry, unsupportedGeometry], [5, 0]),
+    ).toBeNull();
   });
 
   it('prefers an aircraft hit over history-track candidates', () => {
@@ -145,8 +152,9 @@ describe('MapController controls', () => {
     vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
       if (options?.hitTolerance === 5) return undefined;
       expect(options?.hitTolerance).toBe(8);
-      callback(visible, pTracksHandle.layer);
-      callback(hidden, pTracksHandle.layer);
+      expect(options?.layerFilter?.(pTracksHandle.layer)).toBe(true);
+      expect(callback(visible, pTracksHandle.layer)).toBeUndefined();
+      expect(callback(hidden, pTracksHandle.layer)).toBeUndefined();
       return undefined;
     });
 
@@ -174,7 +182,10 @@ describe('MapController controls', () => {
     controller.onSelect(onSelect);
 
     vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
-      if (options?.hitTolerance === 5) return callback(aircraft, {} as never);
+      if (options?.hitTolerance === 5) {
+        expect(options?.layerFilter?.((controller as never).handle.layer)).toBe(true);
+        return callback(aircraft, {} as never);
+      }
       callback(track, {} as never);
       return undefined;
     });

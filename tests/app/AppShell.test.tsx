@@ -6,17 +6,18 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSeedVersion, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
 import { setTestLanguage } from '@/i18n/testUtils';
+import type { MapSelection } from '@/map/MapController';
 
 vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
 }));
 
 let capturedOnReady: ((controller: unknown) => void) | null = null;
-let capturedSelectCb: ((hex: string | null) => void) | null = null;
+let capturedSelectCb: ((selection: MapSelection) => void) | null = null;
 let capturedListOnSelect: ((hex: string) => void) | null = null;
 
 const fakeController = {
-  onSelect: vi.fn((cb: (hex: string | null) => void) => {
+  onSelect: vi.fn((cb: (selection: MapSelection) => void) => {
     capturedSelectCb = cb;
   }),
   setSelected: vi.fn(),
@@ -155,7 +156,7 @@ describe('AppShell', () => {
     expect(capturedSelectCb).toBeTypeOf('function');
 
     act(() => {
-      capturedSelectCb!('781860');
+      capturedSelectCb!({ type: 'aircraft', hex: '781860' });
     });
 
     expect(useSelectionStore.getState().selectedHex).toBe('781860');
@@ -321,7 +322,7 @@ describe('AppShell', () => {
     act(() => {
       capturedOnReady!(fakeController);
       useSelectionStore.getState().selectPass('781860:100', '781860');
-      capturedSelectCb!('781860');
+      capturedSelectCb!({ type: 'aircraft', hex: '781860' });
     });
 
     expect(useSelectionStore.getState()).toMatchObject({
