@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, fireEvent, act } from '@testing-library/react';
+import { cleanup, screen, fireEvent, act } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
 import { aircraftStore } from '@/store/aircraftStore';
@@ -48,8 +48,6 @@ class ResizeObserverMock {
   }
 }
 
-vi.stubGlobal('ResizeObserver', ResizeObserverMock);
-
 function seed(hex: string, fields: Partial<Aircraft>): void {
   const a = new Aircraft(hex);
   Object.assign(a, fields);
@@ -60,6 +58,7 @@ describe('ListPanel', () => {
   let rectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
     ResizeObserverMock.instances.clear();
     rectSpy = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
@@ -118,7 +117,17 @@ describe('ListPanel', () => {
     useSelectionStore.setState({ selectedHex: null, selectedPassId: null });
   });
 
-  afterEach(() => rectSpy.mockRestore());
+  afterEach(async () => {
+    await act(async () => {
+      cleanup();
+      await Promise.resolve();
+    });
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    ResizeObserverMock.instances.clear();
+    rectSpy.mockRestore();
+    vi.unstubAllGlobals();
+  });
 
   it('renders rows from the store and calls onSelect on row click', async () => {
     seed('A1', { flight: 'CCA101', registration: 'B-2033', altitude: 35000 });
@@ -404,7 +413,11 @@ describe('ListPanel', () => {
     fireEvent.scroll(scrollRegion);
     await act(async () => {});
 
-    expect(screen.getByTestId('row-A289')).toBeInTheDocument();
+    const firstVirtualRow = screen.getByTestId('row-A289');
+    const topSpacer = firstVirtualRow.previousElementSibling;
+    expect(firstVirtualRow.dataset.index).toBe('289');
+    expect(topSpacer).toHaveAttribute('aria-hidden', 'true');
+    expect(topSpacer?.querySelector('td')).toHaveStyle({ height: '9280px' });
   });
 
   it('keeps table rows structurally valid when all columns are hidden', async () => {
