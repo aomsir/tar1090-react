@@ -395,7 +395,7 @@ describe('ListPanel', () => {
     expect(screen.getByTestId('row-A300').className).toContain('border-indigo');
   });
 
-  it('measures a taller mounted row before calculating the deep scroll spacer', async () => {
+  it('uses the fixed row estimate when calculating the deep scroll spacer', async () => {
     for (let i = 0; i < 500; i++) {
       seed(`A${String(i).padStart(3, '0')}`, {
         flight: `FLT${String(i).padStart(3, '0')}`,
@@ -413,9 +413,9 @@ describe('ListPanel', () => {
     fireEvent.scroll(scrollRegion);
     await act(async () => {});
 
-    const firstVirtualRow = screen.getByTestId('row-A289');
+    const firstVirtualRow = screen.getByTestId('row-A290');
     const topSpacer = firstVirtualRow.previousElementSibling;
-    expect(firstVirtualRow.dataset.index).toBe('289');
+    expect(firstVirtualRow.dataset.index).toBe('290');
     expect(topSpacer).toHaveAttribute('aria-hidden', 'true');
     expect(topSpacer?.querySelector('td')).toHaveStyle({ height: '9280px' });
   });

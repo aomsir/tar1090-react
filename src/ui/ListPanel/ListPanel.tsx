@@ -62,7 +62,6 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
-    measureElement: (element) => element.getBoundingClientRect().height,
     overscan: ROW_OVERSCAN,
     getItemKey: (index) => rows[index]!.rowId,
     initialRect: { width: 640, height: 320 },
@@ -255,7 +254,6 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   key={r.rowId}
                   data-testid={`row-${r.rowId}`}
                   data-index={virtualRow.index}
-                  ref={rowVirtualizer.measureElement}
                   onClick={() => onSelect(r.rowId)}
                   className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
                 >
