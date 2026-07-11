@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Chip } from '@heroui/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
@@ -80,6 +80,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   const isDragging = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const instanceId = useId().replace(/:/g, '');
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
   const columns = useMemo(() => createListColumns(t, i18n.language), [t, i18n.language]);
   const filters = useMemo<{ id: FilterKey; label: string }[]>(
@@ -98,6 +99,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
     640,
     visibleColumns.reduce((width, column) => width + COLUMN_WIDTH_PX[column.id], 0),
   );
+  const columnHeaderId = (columnId: ColumnId | 'empty') => `list-${instanceId}-column-${columnId}`;
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
   // TanStack owns the scroll subscription and does not support React Compiler memoization.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -269,6 +271,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
       <div
         className="list-table-frame mt-2 flex min-h-0 flex-1 flex-col overflow-x-auto"
         role="table"
+        aria-label={t('list.columns')}
         aria-rowcount={rows.length + 1}
         aria-colcount={tableColumnCount}
       >
@@ -284,7 +287,11 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
           >
             <ListColgroup columns={visibleColumns} />
             <thead className="bg-zinc-950" role="rowgroup">
-              <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500" role="row">
+              <tr
+                className="h-16 border-b border-white/10 text-[12px] text-slate-500"
+                role="row"
+                aria-rowindex={1}
+              >
                 {visibleColumns.map((c) => {
                   const sortable = c.id !== 'flag';
                   const isActive = sortKey === c.id;
@@ -292,7 +299,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   return (
                     <th
                       key={c.id}
-                      id={`list-column-${c.id}`}
+                      id={columnHeaderId(c.id)}
                       role="columnheader"
                       aria-sort={
                         isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
@@ -315,7 +322,7 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                   );
                 })}
                 {visibleColumns.length === 0 ? (
-                  <th id="list-column-empty" role="columnheader" aria-hidden="true" />
+                  <th id={columnHeaderId('empty')} role="columnheader" aria-hidden="true" />
                 ) : null}
               </tr>
             </thead>
@@ -363,9 +370,9 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                         return (
                           <td
                             key={c.id}
-                            headers={`list-column-${c.id}`}
+                            headers={columnHeaderId(c.id)}
                             role="cell"
-                            aria-labelledby={`list-column-${c.id}`}
+                            aria-labelledby={columnHeaderId(c.id)}
                             className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
                           >
                             <span className="flex h-8 w-4 shrink-0 items-center justify-center">
@@ -396,9 +403,9 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                       return (
                         <td
                           key={c.id}
-                          headers={`list-column-${c.id}`}
+                          headers={columnHeaderId(c.id)}
                           role="cell"
-                          aria-labelledby={`list-column-${c.id}`}
+                          aria-labelledby={columnHeaderId(c.id)}
                           className={cellClass}
                           {...(value ? { title: value } : {})}
                         >
@@ -434,9 +441,9 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
                     })}
                     {visibleColumns.length === 0 ? (
                       <td
-                        headers="list-column-empty"
+                        headers={columnHeaderId('empty')}
                         role="cell"
-                        aria-labelledby="list-column-empty"
+                        aria-labelledby={columnHeaderId('empty')}
                         aria-hidden="true"
                       />
                     ) : null}

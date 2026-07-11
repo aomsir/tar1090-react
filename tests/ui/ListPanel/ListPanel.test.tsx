@@ -461,19 +461,49 @@ describe('ListPanel', () => {
 
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('table', { name: 'Columns' });
     const columnHeaders = within(table).getAllByRole('columnheader');
     const row = screen.getByTestId('row-A1');
     const cells = within(row).getAllByRole('cell');
 
-    expect(screen.getAllByRole('table')).toHaveLength(1);
+    expect(screen.getAllByRole('table', { name: 'Columns' })).toHaveLength(1);
     expect(table).toHaveAttribute('aria-rowcount', '2');
     expect(table).toHaveAttribute('aria-colcount', String(columnHeaders.length));
+    expect(within(table).getAllByRole('row')[0]).toHaveAttribute('aria-rowindex', '1');
+    expect(row).toHaveAttribute('aria-rowindex', '2');
     expect(cells).toHaveLength(columnHeaders.length);
     for (const cell of cells) {
       const labelledBy = cell.getAttribute('aria-labelledby');
       expect(labelledBy).toBeTruthy();
       expect(table.querySelector(`[role="columnheader"]#${labelledBy}`)).toBeTruthy();
+    }
+  });
+
+  it('keeps accessible header references isolated across panel instances', async () => {
+    seed('A1', { flight: 'CCA101', altitude: 35000 });
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(
+      <>
+        <ListPanel onSelect={vi.fn()} />
+        <ListPanel onSelect={vi.fn()} />
+      </>,
+    );
+
+    const tables = screen.getAllByRole('table', { name: 'Columns' });
+    const headerIds = tables.flatMap((table) =>
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.id),
+    );
+
+    expect(new Set(headerIds).size).toBe(headerIds.length);
+    for (const table of tables) {
+      for (const cell of within(table).getAllByRole('cell')) {
+        const labelledBy = cell.getAttribute('aria-labelledby');
+        expect(labelledBy).toBeTruthy();
+        expect(table.querySelector(`[role="columnheader"]#${labelledBy}`)).toBeTruthy();
+      }
     }
   });
 
@@ -606,7 +636,7 @@ describe('ListPanel', () => {
     const header = table.parentElement!.previousElementSibling!;
     const placeholderHeader = header.querySelector('th')!;
     const placeholderCell = table.querySelector('tbody tr:not([aria-hidden]) td')!;
-    expect(placeholderHeader.id).toBe('list-column-empty');
+    expect(placeholderHeader.id).toMatch(/^list-.+-column-empty$/);
     expect(placeholderCell.getAttribute('headers')).toBe(placeholderHeader.id);
   });
 
