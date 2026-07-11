@@ -290,17 +290,17 @@ describe('ListPanel', () => {
   it('panel has a dedicated scroll region wrapping the table', async () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
     const panel = screen.getByTestId('list-panel');
-    const table = screen.getByRole('table');
-    const scrollRegion = table.parentElement;
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const table = scrollRegion.querySelector('table');
     expect(scrollRegion).toBeTruthy();
     expect(scrollRegion).not.toBe(panel);
+    expect(table).toBeTruthy();
   });
 
   it('table has minimum width for column stability', async () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
-    const table = screen.getByRole('table');
-    const cls = table.className;
-    expect(cls).toMatch(/min-w-/);
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
+    expect(table.style.width).toBeTruthy();
   });
 
   it('can show a hidden original column through column options', async () => {
@@ -351,8 +351,9 @@ describe('ListPanel', () => {
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
     const row = screen.getByTestId('row-A1');
-    expect(screen.getByRole('table').className).toContain('border-separate');
-    expect(screen.getByRole('table').className).toContain('border-spacing-0');
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
+    expect(table.className).toContain('border-separate');
+    expect(table.className).toContain('border-spacing-0');
     expect(screen.getByText('MIL')).toBeInTheDocument();
     expect(screen.getByText('MLAT')).toBeInTheDocument();
     for (const cell of Array.from(row.cells)) {
@@ -396,6 +397,44 @@ describe('ListPanel', () => {
     for (const row of mountedRows) {
       expect(row).toHaveStyle({ height: '32px' });
     }
+  });
+
+  it('keeps a fixed header outside the virtual scroll region for large lists', async () => {
+    for (let i = 0; i < 500; i++) {
+      seed(`A${String(i).padStart(3, '0')}`, {
+        flight: `FLT${String(i).padStart(3, '0')}`,
+        altitude: 35000 - i,
+      });
+    }
+    act(() => useLiveTick.getState().bump());
+
+    await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
+
+    const scrollRegion = screen.getByTestId('list-scroll-region');
+    const frame = scrollRegion.parentElement!;
+    const header = frame.firstElementChild!;
+    const headerThead = header.querySelector('thead')!;
+    const bodyTable = scrollRegion.querySelector('table')!;
+
+    expect(frame.className).toContain('list-table-frame');
+    expect(header).toBe(frame.children[0]);
+    expect(scrollRegion).toBe(frame.children[1]);
+    expect(header.className).toContain('shrink-0');
+    expect(headerThead.querySelector('tr')?.className).toContain('h-16');
+    expect(scrollRegion.querySelector('thead')).toBeNull();
+    expect(scrollRegion.querySelector('tbody')).toBeTruthy();
+    expect(
+      Array.from(header.querySelectorAll('col')).map((col) => col.getAttribute('style')),
+    ).toEqual(
+      Array.from(bodyTable.querySelectorAll('col')).map((col) => col.getAttribute('style')),
+    );
+
+    Object.defineProperty(scrollRegion, 'scrollTop', { configurable: true, value: 32 * 300 });
+    fireEvent.scroll(scrollRegion);
+    await act(async () => {});
+
+    expect(header.querySelector('thead')).toBe(headerThead);
+    expect(Number(screen.getAllByTestId(/^row-/)[0]!.dataset.index)).toBeGreaterThan(0);
   });
 
   it('changes the mounted window on scroll and keeps click identity', async () => {
@@ -481,7 +520,7 @@ describe('ListPanel', () => {
 
     await renderWithI18n(<ListPanel onSelect={vi.fn()} />);
 
-    const table = screen.getByRole('table');
+    const table = screen.getByTestId('list-scroll-region').querySelector('table')!;
     const rows = Array.from(table.querySelectorAll('thead tr, tbody tr'));
     const spacerRows = rows.filter((row) => row.getAttribute('aria-hidden') === 'true');
 

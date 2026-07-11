@@ -3,18 +3,52 @@ import { Chip } from '@heroui/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import { useAircraftRows } from '@/features/list/useAircraftRows';
-import { createListColumns } from '@/features/list/columns';
+import { createListColumns, type ColumnId, type ListColumn } from '@/features/list/columns';
 import { useListControls } from '@/store/listControls';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftRow, FilterKey, SortKey } from '@/features/list/aircraftRows';
-import type { ListColumn } from '@/features/list/columns';
 
 const EMERGENCY_SQUAWKS = new Set(['7500', '7600', '7700']);
 const ROW_HEIGHT = 32;
 const ROW_OVERSCAN = 10;
+const COLUMN_WIDTH_PX: Record<ColumnId, number> = {
+  icao: 84,
+  flag: 40,
+  flight: 112,
+  route: 180,
+  registration: 104,
+  aircraft_type: 72,
+  squawk: 72,
+  altitude: 88,
+  speed: 80,
+  vert_rate: 112,
+  distance: 88,
+  track: 72,
+  msgs: 88,
+  seen: 72,
+  rssi: 64,
+  lat: 96,
+  lon: 96,
+  data_source: 104,
+  military: 56,
+  wd: 80,
+  ws: 88,
+  last_seen: 96,
+  pass_time: 152,
+};
+
+function ListColgroup({ columns }: { columns: ListColumn[] }) {
+  return (
+    <colgroup>
+      {columns.map((column) => (
+        <col key={column.id} style={{ width: `${COLUMN_WIDTH_PX[column.id]}px` }} />
+      ))}
+    </colgroup>
+  );
+}
 
 function rowBackground(row: AircraftRow, selected: boolean, index: number): string {
   if (EMERGENCY_SQUAWKS.has(row.squawk)) return 'bg-red-500/25';
@@ -55,6 +89,10 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
   const modeColumns = columns.filter((c) => isHistory || c.id !== 'pass_time');
   const visibleColumns = modeColumns.filter((c) => !hiddenColumns.has(c.id));
   const tableColumnCount = Math.max(visibleColumns.length, 1);
+  const tableWidth = Math.max(
+    640,
+    visibleColumns.reduce((width, column) => width + COLUMN_WIDTH_PX[column.id], 0),
+  );
   const columnOptionsRef = useRef<HTMLDetailsElement>(null);
   // TanStack owns the scroll subscription and does not support React Compiler memoization.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -201,14 +239,14 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
         </button>
       </div>
 
-      <div
-        ref={scrollRef}
-        data-testid="list-scroll-region"
-        className="mt-2 min-h-0 flex-1 overflow-auto"
-      >
-        <table className="min-w-[640px] w-full border-separate border-spacing-0 text-[13px]">
-          <thead className="sticky top-0 z-10 bg-zinc-950">
-            <tr className="border-b border-white/10 text-[12px] text-slate-500">
+      <div className="list-table-frame mt-2 flex min-h-0 flex-1 flex-col overflow-x-auto">
+        <table
+          className="shrink-0 border-separate border-spacing-0 text-[13px]"
+          style={{ width: `${tableWidth}px` }}
+        >
+          <ListColgroup columns={visibleColumns} />
+          <thead className="bg-zinc-950">
+            <tr className="h-16 border-b border-white/10 text-[12px] text-slate-500">
               {visibleColumns.map((c) => {
                 const sortable = c.id !== 'flag';
                 const isActive = sortKey === c.id;
@@ -240,104 +278,122 @@ export function ListPanel({ onSelect }: { onSelect: (rowId: string) => void }) {
               {visibleColumns.length === 0 ? <th aria-hidden="true" /> : null}
             </tr>
           </thead>
-          <tbody>
-            {topPadding > 0 ? (
-              <tr aria-hidden="true">
-                <td colSpan={tableColumnCount} style={{ height: `${topPadding}px`, padding: 0 }} />
-              </tr>
-            ) : null}
-            {virtualRows.map((virtualRow) => {
-              const r = rows[virtualRow.index]!;
-              const selected = isHistory ? selectedPassId === r.passId : r.hex === selectedHex;
-              return (
-                <tr
-                  key={r.rowId}
-                  data-testid={`row-${r.rowId}`}
-                  data-index={virtualRow.index}
-                  onClick={() => onSelect(r.rowId)}
-                  style={{ height: `${ROW_HEIGHT}px` }}
-                  className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
-                >
-                  {visibleColumns.map((c) => {
-                    const align = c.align ?? 'left';
-                    if (c.id === 'flag') {
+        </table>
+        <div
+          ref={scrollRef}
+          data-testid="list-scroll-region"
+          className="min-h-0 shrink-0 flex-1 overflow-y-auto"
+          style={{ width: `${tableWidth}px` }}
+        >
+          <table
+            className="border-separate border-spacing-0 text-[13px]"
+            style={{ width: `${tableWidth}px` }}
+          >
+            <ListColgroup columns={visibleColumns} />
+            <tbody>
+              {topPadding > 0 ? (
+                <tr aria-hidden="true">
+                  <td
+                    colSpan={tableColumnCount}
+                    style={{ height: `${topPadding}px`, padding: 0 }}
+                  />
+                </tr>
+              ) : null}
+              {virtualRows.map((virtualRow) => {
+                const r = rows[virtualRow.index]!;
+                const selected = isHistory ? selectedPassId === r.passId : r.hex === selectedHex;
+                return (
+                  <tr
+                    key={r.rowId}
+                    data-testid={`row-${r.rowId}`}
+                    data-index={virtualRow.index}
+                    onClick={() => onSelect(r.rowId)}
+                    style={{ height: `${ROW_HEIGHT}px` }}
+                    className={`cursor-pointer transition-colors duration-150 hover:bg-white/10 ${rowBackground(r, selected, virtualRow.index)}`}
+                  >
+                    {visibleColumns.map((c) => {
+                      const align = c.align ?? 'left';
+                      if (c.id === 'flag') {
+                        return (
+                          <td
+                            key={c.id}
+                            className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
+                          >
+                            <span className="flex h-8 w-4 shrink-0 items-center justify-center">
+                              {r.flagPath ? (
+                                <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
+                              ) : (
+                                <span
+                                  className="inline-block h-2 w-2 rounded-full"
+                                  style={{ backgroundColor: hslString(altitudeColor(r.altitude)) }}
+                                />
+                              )}
+                            </span>
+                          </td>
+                        );
+                      }
+                      const value = c.format(r);
+                      const isNumeric = c.align === 'right';
+                      const cellClass = [
+                        'h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap',
+                        align === 'right' ? 'text-right' : 'text-left',
+                        isNumeric ? 'font-mono text-xs' : '',
+                        c.id === 'flight' ? 'font-medium' : '',
+                        !value || value === '—' ? 'text-slate-500' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ');
+
                       return (
-                        <td
-                          key={c.id}
-                          className="h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap"
-                        >
-                          <span className="flex h-8 w-4 shrink-0 items-center justify-center">
-                            {r.flagPath ? (
-                              <img src={r.flagPath} alt="" className="h-2.5 w-4 object-cover" />
+                        <td key={c.id} className={cellClass} {...(value ? { title: value } : {})}>
+                          <span
+                            className={`flex h-8 items-center whitespace-nowrap ${
+                              c.id === 'flight'
+                                ? 'min-w-max gap-1'
+                                : align === 'right'
+                                  ? 'justify-end'
+                                  : ''
+                            }`}
+                          >
+                            {c.id === 'aircraft_type' && value && value !== '—' ? (
+                              <span className="rounded bg-white/[0.08] px-1.5 text-xs">
+                                {value}
+                              </span>
                             ) : (
-                              <span
-                                className="inline-block h-2 w-2 rounded-full"
-                                style={{ backgroundColor: hslString(altitudeColor(r.altitude)) }}
-                              />
+                              value || '—'
                             )}
+                            {c.id === 'flight' && r.isMilitary ? (
+                              <Chip size="sm" color="danger" variant="soft" className="scale-75">
+                                MIL
+                              </Chip>
+                            ) : null}
+                            {c.id === 'flight' && r.isMlat ? (
+                              <Chip size="sm" color="warning" variant="soft" className="scale-75">
+                                MLAT
+                              </Chip>
+                            ) : null}
                           </span>
                         </td>
                       );
-                    }
-                    const value = c.format(r);
-                    const isNumeric = c.align === 'right';
-                    const cellClass = [
-                      'h-8 px-2 py-0 align-middle leading-4 whitespace-nowrap',
-                      align === 'right' ? 'text-right' : 'text-left',
-                      isNumeric ? 'font-mono text-xs' : '',
-                      c.id === 'flight' ? 'font-medium' : '',
-                      !value || value === '—' ? 'text-slate-500' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ');
-
-                    return (
-                      <td key={c.id} className={cellClass} {...(value ? { title: value } : {})}>
-                        <span
-                          className={`flex h-8 items-center whitespace-nowrap ${
-                            c.id === 'flight'
-                              ? 'min-w-max gap-1'
-                              : align === 'right'
-                                ? 'justify-end'
-                                : ''
-                          }`}
-                        >
-                          {c.id === 'aircraft_type' && value && value !== '—' ? (
-                            <span className="rounded bg-white/[0.08] px-1.5 text-xs">{value}</span>
-                          ) : (
-                            value || '—'
-                          )}
-                          {c.id === 'flight' && r.isMilitary ? (
-                            <Chip size="sm" color="danger" variant="soft" className="scale-75">
-                              MIL
-                            </Chip>
-                          ) : null}
-                          {c.id === 'flight' && r.isMlat ? (
-                            <Chip size="sm" color="warning" variant="soft" className="scale-75">
-                              MLAT
-                            </Chip>
-                          ) : null}
-                        </span>
-                      </td>
-                    );
-                  })}
-                  {visibleColumns.length === 0 ? <td aria-hidden="true" /> : null}
+                    })}
+                    {visibleColumns.length === 0 ? <td aria-hidden="true" /> : null}
+                  </tr>
+                );
+              })}
+              {bottomPadding > 0 ? (
+                <tr aria-hidden="true">
+                  <td
+                    colSpan={tableColumnCount}
+                    style={{ height: `${bottomPadding}px`, padding: 0 }}
+                  />
                 </tr>
-              );
-            })}
-            {bottomPadding > 0 ? (
-              <tr aria-hidden="true">
-                <td
-                  colSpan={tableColumnCount}
-                  style={{ height: `${bottomPadding}px`, padding: 0 }}
-                />
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-        {rows.length === 0 ? (
-          <div className="text-muted px-1 py-2 text-[13px]">{t('list.emptyState')}</div>
-        ) : null}
+              ) : null}
+            </tbody>
+          </table>
+          {rows.length === 0 ? (
+            <div className="text-muted px-1 py-2 text-[13px]">{t('list.emptyState')}</div>
+          ) : null}
+        </div>
       </div>
     </aside>
   );
