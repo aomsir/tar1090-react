@@ -6,21 +6,23 @@ import { usePlaybackStore } from '@/store/playbackStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSeedVersion, clearHistorySeedForTest } from '@/data/liveHistorySeeder';
 import { setTestLanguage } from '@/i18n/testUtils';
+import type { MapSelection } from '@/map/MapController';
 
 vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
 }));
 
 let capturedOnReady: ((controller: unknown) => void) | null = null;
-let capturedSelectCb: ((hex: string | null) => void) | null = null;
+let capturedSelectCb: ((selection: MapSelection) => void) | null = null;
 let capturedListOnSelect: ((hex: string) => void) | null = null;
 
 const fakeController = {
-  onSelect: vi.fn((cb: (hex: string | null) => void) => {
+  onSelect: vi.fn((cb: (selection: MapSelection) => void) => {
     capturedSelectCb = cb;
   }),
   setSelected: vi.fn(),
   setSelectedTrackKey: vi.fn(),
+  setHistoryTrackSelectionEnabled: vi.fn(),
   syncAircraft: vi.fn(),
   centerOn: vi.fn(),
   onViewChange: vi.fn(),
@@ -120,6 +122,7 @@ describe('AppShell', () => {
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.setSelectedTrackKey.mockClear();
+    fakeController.setHistoryTrackSelectionEnabled.mockClear();
     fakeController.centerOn.mockClear();
     fakeController.onViewChange.mockClear();
     fakeController.getViewExtentLonLat.mockClear();
@@ -155,7 +158,7 @@ describe('AppShell', () => {
     expect(capturedSelectCb).toBeTypeOf('function');
 
     act(() => {
-      capturedSelectCb!('781860');
+      capturedSelectCb!({ type: 'aircraft', hex: '781860' });
     });
 
     expect(useSelectionStore.getState().selectedHex).toBe('781860');
@@ -188,6 +191,33 @@ describe('AppShell', () => {
       extended: 2,
       trackLabels: true,
     });
+  });
+
+  it('disables history-track selection when the live-mode controller becomes ready', () => {
+    render(<AppShell />);
+
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('enables history-track selection for a ready history-mode controller and disables it on return to live', () => {
+    usePlaybackStore.getState().setMode('history');
+    render(<AppShell />);
+
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenLastCalledWith(true);
+
+    act(() => {
+      usePlaybackStore.getState().setMode('live');
+    });
+
+    expect(fakeController.setHistoryTrackSelectionEnabled).toHaveBeenLastCalledWith(false);
   });
 
   it('draws the selected aircraft track when history is already loaded', async () => {
@@ -321,12 +351,85 @@ describe('AppShell', () => {
     act(() => {
       capturedOnReady!(fakeController);
       useSelectionStore.getState().selectPass('781860:100', '781860');
-      capturedSelectCb!('781860');
+      capturedSelectCb!({ type: 'aircraft', hex: '781860' });
     });
 
     expect(useSelectionStore.getState()).toMatchObject({
       selectedPassId: '781860:100',
       selectedHex: '781860',
+    });
+  });
+
+  it('selects the clicked history track without moving the playback cursor or centering', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 25, lon: 120, altitude: 1000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 30, lon: 125, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setCursor(150);
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    fakeController.centerOn.mockClear();
+    fakeController.setSelectedTrackKey.mockClear();
+
+    act(() => {
+      capturedSelectCb!({ type: 'historyTrack', passId: '781860:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: '781860:100',
+      selectedHex: '781860',
+    });
+    expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
+    expect(usePlaybackStore.getState().cursorTime).toBe(150);
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
+  });
+
+  it('ignores an unknown history track pass id', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      capturedSelectCb!({ type: 'historyTrack', passId: 'missing:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
+    });
+  });
+
+  it('ignores history track selection in live mode', () => {
+    useSelectionStore.getState().selectPass('existing:100', 'existing');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+      capturedSelectCb!({ type: 'historyTrack', passId: '781860:100' });
+    });
+
+    expect(useSelectionStore.getState()).toMatchObject({
+      selectedPassId: 'existing:100',
+      selectedHex: 'existing',
     });
   });
 

@@ -1,9 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
+import Feature from 'ol/Feature';
+import type { FeatureLike } from 'ol/Feature';
+import LineString from 'ol/geom/LineString';
 import {
+  closestHistoryTrackSelection,
   GAODE_BASEMAP_URL,
   isAircraftHitLayer,
   MAP_DIM_PERCENTAGE,
   MapController,
+  resolveMapSelection,
+  selectionFromAircraftFeature,
+  type MapSelection,
 } from '@/map/MapController';
 import type { PTracksLayerHandle } from '@/map/pTracksLayer';
 
@@ -38,6 +45,88 @@ describe('MapController constants', () => {
   });
 });
 
+describe('MapController selection helpers', () => {
+  it('creates a typed aircraft selection from a string feature id', () => {
+    const feature = new Feature();
+    feature.setId('abc123');
+
+    expect(selectionFromAircraftFeature(feature)).toEqual({
+      type: 'aircraft',
+      hex: 'abc123',
+    } satisfies MapSelection);
+  });
+
+  it('rejects an aircraft feature without a string id', () => {
+    expect(selectionFromAircraftFeature(new Feature())).toBeNull();
+
+    const numericId = new Feature();
+    numericId.setId(123);
+    expect(selectionFromAircraftFeature(numericId)).toBeNull();
+  });
+
+  it('selects the history track geometrically nearest to the click coordinate', () => {
+    const farther = new Feature({
+      geometry: new LineString([
+        [0, 3],
+        [10, 3],
+      ]),
+    });
+    farther.set('trackKey', 'farther-pass');
+    const nearer = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
+    nearer.set('trackKey', 'nearer-pass');
+
+    expect(closestHistoryTrackSelection([farther, nearer], [5, 0])).toEqual({
+      type: 'historyTrack',
+      passId: 'nearer-pass',
+    } satisfies MapSelection);
+  });
+
+  it('ignores history track features without a string track key or valid geometry', () => {
+    const missingKey = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
+    const missingGeometry = new Feature();
+    missingGeometry.set('trackKey', 'pass-a');
+    const unsupportedGeometry = {
+      get: (key: string) => (key === 'trackKey' ? 'pass-b' : undefined),
+      getGeometry: () => ({}),
+    } as unknown as FeatureLike;
+
+    expect(
+      closestHistoryTrackSelection([missingKey, missingGeometry, unsupportedGeometry], [5, 0]),
+    ).toBeNull();
+  });
+
+  it('prefers an aircraft hit over history-track candidates', () => {
+    const aircraft = new Feature();
+    aircraft.setId('abc123');
+    const track = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
+    track.set('trackKey', 'pass-a');
+
+    expect(resolveMapSelection(aircraft, [track], [5, 0])).toEqual({
+      type: 'aircraft',
+      hex: 'abc123',
+    } satisfies MapSelection);
+  });
+
+  it('returns null when neither an aircraft nor a history track is hit', () => {
+    expect(resolveMapSelection(undefined, [], [5, 0])).toBeNull();
+  });
+});
+
 describe('MapController controls', () => {
   it('creates the map without any default controls', () => {
     const el = document.createElement('div');
@@ -58,6 +147,199 @@ describe('MapController controls', () => {
 
     controller.setSelectedTrackKey('abc123:1000');
     expect(setSelectedTrackKey).toHaveBeenCalledWith('abc123:1000');
+    controller.dispose();
+  });
+
+  it('does not query persistent tracks or select them by default after an aircraft miss', () => {
+    const controller = new MapController(document.createElement('div'));
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+      }
+    ).map;
+    const onSelect = vi.fn();
+    controller.onSelect(onSelect);
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockReturnValue(undefined);
+
+    map.dispatchEvent({ type: 'click', pixel: [5, 0], coordinate: [5, 0] });
+
+    expect(map.forEachFeatureAtPixel).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith(null);
+    controller.dispose();
+  });
+
+  it('clicks the nearest visible history track after aircraft hit detection misses', () => {
+    const controller = new MapController(document.createElement('div'));
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
+    const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
+      .pTracksHandle;
+    const visible = new Feature({
+      geometry: new LineString([
+        [0, 1],
+        [10, 1],
+      ]),
+    });
+    visible.set('trackKey', 'visible-pass');
+    const hidden = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
+    hidden.set('trackKey', 'hidden-pass');
+    pTracksHandle.setSelectedKey('visible-pass');
+    const onSelect = vi.fn();
+    controller.onSelect(onSelect);
+    (
+      controller as unknown as { setHistoryTrackSelectionEnabled(enabled: boolean): void }
+    ).setHistoryTrackSelectionEnabled(true);
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
+      if (options?.hitTolerance === 5) return undefined;
+      expect(options?.hitTolerance).toBe(8);
+      expect(options?.layerFilter?.(pTracksHandle.layer)).toBe(true);
+      expect(callback(visible, pTracksHandle.layer)).toBeUndefined();
+      expect(callback(hidden, pTracksHandle.layer)).toBeUndefined();
+      return undefined;
+    });
+
+    map.dispatchEvent({ type: 'click', pixel: [5, 0], coordinate: [5, 0] });
+
+    expect(onSelect).toHaveBeenCalledWith({ type: 'historyTrack', passId: 'visible-pass' });
+    controller.dispose();
+  });
+
+  it('prefers an aircraft click over persistent-track candidates', () => {
+    const controller = new MapController(document.createElement('div'));
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: { type: string; pixel: number[]; coordinate: number[] }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        handle: { layer: unknown };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
+    const aircraft = new Feature();
+    aircraft.setId('abc123');
+    const track = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
+    track.set('trackKey', 'pass-a');
+    const onSelect = vi.fn();
+    controller.onSelect(onSelect);
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
+      if (options?.hitTolerance === 5) {
+        expect(options?.layerFilter?.((controller as never).handle.layer)).toBe(true);
+        return callback(aircraft, {} as never);
+      }
+      callback(track, {} as never);
+      return undefined;
+    });
+
+    map.dispatchEvent({ type: 'click', pixel: [5, 0], coordinate: [5, 0] });
+
+    expect(onSelect).toHaveBeenCalledWith({ type: 'aircraft', hex: 'abc123' });
+    expect(map.forEachFeatureAtPixel).toHaveBeenCalledTimes(1);
+    controller.dispose();
+  });
+
+  it('shows a pointer only for aircraft or visible history-track hover hits', () => {
+    const target = document.createElement('div');
+    const controller = new MapController(target);
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: {
+            type: string;
+            pixel: number[];
+            coordinate: number[];
+            dragging: boolean;
+          }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+        pTracksHandle: PTracksLayerHandle;
+      }
+    ).map;
+    const pTracksHandle = (controller as unknown as { pTracksHandle: PTracksLayerHandle })
+      .pTracksHandle;
+    const visible = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
+    visible.set('trackKey', 'visible-pass');
+    const hidden = new Feature({
+      geometry: new LineString([
+        [0, 0],
+        [10, 0],
+      ]),
+    });
+    hidden.set('trackKey', 'hidden-pass');
+    pTracksHandle.setSelectedKey('visible-pass');
+    (
+      controller as unknown as { setHistoryTrackSelectionEnabled(enabled: boolean): void }
+    ).setHistoryTrackSelectionEnabled(true);
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
+      if (options?.hitTolerance === 5) return undefined;
+      callback(hidden, pTracksHandle.layer);
+      return undefined;
+    });
+    map.dispatchEvent({ type: 'pointermove', pixel: [5, 0], coordinate: [5, 0], dragging: false });
+    expect(target.style.cursor).toBe('');
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockImplementation((_, callback, options) => {
+      if (options?.hitTolerance === 5) return undefined;
+      return callback(visible, pTracksHandle.layer);
+    });
+    map.dispatchEvent({ type: 'pointermove', pixel: [5, 0], coordinate: [5, 0], dragging: false });
+
+    expect(target.style.cursor).toBe('pointer');
+    controller.dispose();
+  });
+
+  it('does not query persistent tracks or show a pointer by default after an aircraft hover miss', () => {
+    const target = document.createElement('div');
+    const controller = new MapController(target);
+    const map = (
+      controller as unknown as {
+        map: {
+          dispatchEvent(event: {
+            type: string;
+            pixel: number[];
+            coordinate: number[];
+            dragging: boolean;
+          }): void;
+          forEachFeatureAtPixel: ReturnType<typeof vi.fn>;
+        };
+      }
+    ).map;
+
+    vi.spyOn(map, 'forEachFeatureAtPixel').mockReturnValue(undefined);
+
+    map.dispatchEvent({ type: 'pointermove', pixel: [5, 0], coordinate: [5, 0], dragging: false });
+
+    expect(map.forEachFeatureAtPixel).toHaveBeenCalledTimes(1);
+    expect(target.style.cursor).toBe('');
     controller.dispose();
   });
 });

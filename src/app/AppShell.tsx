@@ -153,6 +153,10 @@ export function AppShell() {
   }, [mode, selectedHex, selectedPassId]);
 
   useEffect(() => {
+    controllerRef.current?.setHistoryTrackSelectionEnabled(mode === 'history');
+  }, [mode]);
+
+  useEffect(() => {
     if (mode !== 'live') return;
     const c = controllerRef.current;
     if (!c) return;
@@ -203,12 +207,23 @@ export function AppShell() {
       <MapView
         onReady={(controller) => {
           controllerRef.current = controller;
-          controller.onSelect((hex) => {
+          controller.onSelect((mapSelection) => {
             const selection = useSelectionStore.getState();
-            if (hex === null) {
+            if (mapSelection === null) {
               selection.clearAll();
-            } else if (
-              usePlaybackStore.getState().mode !== 'history' ||
+              return;
+            }
+            const playback = usePlaybackStore.getState();
+            if (mapSelection.type === 'historyTrack') {
+              if (playback.mode !== 'history') return;
+              const pass = historyStore.getPass(mapSelection.passId);
+              if (pass) selection.selectPass(pass.passId, pass.hex);
+              return;
+            }
+
+            const { hex } = mapSelection;
+            if (
+              playback.mode !== 'history' ||
               !selection.selectedPassId ||
               selection.selectedHex !== hex
             ) {
@@ -221,6 +236,9 @@ export function AppShell() {
             usePlaybackStore.getState().mode === 'history'
               ? selection.selectedPassId
               : selection.selectedHex,
+          );
+          controller.setHistoryTrackSelectionEnabled(
+            usePlaybackStore.getState().mode === 'history',
           );
 
           const toolbarState = useToolbarStore.getState();

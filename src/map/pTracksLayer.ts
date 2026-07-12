@@ -1,6 +1,6 @@
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import Feature from 'ol/Feature';
+import Feature, { type FeatureLike } from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 import { fromLonLat } from 'ol/proj';
 import Style from 'ol/style/Style';
@@ -11,17 +11,21 @@ import { buildTrackSegments } from '@/features/track/track';
 export interface PTracksLayerHandle {
   layer: VectorLayer<VectorSource>;
   source: VectorSource;
+  isFeatureVisible: (feature: FeatureLike) => boolean;
   setSelectedKey: (key: string | null) => void;
 }
 
 export function createPTracksLayer(): PTracksLayerHandle {
   let selectedKey: string | null = null;
   const source = new VectorSource();
+  const isFeatureVisible = (feature: FeatureLike): boolean => {
+    const trackKey = feature.get('trackKey');
+    return typeof trackKey === 'string' && (selectedKey === null || trackKey === selectedKey);
+  };
   const layer = new VectorLayer({
     source,
     style: (feature) => {
-      const trackKey = feature.get('trackKey') as string;
-      if (selectedKey !== null && trackKey !== selectedKey) return new Style({});
+      if (!isFeatureVisible(feature)) return new Style({});
       const color = feature.get('colorKey') as string;
       const estimated = feature.get('estimated') === true;
       return new Style({
@@ -37,6 +41,7 @@ export function createPTracksLayer(): PTracksLayerHandle {
   return {
     layer,
     source,
+    isFeatureVisible,
     setSelectedKey(key: string | null) {
       selectedKey = key;
       layer.changed();
