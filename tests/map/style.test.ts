@@ -3,11 +3,11 @@ import {
   aircraftFillColor,
   aircraftRotationRad,
   aircraftStyle,
-  markerLabel,
   markerZoomScale,
   MARKER_ZOOM_DIVIDE,
   MARKER_SMALL,
   MARKER_BIG,
+  selectedAircraftLabel,
 } from '@/map/style';
 import { Aircraft } from '@/domain/Aircraft';
 
@@ -34,22 +34,100 @@ describe('map style helpers', () => {
   });
 });
 
-describe('markerLabel', () => {
-  it('uses the trimmed flight when present', () => {
-    const ac = new Aircraft('abc123');
-    ac.update({ hex: 'abc123', flight: 'CCA101 ' }, 1);
-    expect(markerLabel(ac)).toBe('CCA101');
+describe('selectedAircraftLabel', () => {
+  function aircraft(values: Partial<Aircraft> = {}): Aircraft {
+    return Object.assign(new Aircraft('abc123'), values);
+  }
+
+  it('formats exactly three lines with callsign, registration, altitude, speed, rate, and heading', () => {
+    expect(
+      selectedAircraftLabel(
+        aircraft({
+          flight: ' CCA101 ',
+          registration: 'B-1234',
+          altitude: 32000.4,
+          speed: 449.6,
+          vertRate: 129,
+          track: 86.6,
+        }),
+      ),
+    ).toBe('CCA101 B-1234\n32,000 ft 450 kt ↑\nHDG 087°');
   });
 
-  it('falls back to "reg: <registration>" when no flight', () => {
-    const ac = new Aircraft('abc123');
-    ac.registration = 'B-1234';
-    expect(markerLabel(ac)).toBe('reg: B-1234');
+  it('falls back to hex and placeholders for missing data', () => {
+    expect(selectedAircraftLabel(aircraft())).toBe('hex: abc123 —\n— — →\nHDG —');
   });
 
-  it('falls back to "hex: <hex>" when no flight or registration', () => {
-    const ac = new Aircraft('abc123');
-    expect(markerLabel(ac)).toBe('hex: abc123');
+  it('does not truncate a hexadecimal fallback identifier', () => {
+    expect(selectedAircraftLabel(new Aircraft('abcdef1234567890'))).toBe(
+      'hex: abcdef1234567890 —\n— — →\nHDG —',
+    );
+  });
+
+  it('truncates callsign and registration to twelve characters', () => {
+    expect(
+      selectedAircraftLabel(
+        aircraft({ flight: 'ABCDEFGHIJKLM', registration: '1234567890123' }),
+      ),
+    ).toBe('ABCDEFGHIJK… 12345678901…\n— — →\nHDG —');
+  });
+
+  it('uses GND and treats rates inside the neutral range as level', () => {
+    expect(
+      selectedAircraftLabel(aircraft({ altitude: 'ground', speed: 120, vertRate: -128 })),
+    ).toBe('hex: abc123 —\nGND 120 kt →\nHDG —');
+  });
+
+  it('falls back through barometric and geometric vertical rates', () => {
+    expect(
+      selectedAircraftLabel(aircraft({ vertRate: Number.NaN, baroRate: -129, geomRate: 129 })),
+    ).toBe('hex: abc123 —\n— — ↓\nHDG —');
+    expect(selectedAircraftLabel(aircraft({ geomRate: 129 }))).toBe('hex: abc123 —\n— — ↑\nHDG —');
+  });
+
+  it('uses the first finite vertical rate by priority', () => {
+    expect(selectedAircraftLabel(aircraft({ vertRate: 129, baroRate: -129 }))).toBe(
+      'hex: abc123 —\n— — ↑\nHDG —',
+    );
+    expect(selectedAircraftLabel(aircraft({ baroRate: -129, geomRate: 129 }))).toBe(
+      'hex: abc123 —\n— — ↓\nHDG —',
+    );
+  });
+
+  it('treats both vertical-rate bounds as level', () => {
+    expect(selectedAircraftLabel(aircraft({ vertRate: 128 }))).toBe('hex: abc123 —\n— — →\nHDG —');
+  });
+
+  it('rounds and normalizes finite tracks', () => {
+    expect(selectedAircraftLabel(aircraft({ track: -0.6 }))).toBe('hex: abc123 —\n— — →\nHDG 359°');
+    expect(selectedAircraftLabel(aircraft({ track: 360 }))).toBe('hex: abc123 —\n— — →\nHDG 000°');
+  });
+
+  it('never exposes invalid numeric values or throws for partial aircraft data', () => {
+    expect(() =>
+      selectedAircraftLabel(
+        aircraft({
+          altitude: Number.POSITIVE_INFINITY as unknown as number,
+          speed: Number.NaN,
+          vertRate: Number.NEGATIVE_INFINITY,
+          baroRate: Number.NaN,
+          geomRate: Number.POSITIVE_INFINITY,
+          track: Number.NaN,
+        }),
+      ),
+    ).not.toThrow();
+    expect(
+      selectedAircraftLabel(
+        aircraft({
+          altitude: Number.POSITIVE_INFINITY as unknown as number,
+          speed: Number.NaN,
+          vertRate: Number.NEGATIVE_INFINITY,
+          baroRate: Number.NaN,
+          geomRate: Number.POSITIVE_INFINITY,
+          track: Number.NaN,
+        }),
+      ),
+    ).toBe('hex: abc123 —\n— — →\nHDG —');
   });
 });
 

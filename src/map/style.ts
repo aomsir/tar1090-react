@@ -26,16 +26,16 @@ export function aircraftRotationRad(ac: Aircraft): number {
   return ((ac.track ?? 0) * Math.PI) / 180;
 }
 
-/** Prefer callsign labels, then registration, then hex ID. */
-export function markerLabel(ac: Aircraft): string {
+/** Preserve the map marker label behavior independently from selected labels. */
+function legacyMarkerLabel(ac: Aircraft): string {
   const flight = ac.flight?.trim();
   if (flight) return flight;
   if (ac.registration) return `reg: ${ac.registration}`;
   return `hex: ${ac.hex}`;
 }
 
-function extendedLabel(ac: Aircraft): string {
-  const base = markerLabel(ac);
+function legacyExtendedLabel(ac: Aircraft): string {
+  const base = legacyMarkerLabel(ac);
   const parts = [base];
   if (ac.altitude != null) {
     parts.push(ac.altitude === 'ground' ? 'GND' : `${ac.altitude} ft`);
@@ -44,6 +44,39 @@ function extendedLabel(ac: Aircraft): string {
     parts.push(`${ac.speed} kt`);
   }
   return parts.join('\n');
+}
+
+function truncated(value: string): string {
+  return value.length > 12 ? `${value.slice(0, 11)}…` : value;
+}
+
+function finiteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+export function selectedAircraftLabel(ac: Aircraft): string {
+  const callsign = ac.flight?.trim();
+  const primary = callsign ? truncated(callsign) : `hex: ${ac.hex}`;
+  const registration = ac.registration?.trim();
+  const altitude =
+    ac.altitude === 'ground'
+      ? 'GND'
+      : finiteNumber(ac.altitude)
+        ? `${Math.round(ac.altitude).toLocaleString('en-US')} ft`
+        : '—';
+  const speed = finiteNumber(ac.speed) ? `${Math.round(ac.speed)} kt` : '—';
+  const verticalRate = [ac.vertRate, ac.baroRate, ac.geomRate].find(finiteNumber);
+  const verticalDirection =
+    verticalRate == null || (verticalRate >= -128 && verticalRate <= 128)
+      ? '→'
+      : verticalRate > 128
+        ? '↑'
+        : '↓';
+  const heading = finiteNumber(ac.track)
+    ? `HDG ${String(((Math.round(ac.track) % 360) + 360) % 360).padStart(3, '0')}°`
+    : 'HDG —';
+
+  return `${primary} ${registration ? truncated(registration) : '—'}\n${altitude} ${speed} ${verticalDirection}\n${heading}`;
 }
 
 export function aircraftStyle(
@@ -64,8 +97,8 @@ export function aircraftStyle(
     labelConfig?.enabled === false
       ? ''
       : (labelConfig?.extended ?? 0) > 0
-        ? extendedLabel(ac)
-        : markerLabel(ac);
+        ? legacyExtendedLabel(ac)
+        : legacyMarkerLabel(ac);
 
   return new Style({
     image: new Icon({
