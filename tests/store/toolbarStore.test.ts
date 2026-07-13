@@ -139,7 +139,7 @@ describe('toolbarStore', () => {
   it('normalizes an invalid current-version historyTrackLimit during hydration', async () => {
     localStorage.setItem(
       'toolbar-settings',
-      JSON.stringify({ state: { historyTrackLimit: 1234 }, version: 4 }),
+      JSON.stringify({ state: { historyTrackLimit: 1234 }, version: 5 }),
     );
 
     await useToolbarStore.persist.rehydrate();
@@ -150,7 +150,7 @@ describe('toolbarStore', () => {
   it('preserves a valid current-version historyTrackLimit during hydration', async () => {
     localStorage.setItem(
       'toolbar-settings',
-      JSON.stringify({ state: { historyTrackLimit: 'all' }, version: 4 }),
+      JSON.stringify({ state: { historyTrackLimit: 'all' }, version: 5 }),
     );
 
     await useToolbarStore.persist.rehydrate();
@@ -171,7 +171,7 @@ describe('toolbarStore', () => {
           toggle: 'corrupted action',
           unexpected: 'ignored',
         },
-        version: 4,
+        version: 5,
       }),
     );
 
@@ -236,5 +236,60 @@ describe('routeApi settings', () => {
     useToolbarStore.getState().setRouteApiEnabled(true);
     useToolbarStore.getState().resetAll();
     expect(useToolbarStore.getState().routeApiEnabled).toBe(false);
+  });
+});
+
+describe('altitude filter', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useToolbarStore.setState(useToolbarStore.getInitialState());
+  });
+
+  it('defaults altitudeFilterEnabled to false, min to 0, max to 45000', () => {
+    const s = useToolbarStore.getState();
+    expect(s.altitudeFilterEnabled).toBe(false);
+    expect(s.altitudeFilterMin).toBe(0);
+    expect(s.altitudeFilterMax).toBe(45000);
+  });
+
+  it('setAltitudeFilterEnabled toggles the flag', () => {
+    useToolbarStore.getState().setAltitudeFilterEnabled(true);
+    expect(useToolbarStore.getState().altitudeFilterEnabled).toBe(true);
+    useToolbarStore.getState().setAltitudeFilterEnabled(false);
+    expect(useToolbarStore.getState().altitudeFilterEnabled).toBe(false);
+  });
+
+  it('setAltitudeFilterRange updates min and max', () => {
+    useToolbarStore.getState().setAltitudeFilterRange(5000, 25000);
+    expect(useToolbarStore.getState().altitudeFilterMin).toBe(5000);
+    expect(useToolbarStore.getState().altitudeFilterMax).toBe(25000);
+  });
+
+  it('resetAll restores altitude filter defaults', () => {
+    useToolbarStore.getState().setAltitudeFilterEnabled(true);
+    useToolbarStore.getState().setAltitudeFilterRange(5000, 25000);
+    useToolbarStore.getState().resetAll();
+
+    const s = useToolbarStore.getState();
+    expect(s.altitudeFilterEnabled).toBe(false);
+    expect(s.altitudeFilterMin).toBe(0);
+    expect(s.altitudeFilterMax).toBe(45000);
+  });
+
+  it('persists altitude filter fields to localStorage', () => {
+    useToolbarStore.getState().setAltitudeFilterEnabled(true);
+    useToolbarStore.getState().setAltitudeFilterRange(1000, 10000);
+
+    const stored = JSON.parse(localStorage.getItem('toolbar-settings') ?? '{}');
+    expect(stored.state.altitudeFilterEnabled).toBe(true);
+    expect(stored.state.altitudeFilterMin).toBe(1000);
+    expect(stored.state.altitudeFilterMax).toBe(10000);
+  });
+
+  it('migrates v4 storage missing altitude filter fields', () => {
+    const migrated = migrateToolbarState({ units: 'metric' });
+    expect(migrated.altitudeFilterEnabled).toBe(false);
+    expect(migrated.altitudeFilterMin).toBe(0);
+    expect(migrated.altitudeFilterMax).toBe(45000);
   });
 });
