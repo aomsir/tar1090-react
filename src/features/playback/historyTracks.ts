@@ -11,6 +11,17 @@ export function normalizeHistoryTrackLimit(value: unknown): HistoryTrackLimit {
     : 1000;
 }
 
+export function passMatchesAltitudeRange(
+  pass: AircraftPass,
+  minAlt: number,
+  maxAlt: number,
+): boolean {
+  return pass.trackPoints.some((pt) => {
+    const alt = pt.alt;
+    return typeof alt === 'number' && alt >= minAlt && alt <= maxAlt;
+  });
+}
+
 export function buildDrawablePassIndex(passes: AircraftPass[]): AircraftPass[] {
   return passes
     .filter((pass) => pass.trackPoints.length >= 2)
