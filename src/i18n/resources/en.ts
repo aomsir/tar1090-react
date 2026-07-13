@@ -27,6 +27,8 @@ const en: TranslationResource = {
     historyTracks: {
       title: 'Historical tracks',
       allWarning: 'All (may affect performance)',
+      altitudeFilter: 'Altitude filter',
+      altitudeRange: '{{min}} – {{max}} ft',
     },
     scale: {
       title: 'Scale',
