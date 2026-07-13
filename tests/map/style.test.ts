@@ -80,7 +80,9 @@ describe('selectedAircraftLabel', () => {
     expect(
       selectedAircraftLabel(aircraft({ vertRate: Number.NaN, baroRate: -129, geomRate: 129 })),
     ).toBe('hex: abc123 · —\n— ↓ · —\nHDG —');
-    expect(selectedAircraftLabel(aircraft({ geomRate: 129 }))).toBe('hex: abc123 · —\n— ↑ · —\nHDG —');
+    expect(selectedAircraftLabel(aircraft({ geomRate: 129 }))).toBe(
+      'hex: abc123 · —\n— ↑ · —\nHDG —',
+    );
   });
 
   it('uses the first finite vertical rate by priority', () => {
@@ -93,12 +95,18 @@ describe('selectedAircraftLabel', () => {
   });
 
   it('treats both vertical-rate bounds as level', () => {
-    expect(selectedAircraftLabel(aircraft({ vertRate: 128 }))).toBe('hex: abc123 · —\n— → · —\nHDG —');
+    expect(selectedAircraftLabel(aircraft({ vertRate: 128 }))).toBe(
+      'hex: abc123 · —\n— → · —\nHDG —',
+    );
   });
 
   it('rounds and normalizes finite tracks', () => {
-    expect(selectedAircraftLabel(aircraft({ track: -0.6 }))).toBe('hex: abc123 · —\n— → · —\nHDG 359°');
-    expect(selectedAircraftLabel(aircraft({ track: 360 }))).toBe('hex: abc123 · —\n— → · —\nHDG 000°');
+    expect(selectedAircraftLabel(aircraft({ track: -0.6 }))).toBe(
+      'hex: abc123 · —\n— → · —\nHDG 359°',
+    );
+    expect(selectedAircraftLabel(aircraft({ track: 360 }))).toBe(
+      'hex: abc123 · —\n— → · —\nHDG 000°',
+    );
   });
 
   it('never exposes invalid numeric values or throws for partial aircraft data', () => {
