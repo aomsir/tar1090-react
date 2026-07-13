@@ -90,4 +90,33 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('radio', { name: '英语' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '中文' })).toBeInTheDocument();
   });
+
+  it('shows altitude filter switch', async () => {
+    await renderWithI18n(<SettingsPanel />, { language: 'en' });
+    expect(screen.getByText('Altitude filter')).toBeInTheDocument();
+  });
+
+  it('shows altitude range slider when filter is enabled', async () => {
+    useToolbarStore.setState({ altitudeFilterEnabled: true });
+    await renderWithI18n(<SettingsPanel />, { language: 'en' });
+    expect(screen.getByText('0 – 45,000 ft')).toBeInTheDocument();
+  });
+
+  it('does not show altitude range slider when filter is disabled', async () => {
+    useToolbarStore.setState({ altitudeFilterEnabled: false });
+    await renderWithI18n(<SettingsPanel />, { language: 'en' });
+    expect(screen.queryByText(/–.*ft/)).not.toBeInTheDocument();
+  });
+
+  it('toggles altitude filter enabled state', async () => {
+    const user = userEvent.setup();
+    await renderWithI18n(<SettingsPanel />, { language: 'en' });
+
+    const switchEl =
+      screen.getByText('Altitude filter').closest('label')?.querySelector('input') ||
+      screen.getByRole('switch', { name: /altitude filter/i });
+    await user.click(switchEl!);
+
+    expect(useToolbarStore.getState().altitudeFilterEnabled).toBe(true);
+  });
 });
