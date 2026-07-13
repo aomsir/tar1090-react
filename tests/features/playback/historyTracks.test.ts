@@ -109,6 +109,57 @@ describe('history tracks', () => {
     expect([...selectHistoryTrackMap(ordered, 100, 'single-point').keys()]).toEqual(['drawable']);
     expect(selectHistoryTrackMap([], 100, 'drawable')).toEqual(new Map());
   });
+
+  it('filters passes by altitude range before applying numeric limit', () => {
+    const passes = buildDrawablePassIndex([
+      pass('low', 3, 2, [1000, 2000]),
+      pass('mid', 2, 2, [15000, 16000]),
+      pass('high', 1, 2, [35000, 36000]),
+    ]);
+
+    const result = selectHistoryTrackMap(passes, 'all', null, { min: 0, max: 10000 });
+
+    expect([...result.keys()]).toEqual(['low']);
+  });
+
+  it('does not filter when altitudeFilter is undefined', () => {
+    const passes = buildDrawablePassIndex([
+      pass('low', 2, 2, [1000, 2000]),
+      pass('high', 1, 2, [35000, 36000]),
+    ]);
+
+    const result = selectHistoryTrackMap(passes, 'all', null);
+
+    expect(result.size).toBe(2);
+  });
+
+  it('altitude filter is applied before quantity limit', () => {
+    const passes = buildDrawablePassIndex([
+      pass('a', 3, 2, [5000, 6000]),
+      pass('b', 2, 2, [30000, 31000]),
+      pass('c', 1, 2, [7000, 8000]),
+    ]);
+
+    const result = selectHistoryTrackMap(passes, 100, null, { min: 0, max: 10000 });
+
+    expect(result.size).toBe(2);
+    expect(result.has('a')).toBe(true);
+    expect(result.has('c')).toBe(true);
+    expect(result.has('b')).toBe(false);
+  });
+
+  it('always includes the selected pass even when filtered out by altitude', () => {
+    const passes = buildDrawablePassIndex([
+      pass('low', 2, 2, [1000, 2000]),
+      pass('high', 1, 2, [35000, 36000]),
+    ]);
+
+    const result = selectHistoryTrackMap(passes, 'all', 'high', { min: 0, max: 10000 });
+
+    expect(result.size).toBe(2);
+    expect(result.has('low')).toBe(true);
+    expect(result.has('high')).toBe(true);
+  });
 });
 
 describe('passMatchesAltitudeRange', () => {
