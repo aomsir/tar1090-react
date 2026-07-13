@@ -132,14 +132,28 @@ describe('selectedAircraftLabel', () => {
 });
 
 describe('aircraftStyle', () => {
-  it('renders the marker label as style text', () => {
+  it('does not attach text to an unselected aircraft', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
     expect(
-      aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false })
-        .getText()
-        ?.getText(),
-    ).toBe('CCA101');
+      aircraftStyle(ac, false, 0, { enabled: true, extended: 1, trackLabels: false }).getText(),
+    ).toBeNull();
+  });
+
+  it('shows the selected label even when general labels are disabled', () => {
+    const ac = new Aircraft('abc123');
+    ac.update(
+      { hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450, track: 87 },
+      1,
+    );
+    const text = aircraftStyle(ac, true, 0, {
+      enabled: false,
+      extended: 0,
+      trackLabels: false,
+    }).getText();
+
+    expect(text?.getText()).toBe(selectedAircraftLabel(ac));
+    expect(text?.getText()?.split('\n')).toHaveLength(3);
   });
 
   it('uses an svg icon image instead of a triangle', () => {
@@ -179,43 +193,39 @@ describe('aircraftStyle', () => {
     expect(big.getScale() as number).toBeGreaterThan(small.getScale() as number);
   });
 
-  it('moves label offset with enlarged marker size', () => {
+  it('styles the selected label as a dark surface above-right of the icon', () => {
     const ac = new Aircraft('abc123');
     ac.update({ hex: 'abc123', flight: 'CCA101', t: 'A320' }, 1);
-    const cfg = { enabled: true, extended: 0, trackLabels: false };
-    const small = aircraftStyle(ac, false, 8, cfg).getText()?.getOffsetY();
-    const big = aircraftStyle(ac, false, 9, cfg).getText()?.getOffsetY();
-    expect(Math.abs(big ?? 0)).toBeGreaterThan(Math.abs(small ?? 0));
+    const text = aircraftStyle(ac, true, 9).getText();
+
+    expect(text?.getFont()).toBe(
+      '600 12px/16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    );
+    expect(text?.getTextAlign()).toBe('left');
+    expect(text?.getTextBaseline()).toBe('bottom');
+    expect(text?.getOffsetX()).toBeGreaterThan(0);
+    expect(text?.getOffsetY()).toBeLessThan(0);
+    expect(text?.getPadding()).toEqual([6, 8, 6, 8]);
+    expect(text?.getFill()?.getColor()).toBe('#f8fafc');
+    expect(text?.getBackgroundFill()?.getColor()).toBe('rgba(15, 23, 42, 0.88)');
+    expect(text?.getBackgroundStroke()?.getColor()).toBe('rgba(148, 163, 184, 0.35)');
+    expect(text?.getBackgroundStroke()?.getWidth()).toBe(1);
   });
 
-  it('hides label when enableLabels is false', () => {
+  it('keeps the selected marker larger with a white outline', () => {
     const ac = new Aircraft('abc123');
-    ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
-    const style = aircraftStyle(ac, false, 0, { enabled: false, extended: 0, trackLabels: false });
-    expect(style.getText()?.getText()).toBe('');
-  });
+    ac.update({ hex: 'abc123', t: 'A320' }, 1);
+    const normal = aircraftStyle(ac, false, 9).getImage() as {
+      getScale: () => number | [number, number];
+      getSrc: () => string;
+    };
+    const selected = aircraftStyle(ac, true, 9).getImage() as {
+      getScale: () => number | [number, number];
+      getSrc: () => string;
+    };
 
-  it('shows label when enableLabels is true', () => {
-    const ac = new Aircraft('abc123');
-    ac.update({ hex: 'abc123', flight: 'CCA101' }, 1);
-    const style = aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false });
-    expect(style.getText()?.getText()).toBe('CCA101');
-  });
-
-  it('includes altitude and speed when extendedLabels > 0', () => {
-    const ac = new Aircraft('abc123');
-    ac.update({ hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450 }, 1);
-    const base = aircraftStyle(ac, false, 0, { enabled: true, extended: 0, trackLabels: false });
-    const extended = aircraftStyle(ac, false, 0, {
-      enabled: true,
-      extended: 1,
-      trackLabels: false,
-    });
-    expect(base.getText()?.getText()).toBe('CCA101');
-    const extText = extended.getText()?.getText() as string;
-    expect(extText).toContain('CCA101');
-    expect(extText).not.toBe('CCA101');
-    expect(extText).toContain('32000');
+    expect(selected.getScale() as number).toBeGreaterThan(normal.getScale() as number);
+    expect(atob(selected.getSrc().split(',')[1])).toContain('stroke="#ffffff"');
   });
 });
 
