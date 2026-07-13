@@ -36,7 +36,7 @@ function finiteNumber(value: unknown): value is number {
 
 export function selectedAircraftLabel(ac: Aircraft): string {
   const callsign = ac.flight?.trim();
-  const primary = callsign ? truncated(callsign) : `hex: ${ac.hex}`;
+  const primary = truncated(callsign || `hex: ${ac.hex}`);
   const registration = ac.registration?.trim();
   const altitude =
     ac.altitude === 'ground'
@@ -56,7 +56,7 @@ export function selectedAircraftLabel(ac: Aircraft): string {
     ? `HDG ${String(((Math.round(ac.track) % 360) + 360) % 360).padStart(3, '0')}°`
     : 'HDG —';
 
-  return `${primary} ${registration ? truncated(registration) : '—'}\n${altitude} ${speed} ${verticalDirection}\n${heading}`;
+  return `${primary} · ${registration ? truncated(registration) : '—'}\n${altitude} ${verticalDirection} · ${speed}\n${heading}`;
 }
 
 export function aircraftStyle(
@@ -81,6 +81,7 @@ export function aircraftStyle(
         font: '600 12px/16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
         textAlign: 'left',
         textBaseline: 'bottom',
+        rotateWithView: false,
         offsetX: 24 * markerScale,
         offsetY: -18 * markerScale,
         padding: [6, 8, 6, 8],

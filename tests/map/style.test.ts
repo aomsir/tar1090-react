@@ -51,54 +51,54 @@ describe('selectedAircraftLabel', () => {
           track: 86.6,
         }),
       ),
-    ).toBe('CCA101 B-1234\n32,000 ft 450 kt ↑\nHDG 087°');
+    ).toBe('CCA101 · B-1234\n32,000 ft ↑ · 450 kt\nHDG 087°');
   });
 
   it('falls back to hex and placeholders for missing data', () => {
-    expect(selectedAircraftLabel(aircraft())).toBe('hex: abc123 —\n— — →\nHDG —');
+    expect(selectedAircraftLabel(aircraft())).toBe('hex: abc123 · —\n— → · —\nHDG —');
   });
 
-  it('does not truncate a hexadecimal fallback identifier', () => {
+  it('truncates a hexadecimal fallback identifier to twelve characters', () => {
     expect(selectedAircraftLabel(new Aircraft('abcdef1234567890'))).toBe(
-      'hex: abcdef1234567890 —\n— — →\nHDG —',
+      'hex: abcdef… · —\n— → · —\nHDG —',
     );
   });
 
   it('truncates callsign and registration to twelve characters', () => {
     expect(
       selectedAircraftLabel(aircraft({ flight: 'ABCDEFGHIJKLM', registration: '1234567890123' })),
-    ).toBe('ABCDEFGHIJK… 12345678901…\n— — →\nHDG —');
+    ).toBe('ABCDEFGHIJK… · 12345678901…\n— → · —\nHDG —');
   });
 
   it('uses GND and treats rates inside the neutral range as level', () => {
     expect(
       selectedAircraftLabel(aircraft({ altitude: 'ground', speed: 120, vertRate: -128 })),
-    ).toBe('hex: abc123 —\nGND 120 kt →\nHDG —');
+    ).toBe('hex: abc123 · —\nGND → · 120 kt\nHDG —');
   });
 
   it('falls back through barometric and geometric vertical rates', () => {
     expect(
       selectedAircraftLabel(aircraft({ vertRate: Number.NaN, baroRate: -129, geomRate: 129 })),
-    ).toBe('hex: abc123 —\n— — ↓\nHDG —');
-    expect(selectedAircraftLabel(aircraft({ geomRate: 129 }))).toBe('hex: abc123 —\n— — ↑\nHDG —');
+    ).toBe('hex: abc123 · —\n— ↓ · —\nHDG —');
+    expect(selectedAircraftLabel(aircraft({ geomRate: 129 }))).toBe('hex: abc123 · —\n— ↑ · —\nHDG —');
   });
 
   it('uses the first finite vertical rate by priority', () => {
     expect(selectedAircraftLabel(aircraft({ vertRate: 129, baroRate: -129 }))).toBe(
-      'hex: abc123 —\n— — ↑\nHDG —',
+      'hex: abc123 · —\n— ↑ · —\nHDG —',
     );
     expect(selectedAircraftLabel(aircraft({ baroRate: -129, geomRate: 129 }))).toBe(
-      'hex: abc123 —\n— — ↓\nHDG —',
+      'hex: abc123 · —\n— ↓ · —\nHDG —',
     );
   });
 
   it('treats both vertical-rate bounds as level', () => {
-    expect(selectedAircraftLabel(aircraft({ vertRate: 128 }))).toBe('hex: abc123 —\n— — →\nHDG —');
+    expect(selectedAircraftLabel(aircraft({ vertRate: 128 }))).toBe('hex: abc123 · —\n— → · —\nHDG —');
   });
 
   it('rounds and normalizes finite tracks', () => {
-    expect(selectedAircraftLabel(aircraft({ track: -0.6 }))).toBe('hex: abc123 —\n— — →\nHDG 359°');
-    expect(selectedAircraftLabel(aircraft({ track: 360 }))).toBe('hex: abc123 —\n— — →\nHDG 000°');
+    expect(selectedAircraftLabel(aircraft({ track: -0.6 }))).toBe('hex: abc123 · —\n— → · —\nHDG 359°');
+    expect(selectedAircraftLabel(aircraft({ track: 360 }))).toBe('hex: abc123 · —\n— → · —\nHDG 000°');
   });
 
   it('never exposes invalid numeric values or throws for partial aircraft data', () => {
@@ -125,7 +125,7 @@ describe('selectedAircraftLabel', () => {
           track: Number.NaN,
         }),
       ),
-    ).toBe('hex: abc123 —\n— — →\nHDG —');
+    ).toBe('hex: abc123 · —\n— → · —\nHDG —');
   });
 });
 
@@ -198,6 +198,7 @@ describe('aircraftStyle', () => {
     );
     expect(text?.getTextAlign()).toBe('left');
     expect(text?.getTextBaseline()).toBe('bottom');
+    expect(text?.getRotateWithView()).toBe(false);
     expect(text?.getOffsetX()).toBeGreaterThan(0);
     expect(text?.getOffsetY()).toBeLessThan(0);
     expect(text?.getPadding()).toEqual([6, 8, 6, 8]);
