@@ -26,32 +26,47 @@ export function aircraftRotationRad(ac: Aircraft): number {
   return ((ac.track ?? 0) * Math.PI) / 180;
 }
 
-/** Prefer callsign labels, then registration, then hex ID. */
-export function markerLabel(ac: Aircraft): string {
-  const flight = ac.flight?.trim();
-  if (flight) return flight;
-  if (ac.registration) return `reg: ${ac.registration}`;
-  return `hex: ${ac.hex}`;
+function truncated(value: string): string {
+  return value.length > 12 ? `${value.slice(0, 11)}…` : value;
 }
 
-function extendedLabel(ac: Aircraft): string {
-  const base = markerLabel(ac);
-  const parts = [base];
-  if (ac.altitude != null) {
-    parts.push(ac.altitude === 'ground' ? 'GND' : `${ac.altitude} ft`);
-  }
-  if (ac.speed != null) {
-    parts.push(`${ac.speed} kt`);
-  }
-  return parts.join('\n');
+function finiteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+export function selectedAircraftLabel(ac: Aircraft): string {
+  const callsign = ac.flight?.trim();
+  const primary = truncated(callsign || `hex: ${ac.hex}`);
+  const registration = ac.registration?.trim();
+  const altitude =
+    ac.altitude === 'ground'
+      ? 'GND'
+      : finiteNumber(ac.altitude)
+        ? `${Math.round(ac.altitude).toLocaleString('en-US')} ft`
+        : '—';
+  const speed = finiteNumber(ac.speed) ? `${Math.round(ac.speed)} kt` : '—';
+  const verticalRate = [ac.vertRate, ac.baroRate, ac.geomRate].find(finiteNumber);
+  const verticalDirection =
+    verticalRate == null || (verticalRate >= -128 && verticalRate <= 128)
+      ? '→'
+      : verticalRate > 128
+        ? '↑'
+        : '↓';
+  const heading = finiteNumber(ac.track)
+    ? `HDG ${String(((Math.round(ac.track) % 360) + 360) % 360).padStart(3, '0')}°`
+    : 'HDG —';
+
+  return `${primary} · ${registration ? truncated(registration) : '—'}\n${altitude} ${verticalDirection} · ${speed}\n${heading}`;
 }
 
 export function aircraftStyle(
   ac: Aircraft,
   selected: boolean,
   zoom = 0,
-  labelConfig?: LabelConfig,
+  _labelConfig?: LabelConfig,
 ): Style {
+  void _labelConfig;
+
   const { shape, scale } = selectMarker(ac);
   const fill = aircraftFillColor(ac);
   const stroke = selected ? '#ffffff' : '#000000';
@@ -60,12 +75,21 @@ export function aircraftStyle(
   const markerScale =
     BASE_ICON_SCALE * markerZoomScale(zoom) * scale * (selected ? SELECTED_SCALE : 1);
 
-  const labelText =
-    labelConfig?.enabled === false
-      ? ''
-      : (labelConfig?.extended ?? 0) > 0
-        ? extendedLabel(ac)
-        : markerLabel(ac);
+  const text = selected
+    ? new Text({
+        text: selectedAircraftLabel(ac),
+        font: '600 12px/16px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        textAlign: 'left',
+        textBaseline: 'bottom',
+        rotateWithView: false,
+        offsetX: 24 * markerScale,
+        offsetY: -18 * markerScale,
+        padding: [6, 8, 6, 8],
+        fill: new Fill({ color: '#f8fafc' }),
+        backgroundFill: new Fill({ color: 'rgba(15, 23, 42, 0.88)' }),
+        backgroundStroke: new Stroke({ color: 'rgba(148, 163, 184, 0.35)', width: 1 }),
+      })
+    : undefined;
 
   return new Style({
     image: new Icon({
@@ -74,12 +98,6 @@ export function aircraftStyle(
       rotation,
       rotateWithView: true,
     }),
-    text: new Text({
-      text: labelText,
-      font: 'bold 12px/14px Tahoma, Geneva, sans-serif',
-      offsetY: -30 * markerScale,
-      fill: new Fill({ color: '#ffffff' }),
-      stroke: new Stroke({ color: 'rgba(0,0,0,0.75)', width: 3 }),
-    }),
+    text,
   });
 }
