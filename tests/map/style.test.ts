@@ -66,9 +66,7 @@ describe('selectedAircraftLabel', () => {
 
   it('truncates callsign and registration to twelve characters', () => {
     expect(
-      selectedAircraftLabel(
-        aircraft({ flight: 'ABCDEFGHIJKLM', registration: '1234567890123' }),
-      ),
+      selectedAircraftLabel(aircraft({ flight: 'ABCDEFGHIJKLM', registration: '1234567890123' })),
     ).toBe('ABCDEFGHIJK… 12345678901…\n— — →\nHDG —');
   });
 
@@ -142,10 +140,7 @@ describe('aircraftStyle', () => {
 
   it('shows the selected label even when general labels are disabled', () => {
     const ac = new Aircraft('abc123');
-    ac.update(
-      { hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450, track: 87 },
-      1,
-    );
+    ac.update({ hex: 'abc123', flight: 'CCA101', altitude: 32000, speed: 450, track: 87 }, 1);
     const text = aircraftStyle(ac, true, 0, {
       enabled: false,
       extended: 0,
