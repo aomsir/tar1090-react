@@ -48,7 +48,7 @@ export function AppShell() {
 
   useLiveData(controllerRef);
   useUrlSync();
-  usePlayback(controllerRef);
+  usePlayback(controllerRef, mapReadyVersion);
   useHistoryAircraftMarkers(controllerRef, mapReadyVersion);
   const trackSegments = useSelectedTrack();
   const mode = usePlaybackStore((s) => s.mode);

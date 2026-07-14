@@ -18,6 +18,7 @@ export interface HistoryPerformanceSnapshot {
 export class HistoryPerformanceRecorder {
   private readonly now: () => number;
   private readonly starts = new Map<HistoryPhase, number>();
+  private readonly origins = new Map<HistoryPhase, number>();
   private readonly phases: Partial<Record<HistoryPhase, number>> = {};
   private firstMapContentMs?: number;
   private fullMapContentMs?: number;
@@ -28,7 +29,9 @@ export class HistoryPerformanceRecorder {
 
   start(phase: HistoryPhase): void {
     if (this.starts.has(phase)) throw new Error(`History phase was already started: ${phase}`);
-    this.starts.set(phase, this.now());
+    const started = this.now();
+    this.starts.set(phase, started);
+    this.origins.set(phase, started);
   }
 
   end(phase: HistoryPhase): number {
@@ -40,12 +43,17 @@ export class HistoryPerformanceRecorder {
     return duration;
   }
 
+  elapsedSince(phase: HistoryPhase): number | undefined {
+    const started = this.origins.get(phase);
+    return started === undefined ? undefined : this.now() - started;
+  }
+
   markFirstMapContent(ms: number): void {
     this.firstMapContentMs ??= ms;
   }
 
   markFullMapContent(ms: number): void {
-    this.fullMapContentMs = ms;
+    this.fullMapContentMs ??= ms;
   }
 
   snapshot(): HistoryPerformanceSnapshot {

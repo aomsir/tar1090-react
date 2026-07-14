@@ -15,6 +15,7 @@ import type { HistoryPerformanceRecorder } from '@/features/playback/historyPerf
 
 export class HistoryStore {
   generation = 0;
+  performanceRecorder: { generation: number; recorder: HistoryPerformanceRecorder } | null = null;
   frames: AircraftSnapshot[] = [];
   passes: AircraftPass[] = [];
   drawablePassesRecentFirst: AircraftPass[] = [];
@@ -23,12 +24,14 @@ export class HistoryStore {
 
   setFrames(frames: AircraftSnapshot[]): void {
     this.generation += 1;
+    this.performanceRecorder = null;
     this.frames = [...frames].sort((a, b) => a.now - b.now);
     this.resetPassState();
   }
 
   reset(): void {
     this.generation += 1;
+    this.performanceRecorder = null;
     this.frames = [];
     this.resetPassState();
   }
@@ -104,6 +107,7 @@ export class HistoryStore {
 
   clearPassData(invalidate = true): void {
     if (invalidate) this.generation += 1;
+    if (invalidate) this.performanceRecorder = null;
     this.resetPassState();
   }
 

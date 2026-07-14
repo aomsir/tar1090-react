@@ -43,12 +43,26 @@ describe('HistoryPerformanceRecorder', () => {
     recorder.markFirstMapContent(10);
     recorder.markFirstMapContent(20);
     recorder.markFullMapContent(30);
+    recorder.markFullMapContent(40);
 
     expect(recorder.snapshot()).toEqual({
       phases: {},
       firstMapContentMs: 10,
       fullMapContentMs: 30,
     });
+  });
+
+  it('keeps the post-download origin after the phase ends for map timing callbacks', () => {
+    let now = 10;
+    const recorder = new HistoryPerformanceRecorder(() => now);
+
+    recorder.start('postDownload');
+    now = 30;
+    recorder.end('postDownload');
+    now = 55;
+
+    expect(recorder.elapsedSince('postDownload')).toBe(45);
+    expect(recorder.elapsedSince('fetch')).toBeUndefined();
   });
 });
 
@@ -63,15 +77,17 @@ describe('buildHistoryDayFixture', () => {
     expect(frames[0].aircraft.map(({ hex }) => hex)).toEqual(
       buildHistoryDayFixture()[0].aircraft.map(({ hex }) => hex),
     );
-    expect(frames.flatMap((frame) => frame.aircraft).some(({ altitude }) => altitude === 'ground')).toBe(
-      true,
-    );
-    expect(frames.flatMap((frame) => frame.aircraft).some(({ altitude }) => altitude === undefined)).toBe(
-      true,
-    );
-    expect(frames.flatMap((frame) => frame.aircraft).some(({ altitude }) => typeof altitude === 'number')).toBe(
-      true,
-    );
+    expect(
+      frames.flatMap((frame) => frame.aircraft).some(({ altitude }) => altitude === 'ground'),
+    ).toBe(true);
+    expect(
+      frames.flatMap((frame) => frame.aircraft).some(({ altitude }) => altitude === undefined),
+    ).toBe(true);
+    expect(
+      frames
+        .flatMap((frame) => frame.aircraft)
+        .some(({ altitude }) => typeof altitude === 'number'),
+    ).toBe(true);
     expect(frames[0].aircraft[1].lat).toBe(frames[1].aircraft[1].lat);
     expect(frames[0].aircraft.some(({ hex }) => hex === '000000')).toBe(true);
     expect(frames[1_920].aircraft.some(({ hex }) => hex === '000000')).toBe(true);

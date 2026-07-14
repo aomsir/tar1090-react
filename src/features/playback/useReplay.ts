@@ -37,6 +37,7 @@ export function useReplay(): {
       usePlaybackStore.getState().setMode('history');
       const { lat, lon } = useReceiverStore.getState();
       const { routeApiEnabled } = useToolbarStore.getState();
+      historyStore.performanceRecorder = { generation: historyStore.generation, recorder };
       recorder.start('postDownload');
       try {
         await historyStore.buildPassData(lat, lon, routeApiEnabled, recorder);

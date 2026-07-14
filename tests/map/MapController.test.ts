@@ -13,6 +13,7 @@ import {
   type MapSelection,
 } from '@/map/MapController';
 import type { PTracksLayerHandle } from '@/map/pTracksLayer';
+import type { TrackPoint } from '@/features/track/track';
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -128,6 +129,67 @@ describe('MapController selection helpers', () => {
 });
 
 describe('MapController controls', () => {
+  it('cancels an earlier progressive pTracks job before starting the next one', async () => {
+    const controller = new MapController(document.createElement('div'));
+    const source = (controller as unknown as { pTracksHandle: PTracksLayerHandle }).pTracksHandle
+      .source;
+    const points = (lon: number): TrackPoint[] => [
+      { lon, lat: 30, alt: 10_000, ts: 1_000, ground: false },
+      { lon: lon + 0.1, lat: 30.1, alt: 11_000, ts: 1_010, ground: false },
+    ];
+    let release: (() => void) | undefined;
+
+    const first = controller.showPTracks(
+      new Map([
+        ['first', points(110)],
+        ['old-later', points(111)],
+      ]),
+      { batchSize: 1, yieldToMain: () => new Promise<void>((resolve) => (release = resolve)) },
+    );
+    expect(source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    const second = controller.showPTracks(new Map([['replacement', points(120)]]));
+
+    release?.();
+    await Promise.all([first, second]);
+
+    expect(source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['replacement']);
+    controller.dispose();
+  });
+
+  it('cancels a pending pTracks job before clearing the source', async () => {
+    const controller = new MapController(document.createElement('div'));
+    const source = (controller as unknown as { pTracksHandle: PTracksLayerHandle }).pTracksHandle
+      .source;
+    let release: (() => void) | undefined;
+
+    const done = controller.showPTracks(
+      new Map([
+        [
+          'first',
+          [
+            { lon: 110, lat: 30, alt: 10_000, ts: 1_000, ground: false },
+            { lon: 110.1, lat: 30.1, alt: 11_000, ts: 1_010, ground: false },
+          ],
+        ],
+        [
+          'later',
+          [
+            { lon: 111, lat: 31, alt: 5_000, ts: 1_000, ground: false },
+            { lon: 111.1, lat: 31.1, alt: 6_000, ts: 1_010, ground: false },
+          ],
+        ],
+      ]),
+      { batchSize: 1, yieldToMain: () => new Promise<void>((resolve) => (release = resolve)) },
+    );
+
+    controller.clearPTracks();
+    release?.();
+    await done;
+
+    expect(source.getFeatures()).toHaveLength(0);
+    controller.dispose();
+  });
+
   it('creates the map without any default controls', () => {
     const el = document.createElement('div');
     const controller = new MapController(el);

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePlayback } from '@/features/playback/usePlayback';
 import { historyTrackClipCache } from '@/features/playback/usePlayback';
 import { Aircraft } from '@/domain/Aircraft';
@@ -13,14 +13,19 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import type { MapController } from '@/map/MapController';
 import type { AircraftSnapshot } from '@/data/types';
+import { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
+import type { PTracksSyncOptions } from '@/map/pTracksLayer';
 
 vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
 }));
 
-function Harness({ controller }: { controller: MapController }) {
-  const ref = useRef<MapController | null>(controller);
-  usePlayback(ref);
+function Harness({ controller, readyVersion = 0 }: { controller: MapController | null; readyVersion?: number }) {
+  const ref = useRef<MapController | null>(null);
+  useEffect(() => {
+    ref.current = controller;
+  }, [controller]);
+  usePlayback(ref, readyVersion);
   return null;
 }
 
@@ -101,6 +106,74 @@ describe('usePlayback', () => {
     expect(tracks.size).toBe(100);
     expect(tracks.has('hex100:100')).toBe(true);
     expect(tracks.has('hex0:0')).toBe(false);
+  });
+
+  it('synchronizes history tracks when the controller becomes ready', () => {
+    seedIndexedPasses(1);
+    usePlaybackStore.getState().setMode('history');
+    const controller = makeController();
+
+    const { rerender } = render(<Harness controller={null} readyVersion={0} />);
+
+    expect(controller.showPTracks).not.toHaveBeenCalled();
+    rerender(<Harness controller={controller} readyVersion={1} />);
+
+    expect(controller.showPTracks).toHaveBeenCalledOnce();
+  });
+
+  it('does not let callbacks from a stale progressive job mark the current generation recorder', () => {
+    seedIndexedPasses(1);
+    const controller = makeController();
+    const oldRecorder = new HistoryPerformanceRecorder(() => 10);
+    const currentRecorder = new HistoryPerformanceRecorder(() => 20);
+    oldRecorder.start('postDownload');
+    historyStore.performanceRecorder = {
+      generation: historyStore.generation,
+      recorder: oldRecorder,
+    };
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    const oldOptions = vi
+      .mocked(controller.showPTracks)
+      .mock.calls.at(-1)![1] as PTracksSyncOptions;
+
+    historyStore.setFrames(historyFrames(1));
+    currentRecorder.start('postDownload');
+    historyStore.performanceRecorder = {
+      generation: historyStore.generation,
+      recorder: currentRecorder,
+    };
+    expect(oldOptions.onFirstBatch).toEqual(expect.any(Function));
+    expect(oldOptions.onComplete).toEqual(expect.any(Function));
+    oldOptions.onFirstBatch!();
+    oldOptions.onComplete!();
+
+    expect(oldRecorder.snapshot().firstMapContentMs).toBeUndefined();
+    expect(oldRecorder.snapshot().fullMapContentMs).toBeUndefined();
+    expect(currentRecorder.snapshot().firstMapContentMs).toBeUndefined();
+    expect(currentRecorder.snapshot().fullMapContentMs).toBeUndefined();
+  });
+
+  it('marks first and full progressive map content relative to post-download start', () => {
+    seedIndexedPasses(1);
+    const controller = makeController();
+    let now = 10;
+    const recorder = new HistoryPerformanceRecorder(() => now);
+    recorder.start('postDownload');
+    historyStore.performanceRecorder = { generation: historyStore.generation, recorder };
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    const options = vi.mocked(controller.showPTracks).mock.calls.at(-1)![1] as PTracksSyncOptions;
+
+    now = 25;
+    options.onFirstBatch!();
+    now = 45;
+    options.onComplete!();
+
+    expect(recorder.snapshot().firstMapContentMs).toBe(15);
+    expect(recorder.snapshot().fullMapContentMs).toBe(35);
   });
 
   it('synchronizes tracks built from history frames when buildPassData bumps the live tick', async () => {

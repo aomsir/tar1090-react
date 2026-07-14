@@ -42,43 +42,71 @@ export function extractTrackPoints(frames: AircraftSnapshot[], hex: string): Tra
 
 const colorOf = (p: TrackPoint): string => hslString(altitudeColor(p.alt));
 
+function lastCoord(segment: TrackSegment): [number, number] | undefined {
+  return segment.coords[segment.coords.length - 1];
+}
+
+const continuingSegments = new WeakSet<TrackSegment>();
+
+export function trackSegmentContinues(segment: TrackSegment): boolean {
+  return continuingSegments.has(segment);
+}
+
+export function* iterateTrackSegments(
+  points: Iterable<TrackPoint>,
+  opts: { gapThresholdSec?: number } = {},
+): Generator<TrackSegment> {
+  const gap = opts.gapThresholdSec ?? 90;
+  let cur: TrackSegment | null = null;
+  let prev: TrackPoint | null = null;
+
+  // A continuous final LineString is complete only after its last point is consumed.
+  for (const point of points) {
+    const coord: [number, number] = [point.lon, point.lat];
+    if (prev && point.ts - prev.ts > gap) {
+      if (cur) {
+        continuingSegments.add(cur);
+        yield cur;
+        cur = null;
+      }
+      const estimated: TrackSegment = {
+        coords: [[prev.lon, prev.lat], coord],
+        colorKey: colorOf(prev),
+        ground: false,
+        estimated: true,
+      };
+      continuingSegments.add(estimated);
+      yield estimated;
+    }
+
+    const key = colorOf(point);
+    if (cur && cur.colorKey === key && cur.ground === point.ground) {
+      cur.coords.push(coord);
+    } else {
+      const prior: TrackSegment | null = cur;
+      let startCoord: [number, number] | undefined;
+      if (prior) {
+        startCoord = lastCoord(prior);
+        continuingSegments.add(prior);
+        yield prior;
+      }
+      cur = {
+        coords: startCoord ? [startCoord, coord] : [coord],
+        colorKey: key,
+        ground: point.ground,
+        estimated: false,
+        label: point.ground ? 'GND' : typeof point.alt === 'number' ? `${point.alt} ft` : undefined,
+      };
+    }
+    prev = point;
+  }
+
+  if (cur) yield cur;
+}
+
 export function buildTrackSegments(
   points: TrackPoint[],
   opts: { gapThresholdSec?: number } = {},
 ): TrackSegment[] {
-  const gap = opts.gapThresholdSec ?? 90;
-  const segs: TrackSegment[] = [];
-  let cur: TrackSegment | null = null;
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    const coord: [number, number] = [p.lon, p.lat];
-    if (i > 0) {
-      const prev = points[i - 1];
-      if (p.ts - prev.ts > gap) {
-        segs.push({
-          coords: [[prev.lon, prev.lat], coord],
-          colorKey: colorOf(prev),
-          ground: false,
-          estimated: true,
-        });
-        cur = null;
-      }
-    }
-    const key = colorOf(p);
-    if (cur && cur.colorKey === key && cur.ground === p.ground) {
-      cur.coords.push(coord);
-    } else {
-      const startCoord: [number, number] | null =
-        cur && cur.coords.length ? cur.coords[cur.coords.length - 1] : null;
-      cur = {
-        coords: startCoord ? [startCoord, coord] : [coord],
-        colorKey: key,
-        ground: p.ground,
-        estimated: false,
-        label: p.ground ? 'GND' : typeof p.alt === 'number' ? `${p.alt} ft` : undefined,
-      };
-      segs.push(cur);
-    }
-  }
-  return segs;
+  return Array.from(iterateTrackSegments(points, opts));
 }

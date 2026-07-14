@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPTracksLayer, syncPTracks } from '@/map/pTracksLayer';
+import { createPTracksLayer, syncPTracks, syncPTracksProgressive } from '@/map/pTracksLayer';
 import type { TrackPoint } from '@/features/track/track';
 
 describe('createPTracksLayer', () => {
@@ -188,5 +188,303 @@ describe('syncPTracks', () => {
     expect(() => syncPTracks(handle.source, new Map([['mixed', [point, [point, point]]]]))).toThrow(
       TypeError,
     );
+  });
+});
+
+describe('syncPTracksProgressive', () => {
+  const points = (lon: number): TrackPoint[] => [
+    { lon, lat: 30, alt: 10_000, ts: 1_000, ground: false },
+    { lon: lon + 0.1, lat: 30.1, alt: 11_000, ts: 1_010, ground: false },
+  ];
+
+  it('adds the first batch synchronously before yielding later batches', async () => {
+    const handle = createPTracksLayer();
+    let release: (() => void) | undefined;
+    const yieldToMain = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        [
+          'first',
+          [
+            { lon: 110, lat: 30, alt: 10_000, ts: 1_000, ground: false },
+            { lon: 110.1, lat: 30.1, alt: 11_000, ts: 1_010, ground: false },
+          ],
+        ],
+        [
+          'later',
+          [
+            { lon: 111, lat: 31, alt: 5_000, ts: 1_000, ground: false },
+            { lon: 111.1, lat: 31.1, alt: 6_000, ts: 1_010, ground: false },
+          ],
+        ],
+      ]),
+      { batchSize: 1, yieldToMain },
+    );
+
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+    ]);
+    expect(yieldToMain).toHaveBeenCalledOnce();
+
+    release?.();
+    await job.done;
+
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+      'later',
+    ]);
+  });
+
+  it('updates retained feature objects in place and removes stale features before adding', async () => {
+    const handle = createPTracksLayer();
+    await syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['retained', points(110)],
+        ['stale', points(111)],
+      ]),
+    ).done;
+    const retained = handle.source
+      .getFeatures()
+      .find((feature) => feature.get('trackKey') === 'retained')!;
+    const originalCoordinates = retained.getGeometry()!.getCoordinates();
+
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['retained', points(120)],
+        ['added', points(121)],
+      ]),
+      { batchSize: 1, yieldToMain: async () => {} },
+    );
+
+    expect(
+      handle.source.getFeatures().find((feature) => feature.get('trackKey') === 'retained'),
+    ).toBe(retained);
+    expect(retained.getGeometry()!.getCoordinates()).not.toEqual(originalCoordinates);
+    expect(handle.source.getFeatureById('stale:0:0')).toBeNull();
+    await job.done;
+    expect(handle.source.getFeatureById('added:0:0')).toBeDefined();
+  });
+
+  it('stops adding later batches after cancellation and resolves done normally', async () => {
+    const handle = createPTracksLayer();
+    let release: (() => void) | undefined;
+    const onComplete = vi.fn();
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['first', points(110)],
+        ['later', points(111)],
+      ]),
+      {
+        batchSize: 1,
+        yieldToMain: () =>
+          new Promise<void>((resolve) => {
+            release = resolve;
+          }),
+        onComplete,
+      },
+    );
+
+    job.cancel();
+    release?.();
+    await job.done;
+
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+    ]);
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('uses distinct stable ids for same-track subpaths and keeps all selected subpaths visible', async () => {
+    const handle = createPTracksLayer();
+    await syncPTracksProgressive(handle.source, new Map([['crossing', [points(110), points(120)]]]))
+      .done;
+
+    handle.setSelectedKey('crossing');
+
+    expect(handle.source.getFeatures().map((feature) => feature.getId())).toEqual([
+      'crossing:0:1',
+      'crossing:1:1',
+    ]);
+    expect(handle.source.getFeatures().every(handle.isFeatureVisible)).toBe(true);
+  });
+
+  it('fires first and completion callbacks once for an empty desired set', async () => {
+    const handle = createPTracksLayer();
+    syncPTracks(handle.source, new Map([['stale', points(110)]]));
+    const onFirstBatch = vi.fn();
+    const onComplete = vi.fn();
+
+    await syncPTracksProgressive(handle.source, new Map(), { onFirstBatch, onComplete }).done;
+
+    expect(handle.source.getFeatures()).toHaveLength(0);
+    expect(onFirstBatch).toHaveBeenCalledOnce();
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it.each([Number.NaN, 0, -1, 1.5, Number.POSITIVE_INFINITY])(
+    'normalizes invalid batch size %s without skipping features or hanging',
+    async (batchSize) => {
+      const handle = createPTracksLayer();
+
+      await syncPTracksProgressive(
+        handle.source,
+        new Map([
+          ['first', points(110)],
+          ['second', points(111)],
+        ]),
+        { batchSize, yieldToMain: async () => {} },
+      ).done;
+
+      expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+        'first',
+        'second',
+      ]);
+    },
+  );
+
+  it('does not inspect later paths until the scheduler releases the next batch', async () => {
+    const handle = createPTracksLayer();
+    let release: (() => void) | undefined;
+    let laterPointReads = 0;
+    const laterPoints = [] as TrackPoint[];
+    Object.defineProperties(laterPoints, {
+      0: {
+        enumerable: true,
+        get: () => {
+          laterPointReads += 1;
+          return { lon: 111, lat: 31, alt: 5_000, ts: 1_000, ground: false };
+        },
+      },
+      1: {
+        enumerable: true,
+        get: () => {
+          laterPointReads += 1;
+          return { lon: 111.1, lat: 31.1, alt: 6_000, ts: 1_010, ground: false };
+        },
+      },
+      length: { value: 2 },
+    });
+
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['first', points(110)],
+        ['later', laterPoints],
+      ]),
+      {
+        batchSize: 1,
+        yieldToMain: () => new Promise<void>((resolve) => (release = resolve)),
+      },
+    );
+
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    expect(laterPointReads).toBe(0);
+
+    release?.();
+    await job.done;
+
+    expect(laterPointReads).toBeGreaterThan(0);
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+      'later',
+    ]);
+  });
+
+  it('reads only the prefix needed to produce the first changing-color segment batch', async () => {
+    const handle = createPTracksLayer();
+    const releases: (() => void)[] = [];
+    let reads = 0;
+    const points = [] as TrackPoint[];
+    for (let index = 0; index < 8; index += 1) {
+      Object.defineProperty(points, index, {
+        enumerable: true,
+        get: () => {
+          reads = Math.max(reads, index + 1);
+          return {
+            lon: 110 + index / 10,
+            lat: 30,
+            alt: index % 2 === 0 ? 1_000 : 35_000,
+            ts: 1_000 + index * 10,
+            ground: false,
+          };
+        },
+      });
+    }
+    Object.defineProperty(points, 'length', { value: 8 });
+
+    const job = syncPTracksProgressive(handle.source, new Map([['changing', points]]), {
+      batchSize: 1,
+      yieldToMain: () =>
+        new Promise<void>((resolve) => {
+          releases.push(resolve);
+        }),
+    });
+
+    expect(handle.source.getFeatures()).toHaveLength(1);
+    expect(reads).toBe(3);
+
+    releases.shift()?.();
+    await Promise.resolve();
+    expect(reads).toBeGreaterThan(3);
+    job.cancel();
+    releases.shift()?.();
+    await job.done;
+  });
+
+  it('absorbs callback and scheduler errors without rejecting done or adding later batches', async () => {
+    const handle = createPTracksLayer();
+    const onComplete = vi.fn();
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['first', points(110)],
+        ['later', points(111)],
+      ]),
+      {
+        batchSize: 1,
+        onFirstBatch: () => {
+          throw new Error('first callback failed');
+        },
+        onComplete,
+      },
+    );
+
+    await expect(job.done).resolves.toBeUndefined();
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    expect(onComplete).not.toHaveBeenCalled();
+
+    const schedulerFailure = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['first', points(120)],
+        ['later', points(121)],
+      ]),
+      { batchSize: 1, yieldToMain: async () => Promise.reject(new Error('scheduler failed')) },
+    );
+
+    await expect(schedulerFailure.done).resolves.toBeUndefined();
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+  });
+
+  it('absorbs completion callback errors without rejecting done', async () => {
+    const handle = createPTracksLayer();
+    const job = syncPTracksProgressive(handle.source, new Map([['only', points(110)]]), {
+      onComplete: () => {
+        throw new Error('completion callback failed');
+      },
+    });
+
+    await expect(job.done).resolves.toBeUndefined();
+    expect(handle.source.getFeatures()).toHaveLength(1);
   });
 });

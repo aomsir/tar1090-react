@@ -10,7 +10,7 @@ import type { MapController } from '@/map/MapController';
 
 export const historyTrackClipCache = new HistoryTrackClipCache();
 
-export function usePlayback(controllerRef: RefObject<MapController | null>): void {
+export function usePlayback(controllerRef: RefObject<MapController | null>, readyVersion = 0): void {
   const mode = usePlaybackStore((s) => s.mode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const speed = usePlaybackStore((s) => s.speed);
@@ -39,8 +39,28 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
       // Use 3× median frame interval as gap threshold to avoid false
       // "estimated" dashes when frames were sampled at a coarser step.
       const gap = historyStore.frameInterval() * 3;
-      if (data.size > 0) controllerRef.current?.showPTracks(data, gap);
-      else controllerRef.current?.clearPTracks();
+      const performance = historyStore.performanceRecorder;
+      const generation = historyStore.generation;
+      const markMapContent = (kind: 'first' | 'full'): void => {
+        if (
+          performance?.generation !== generation ||
+          historyStore.generation !== generation ||
+          historyStore.performanceRecorder !== performance
+        ) {
+          return;
+        }
+        const elapsed = performance.recorder.elapsedSince('postDownload');
+        if (elapsed === undefined) return;
+        if (kind === 'first') performance.recorder.markFirstMapContent(elapsed);
+        else performance.recorder.markFullMapContent(elapsed);
+      };
+      if (data.size > 0) {
+        controllerRef.current?.showPTracks(data, {
+          gapThresholdSec: gap,
+          onFirstBatch: () => markMapContent('first'),
+          onComplete: () => markMapContent('full'),
+        });
+      } else controllerRef.current?.clearPTracks();
     } else {
       historyTrackClipCache.clear();
       controllerRef.current?.clearPTracks();
@@ -53,6 +73,7 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
     altitudeFilterEnabled,
     altitudeFilterMin,
     altitudeFilterMax,
+    readyVersion,
     controllerRef,
   ]);
 
