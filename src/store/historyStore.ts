@@ -13,6 +13,7 @@ import { useHistoryStatsStore } from './historyStatsStore';
 import type { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
 
 export class HistoryStore {
+  generation = 0;
   frames: AircraftSnapshot[] = [];
   passes: AircraftPass[] = [];
   drawablePassesRecentFirst: AircraftPass[] = [];
@@ -20,10 +21,12 @@ export class HistoryStore {
   private passById = new Map<string, AircraftPass>();
 
   setFrames(frames: AircraftSnapshot[]): void {
+    this.generation += 1;
     this.frames = [...frames].sort((a, b) => a.now - b.now);
   }
 
   reset(): void {
+    this.generation += 1;
     this.frames = [];
     this.clearPassData();
   }

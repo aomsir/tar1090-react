@@ -18,6 +18,7 @@ import { createPTracksLayer, syncPTracks, type PTracksLayerHandle } from './pTra
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
 import type { TrackPoint } from '@/features/track/track';
+import type { HistoryTrackPaths } from '@/features/playback/historyTrackSelection';
 
 export const GAODE_BASEMAP_URL =
   'https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}';
@@ -192,7 +193,10 @@ export class MapController {
     this.trackHandle.source.clear();
   }
 
-  showPTracks(tracksMap: globalThis.Map<string, TrackPoint[]>, gapThresholdSec?: number): void {
+  showPTracks(
+    tracksMap: HistoryTrackPaths | globalThis.Map<string, TrackPoint[]>,
+    gapThresholdSec?: number,
+  ): void {
     syncPTracks(this.pTracksHandle.source, tracksMap, gapThresholdSec);
   }
 

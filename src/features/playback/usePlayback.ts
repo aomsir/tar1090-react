@@ -5,8 +5,10 @@ import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
-import { selectHistoryTrackMap } from './historyTracks';
+import { HistoryTrackClipCache, selectHistoryTrackPaths } from './historyTrackSelection';
 import type { MapController } from '@/map/MapController';
+
+export const historyTrackClipCache = new HistoryTrackClipCache();
 
 export function usePlayback(controllerRef: RefObject<MapController | null>): void {
   const mode = usePlaybackStore((s) => s.mode);
@@ -24,11 +26,15 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
       const altitudeFilter = altitudeFilterEnabled
         ? { min: altitudeFilterMin, max: altitudeFilterMax }
         : undefined;
-      const data = selectHistoryTrackMap(
+      const data = selectHistoryTrackPaths(
         historyStore.drawablePassesRecentFirst,
         historyTrackLimit,
         selectedPassId,
-        altitudeFilter,
+        {
+          generation: historyStore.generation,
+          altitudeRange: altitudeFilter,
+          cache: historyTrackClipCache,
+        },
       );
       // Use 3× median frame interval as gap threshold to avoid false
       // "estimated" dashes when frames were sampled at a coarser step.
@@ -36,6 +42,7 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
       if (data.size > 0) controllerRef.current?.showPTracks(data, gap);
       else controllerRef.current?.clearPTracks();
     } else {
+      historyTrackClipCache.clear();
       controllerRef.current?.clearPTracks();
     }
   }, [

@@ -145,4 +145,48 @@ describe('syncPTracks', () => {
     expect(style(first, 1).getStroke()).toBeNull();
     expect(style(second, 1).getStroke()).toBeDefined();
   });
+
+  it('renders every clipped subpath for a pass', () => {
+    const handle = createPTracksLayer();
+    syncPTracks(
+      handle.source,
+      new Map([
+        [
+          'crossing',
+          [
+            [
+              { lon: 110, lat: 30, alt: 5_000, ts: 1_000, ground: false },
+              { lon: 110.1, lat: 30.1, alt: 10_000, ts: 1_010, ground: false },
+            ],
+            [
+              { lon: 110.2, lat: 30.2, alt: 10_000, ts: 1_020, ground: false },
+              { lon: 110.3, lat: 30.3, alt: 5_000, ts: 1_030, ground: false },
+            ],
+          ],
+        ],
+      ]),
+    );
+
+    expect(handle.source.getFeatures()).toHaveLength(2);
+    expect(handle.source.getFeatures().every((feature) => feature.get('trackKey') === 'crossing')).toBe(
+      true,
+    );
+  });
+
+  it('ignores empty legacy and nested tracks', () => {
+    const handle = createPTracksLayer();
+
+    syncPTracks(handle.source, new Map([['empty-legacy', []], ['empty-nested', []]]));
+
+    expect(handle.source.getFeatures()).toHaveLength(0);
+  });
+
+  it('rejects mixed legacy and nested path input', () => {
+    const handle = createPTracksLayer();
+    const point = { lon: 110, lat: 30, alt: 5_000, ts: 1_000, ground: false };
+
+    expect(() => syncPTracks(handle.source, new Map([['mixed', [point, [point, point]]]]))).toThrow(
+      TypeError,
+    );
+  });
 });

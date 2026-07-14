@@ -7,6 +7,29 @@ import Style from 'ol/style/Style';
 import Stroke from 'ol/style/Stroke';
 import type { TrackPoint } from '@/features/track/track';
 import { buildTrackSegments } from '@/features/track/track';
+import type { HistoryTrackPaths } from '@/features/playback/historyTrackSelection';
+
+type LegacyHistoryTrackPaths = Map<string, TrackPoint[]>;
+
+function isTrackPoint(value: unknown): value is TrackPoint {
+  if (!value || typeof value !== 'object') return false;
+  const point = value as Partial<TrackPoint>;
+  return (
+    typeof point.lon === 'number' &&
+    typeof point.lat === 'number' &&
+    typeof point.ts === 'number' &&
+    typeof point.ground === 'boolean'
+  );
+}
+
+function asTrackPaths(value: unknown, trackKey: string): readonly TrackPoint[][] {
+  if (!Array.isArray(value) || value.length === 0) return [];
+  if (value.every(isTrackPoint)) return [value];
+  if (value.every(Array.isArray) && value.every((path) => path.every(isTrackPoint))) {
+    return value as TrackPoint[][];
+  }
+  throw new TypeError(`Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`);
+}
 
 export interface PTracksLayerHandle {
   layer: VectorLayer<VectorSource>;
@@ -51,21 +74,24 @@ export function createPTracksLayer(): PTracksLayerHandle {
 
 export function syncPTracks(
   source: VectorSource,
-  tracksMap: Map<string, TrackPoint[]>,
+  tracksMap: HistoryTrackPaths | LegacyHistoryTrackPaths,
   gapThresholdSec?: number,
 ): void {
   source.clear();
-  for (const [trackKey, points] of tracksMap) {
-    const segments = buildTrackSegments(points, { gapThresholdSec });
-    for (const seg of segments) {
-      if (seg.coords.length < 2) continue;
-      const feature = new Feature({
-        geometry: new LineString(seg.coords.map(([lon, lat]) => fromLonLat([lon, lat]))),
-      });
-      feature.set('trackKey', trackKey);
-      feature.set('colorKey', seg.colorKey);
-      feature.set('estimated', seg.estimated);
-      source.addFeature(feature);
+  for (const [trackKey, value] of tracksMap) {
+    const paths = asTrackPaths(value, trackKey);
+    for (const points of paths) {
+      const segments = buildTrackSegments(points, { gapThresholdSec });
+      for (const seg of segments) {
+        if (seg.coords.length < 2) continue;
+        const feature = new Feature({
+          geometry: new LineString(seg.coords.map(([lon, lat]) => fromLonLat([lon, lat]))),
+        });
+        feature.set('trackKey', trackKey);
+        feature.set('colorKey', seg.colorKey);
+        feature.set('estimated', seg.estimated);
+        source.addFeature(feature);
+      }
     }
   }
 }

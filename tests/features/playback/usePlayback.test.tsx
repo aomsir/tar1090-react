@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { usePlayback } from '@/features/playback/usePlayback';
+import { historyTrackClipCache } from '@/features/playback/usePlayback';
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
 import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
@@ -120,9 +121,27 @@ describe('usePlayback', () => {
     const tracks = vi.mocked(controller.showPTracks).mock.calls.at(-1)![0];
     expect([...tracks.keys()]).toEqual(['def456:100000', 'abc123:100']);
     expect(tracks.get('def456:100000')).toEqual([
+      [
       expect.objectContaining({ lon: 6, lat: 5, ts: 100_000 }),
       expect.objectContaining({ lon: 8, lat: 7, ts: 100_001 }),
+      ],
     ]);
+  });
+
+  it('increments the history generation when frames are replaced', () => {
+    const generation = historyStore.generation;
+
+    historyStore.setFrames(historyFrames(1));
+
+    expect(historyStore.generation).toBe(generation + 1);
+  });
+
+  it('increments the history generation when history is reset', () => {
+    const generation = historyStore.generation;
+
+    historyStore.reset();
+
+    expect(historyStore.generation).toBe(generation + 1);
   });
 
   it('resynchronizes built history tracks after a limit change without rebuilding passes', async () => {
@@ -225,6 +244,15 @@ describe('usePlayback', () => {
     render(<Harness controller={controller} />);
 
     expect(controller.clearPTracks).toHaveBeenCalled();
+  });
+
+  it('clears cached clipped paths when leaving history mode', () => {
+    historyTrackClipCache.setGeneration(1);
+    historyTrackClipCache.set('pass', { min: 0, max: 10_000 }, [[]]);
+    const controller = makeController();
+    render(<Harness controller={controller} />);
+
+    expect(historyTrackClipCache.size).toBe(0);
   });
 
   it('clears pTracks when history pass data is unavailable', () => {
