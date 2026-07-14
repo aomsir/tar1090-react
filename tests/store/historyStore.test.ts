@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
+import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import type { AircraftSnapshot } from '@/data/types';
+import { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
 
 const { enrichAircraft, routeService } = vi.hoisted(() => ({
   enrichAircraft: vi.fn(async () => {}),
@@ -74,6 +76,58 @@ describe('pass data', () => {
     await historyStore.buildPassData();
     expect(historyStore.passes).toHaveLength(1);
     expect(historyStore.passTracksData?.size).toBe(1);
+  });
+
+  it('records pass construction, enrichment, and statistics when given a recorder', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000 }])]);
+    const recorder = new HistoryPerformanceRecorder(() => 0);
+
+    await historyStore.buildPassData(undefined, undefined, false, recorder);
+
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0, statistics: 0 });
+  });
+
+  it('closes the passes phase and propagates pass construction failures', async () => {
+    const brokenFrame = frame(1000);
+    Object.defineProperty(brokenFrame, 'aircraft', {
+      get: () => {
+        throw new Error('pass build failed');
+      },
+    });
+    historyStore.setFrames([brokenFrame]);
+    const recorder = new HistoryPerformanceRecorder(() => 0);
+
+    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow(
+      'pass build failed',
+    );
+
+    expect(recorder.snapshot().phases).toEqual({ passes: 0 });
+  });
+
+  it('closes the enrichment phase and propagates enrichment failures', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000 }])]);
+    enrichAircraft.mockRejectedValueOnce(new Error('enrichment failed'));
+    const recorder = new HistoryPerformanceRecorder(() => 0);
+
+    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow(
+      'enrichment failed',
+    );
+
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0 });
+  });
+
+  it('closes the statistics phase and propagates statistics failures', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'aa', lat: 30, lon: 110, altitude: 10000 }])]);
+    vi.spyOn(useHistoryStatsStore.getState(), 'setStats').mockImplementationOnce(() => {
+      throw new Error('statistics failed');
+    });
+    const recorder = new HistoryPerformanceRecorder(() => 0);
+
+    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow(
+      'statistics failed',
+    );
+
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0, statistics: 0 });
   });
 
   it('buildPassData stores canonical passes, pass keyed tracks, and supports pass lookup', async () => {

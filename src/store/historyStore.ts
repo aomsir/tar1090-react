@@ -10,6 +10,7 @@ import { ROUTE_API_URL } from '@/config/api';
 import { useLiveTick } from './liveTick';
 import { computeHistoryStats } from '@/features/stats/historyStats';
 import { useHistoryStatsStore } from './historyStatsStore';
+import type { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
 
 export class HistoryStore {
   frames: AircraftSnapshot[] = [];
@@ -32,12 +33,27 @@ export class HistoryStore {
     return this.passById.get(passId) ?? null;
   }
 
-  async buildPassData(siteLat?: number, siteLon?: number, routeApiEnabled = false): Promise<void> {
-    this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
-    this.drawablePassesRecentFirst = buildDrawablePassIndex(this.passes);
-    this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
-    this.passById = new Map(this.passes.map((pass) => [pass.passId, pass]));
-    await Promise.all(this.passes.map((pass) => enrichAircraft(pass.aircraft)));
+  async buildPassData(
+    siteLat?: number,
+    siteLon?: number,
+    routeApiEnabled = false,
+    recorder?: HistoryPerformanceRecorder,
+  ): Promise<void> {
+    recorder?.start('passes');
+    try {
+      this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
+      this.drawablePassesRecentFirst = buildDrawablePassIndex(this.passes);
+      this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
+      this.passById = new Map(this.passes.map((pass) => [pass.passId, pass]));
+    } finally {
+      recorder?.end('passes');
+    }
+    recorder?.start('enrichment');
+    try {
+      await Promise.all(this.passes.map((pass) => enrichAircraft(pass.aircraft)));
+    } finally {
+      recorder?.end('enrichment');
+    }
 
     if (routeApiEnabled) {
       const callsigns = new Set<string>();
@@ -49,7 +65,12 @@ export class HistoryStore {
       await routeService.flush(ROUTE_API_URL);
     }
 
-    useHistoryStatsStore.getState().setStats(computeHistoryStats(this.frames, this.passes));
+    recorder?.start('statistics');
+    try {
+      useHistoryStatsStore.getState().setStats(computeHistoryStats(this.frames, this.passes));
+    } finally {
+      recorder?.end('statistics');
+    }
     useLiveTick.getState().bump();
   }
 

@@ -166,6 +166,7 @@ describe('useReplay', () => {
   it('clears selection and loading when history loading fails', async () => {
     let replay: ReturnType<typeof useReplay> | null = null;
     ensureLoadedMock.mockRejectedValueOnce(new Error('load failed'));
+    const log = vi.spyOn(console, 'info').mockImplementation(() => {});
     useSelectionStore.setState({
       selectedPassId: 'abc123:100',
       selectedHex: 'abc123',
@@ -189,6 +190,10 @@ describe('useReplay', () => {
       selectedHex: null,
     });
     expect(useSelectionStore.getState().selectedHexes).toEqual(new Set());
+    expect(log).toHaveBeenCalledWith(
+      '[history-performance]',
+      expect.objectContaining({ phases: { fetch: expect.any(Number) } }),
+    );
   });
 
   it('clears complete pass selection and pass data when exiting to live', async () => {

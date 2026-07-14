@@ -6,6 +6,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 import type { HistoryRange } from '@/data/historyLoader';
+import { HistoryPerformanceRecorder } from './historyPerformance';
 
 export function useReplay(): {
   enterHistory: (range: HistoryRange) => Promise<void>;
@@ -17,21 +18,35 @@ export function useReplay(): {
     if (store.mode === 'history' && store.range === range) return;
     useSelectionStore.getState().clearAll();
     store.setLoading(true);
+    const recorder = new HistoryPerformanceRecorder();
     try {
       store.setRange(range);
       historyLoader.reset();
-      await historyLoader.ensureLoaded(
-        (p) => usePlaybackStore.getState().setProgress(p.done, p.total),
-        range,
-      );
+      recorder.start('fetch');
+      try {
+        await historyLoader.ensureLoaded(
+          (p) => usePlaybackStore.getState().setProgress(p.done, p.total),
+          range,
+        );
+      } finally {
+        recorder.end('fetch');
+      }
       const bounds = historyStore.timeBounds();
       usePlaybackStore.getState().setBounds(bounds);
       if (bounds) usePlaybackStore.getState().setCursor(bounds.max);
       usePlaybackStore.getState().setMode('history');
       const { lat, lon } = useReceiverStore.getState();
       const { routeApiEnabled } = useToolbarStore.getState();
-      await historyStore.buildPassData(lat, lon, routeApiEnabled);
+      recorder.start('postDownload');
+      try {
+        await historyStore.buildPassData(lat, lon, routeApiEnabled, recorder);
+      } finally {
+        recorder.end('postDownload');
+      }
     } finally {
+      if (import.meta.env.DEV) {
+        console.info('[history-performance]', recorder.snapshot());
+      }
       usePlaybackStore.getState().setLoading(false);
     }
   }, []);
