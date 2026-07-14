@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CommandBar } from '@/ui/CommandBar/CommandBar';
 import { ListPanel } from '@/ui/ListPanel/ListPanel';
@@ -16,6 +16,7 @@ import { useLiveData } from '@/features/live/useLiveData';
 import { useUrlSync } from '@/app/useUrlSync';
 import { useIsMobile } from '@/app/useIsMobile';
 import { usePlayback } from '@/features/playback/usePlayback';
+import { useHistoryAircraftMarkers } from '@/features/playback/useHistoryAircraftMarkers';
 import { useSelectedTrack } from '@/features/track/useSelectedTrack';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useMapViewStore } from '@/store/mapViewStore';
@@ -32,6 +33,7 @@ import type { TrackPoint } from '@/features/track/track';
 export function AppShell() {
   const { t } = useTranslation();
   const controllerRef = useRef<MapController | null>(null);
+  const [mapReadyVersion, setMapReadyVersion] = useState(0);
   const selectedHex = useSelectionStore((s) => s.selectedHex);
   const selectedPassId = useSelectionStore((s) => s.selectedPassId);
   const selectedHexes = useSelectionStore((s) => s.selectedHexes);
@@ -47,6 +49,7 @@ export function AppShell() {
   useLiveData(controllerRef);
   useUrlSync();
   usePlayback(controllerRef);
+  useHistoryAircraftMarkers(controllerRef, mapReadyVersion);
   const trackSegments = useSelectedTrack();
   const mode = usePlaybackStore((s) => s.mode);
   const seedLoading = useSeedVersion((s) => s.loading);
@@ -109,33 +112,28 @@ export function AppShell() {
     else c.clearTrack();
   }, [trackSegments]);
 
-  // Live: show all live aircraft. History: show only the selected pass aircraft.
+  // Historical marker projection is maintained by useHistoryAircraftMarkers.
   useEffect(() => {
-    if (mode === 'live') {
-      let list = aircraftStore.list();
-      if (onlyMilitary) list = list.filter((ac) => ac.isMilitary);
-      if (isolation) {
-        if (selectedHexes.size > 0) list = list.filter((ac) => selectedHexes.has(ac.hex));
-        else if (selectedHex) list = list.filter((ac) => ac.hex === selectedHex);
-      }
-      if (filterGroundVehicles) list = list.filter((ac) => !ac.category?.startsWith('C'));
-      if (filterBlockedMLAT) list = list.filter((ac) => !ac.hex.startsWith('~'));
-      controllerRef.current?.syncAircraft(list);
+    if (mode !== 'live') return;
+    let list = aircraftStore.list();
+    if (onlyMilitary) list = list.filter((ac) => ac.isMilitary);
+    if (isolation) {
+      if (selectedHexes.size > 0) list = list.filter((ac) => selectedHexes.has(ac.hex));
+      else if (selectedHex) list = list.filter((ac) => ac.hex === selectedHex);
+    }
+    if (filterGroundVehicles) list = list.filter((ac) => !ac.category?.startsWith('C'));
+    if (filterBlockedMLAT) list = list.filter((ac) => !ac.hex.startsWith('~'));
+    controllerRef.current?.syncAircraft(list);
 
-      if (follow && selectedHex) {
-        const ac = aircraftStore.map.get(selectedHex);
-        if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
-          controllerRef.current?.centerOn(ac.lon, ac.lat);
-        }
+    if (follow && selectedHex) {
+      const ac = aircraftStore.map.get(selectedHex);
+      if (ac && typeof ac.lon === 'number' && typeof ac.lat === 'number') {
+        controllerRef.current?.centerOn(ac.lon, ac.lat);
       }
-    } else {
-      const pass = historyStore.getPass(selectedPassId);
-      controllerRef.current?.syncAircraft(pass ? [pass.aircraft] : []);
     }
   }, [
     mode,
     selectedHex,
-    selectedPassId,
     selectedHexes,
     onlyMilitary,
     isolation,
@@ -207,6 +205,7 @@ export function AppShell() {
       <MapView
         onReady={(controller) => {
           controllerRef.current = controller;
+          setMapReadyVersion((version) => version + 1);
           controller.onSelect((mapSelection) => {
             const selection = useSelectionStore.getState();
             if (mapSelection === null) {

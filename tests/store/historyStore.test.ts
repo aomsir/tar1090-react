@@ -41,6 +41,16 @@ describe('historyStore', () => {
     expect(historyStore.frameAt(9999)?.now).toBe(300);
   });
 
+  it('frameIndexAt returns the frameAt index, clamping before the first frame and after the last', () => {
+    historyStore.setFrames([frame(100), frame(200), frame(300)]);
+    expect(historyStore.frameIndexAt(50)).toBe(0);
+    expect(historyStore.frameIndexAt(250)).toBe(1);
+    expect(historyStore.frameIndexAt(300)).toBe(2);
+    expect(historyStore.frameIndexAt(9999)).toBe(2);
+    historyStore.reset();
+    expect(historyStore.frameIndexAt(100)).toBeNull();
+  });
+
   it('extractFrameAircraft builds positioned Aircraft from the nearest frame', () => {
     historyStore.setFrames([frame(200, [{ hex: 'abc', lat: 1, lon: 2, altitude: 1000 }])]);
     const list = historyStore.extractFrameAircraft(250);
@@ -144,6 +154,13 @@ describe('pass data', () => {
     expect(historyStore.getPass(historyStore.passes[0].passId)).toBe(historyStore.passes[0]);
     expect(historyStore.getPass(null)).toBeNull();
     expect(historyStore.getPass('missing')).toBeNull();
+  });
+
+  it('normalizes pass ids for lookup', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'abc123', lat: 30, lon: 110, altitude: 10000 }])]);
+    await historyStore.buildPassData();
+
+    expect(historyStore.getPass(' ABC123:1000 ')).toBe(historyStore.passes[0]);
   });
 
   it('buildPassData caches drawable passes with the most recent first', async () => {

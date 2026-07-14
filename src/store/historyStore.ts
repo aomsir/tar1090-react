@@ -33,7 +33,7 @@ export class HistoryStore {
 
   getPass(passId: string | null): AircraftPass | null {
     if (!passId) return null;
-    return this.passById.get(passId) ?? null;
+    return this.passById.get(passId.trim().toLowerCase()) ?? null;
   }
 
   async buildPassData(
@@ -47,7 +47,7 @@ export class HistoryStore {
       this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
       this.drawablePassesRecentFirst = buildDrawablePassIndex(this.passes);
       this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
-      this.passById = new Map(this.passes.map((pass) => [pass.passId, pass]));
+    this.passById = new Map(this.passes.map((pass) => [pass.passId.trim().toLowerCase(), pass]));
     } finally {
       recorder?.end('passes');
     }
@@ -100,11 +100,11 @@ export class HistoryStore {
     return { min: this.frames[0].now, max: this.frames[this.frames.length - 1].now };
   }
 
-  frameAt(t: number): AircraftSnapshot | null {
+  frameIndexAt(t: number): number | null {
     const n = this.frames.length;
     if (n === 0) return null;
-    if (t <= this.frames[0].now) return this.frames[0];
-    if (t >= this.frames[n - 1].now) return this.frames[n - 1];
+    if (t <= this.frames[0].now) return 0;
+    if (t >= this.frames[n - 1].now) return n - 1;
     let lo = 0;
     let hi = n - 1;
     let best = 0;
@@ -117,7 +117,12 @@ export class HistoryStore {
         hi = mid - 1;
       }
     }
-    return this.frames[best];
+    return best;
+  }
+
+  frameAt(t: number): AircraftSnapshot | null {
+    const index = this.frameIndexAt(t);
+    return index === null ? null : this.frames[index];
   }
 
   extractFrameAircraft(t: number): Aircraft[] {

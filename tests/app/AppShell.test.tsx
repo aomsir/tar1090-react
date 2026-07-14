@@ -321,7 +321,7 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(100, 10);
-    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'FIRST' }]);
+    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
 
     act(() => {
       capturedListOnSelect!('781860:44000');
@@ -549,7 +549,7 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
-  it('syncs only the selected aircraft marker in history mode', async () => {
+  it('syncs every positioned aircraft marker in the effective history frame', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -569,21 +569,39 @@ describe('AppShell', () => {
       capturedOnReady!(fakeController);
     });
 
-    // Before selection: empty aircraft list
-    expect(fakeController.syncAircraft).toHaveBeenCalledWith([]);
+    const lastList = fakeController.syncAircraft.mock.calls.at(-1)![0] as { hex: string }[];
+    expect(lastList.map((aircraft) => aircraft.hex)).toEqual(['781860', 'aaaaaa']);
+  });
 
-    fakeController.syncAircraft.mockClear();
+  it('does not re-sync history markers while cursor updates remain in the same frame', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [{ hex: '781860', lat: 25, lon: 120, altitude: 1000 }],
+      },
+      {
+        now: 200,
+        messages: 0,
+        aircraft: [{ hex: 'aaaaaa', lat: 30, lon: 110, altitude: 2000 }],
+      },
+    ]);
+    usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    usePlaybackStore.getState().setCursor(100);
+
+    render(<AppShell />);
     act(() => {
-      capturedListOnSelect!('781860:100');
+      capturedOnReady!(fakeController);
+    });
+    fakeController.syncAircraft.mockClear();
+
+    act(() => {
+      usePlaybackStore.getState().setCursor(120);
+      usePlaybackStore.getState().setCursor(199);
     });
 
-    // After selection: only the selected aircraft
-    const calls = fakeController.syncAircraft.mock.calls;
-    expect(calls.length).toBeGreaterThanOrEqual(1);
-    const lastList = calls[calls.length - 1][0] as { hex: string }[];
-    expect(lastList.length).toBe(1);
-    expect(lastList[0].hex).toBe('781860');
-    expect(fakeController.setSelectedTrackKey).toHaveBeenCalledWith('781860:100');
+    expect(fakeController.syncAircraft).not.toHaveBeenCalled();
   });
 
   it('centers map on live aircraft when selected from list in live mode', () => {
