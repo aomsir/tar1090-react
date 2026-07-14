@@ -51,6 +51,9 @@ interface ToolbarState {
   listWidth: number;
   routeApiEnabled: boolean;
   historyTrackLimit: HistoryTrackLimit;
+  altitudeFilterEnabled: boolean;
+  altitudeFilterMin: number;
+  altitudeFilterMax: number;
 
   // Actions
   toggle: (key: ToggleKey) => void;
@@ -62,6 +65,8 @@ interface ToolbarState {
   setListWidth: (w: number) => void;
   setRouteApiEnabled: (enabled: boolean) => void;
   setHistoryTrackLimit: (limit: HistoryTrackLimit) => void;
+  setAltitudeFilterEnabled: (enabled: boolean) => void;
+  setAltitudeFilterRange: (min: number, max: number) => void;
   toggleSettings: () => void;
   statsDashboardOpen: boolean;
   toggleStatsDashboard: () => void;
@@ -94,6 +99,9 @@ const DEFAULTS = {
   listWidth: 384,
   routeApiEnabled: false,
   historyTrackLimit: 1000 as HistoryTrackLimit,
+  altitudeFilterEnabled: false,
+  altitudeFilterMin: 0,
+  altitudeFilterMax: 45000,
 };
 
 const PERSISTED_TOOLBAR_KEYS = [
@@ -119,6 +127,9 @@ const PERSISTED_TOOLBAR_KEYS = [
   'listWidth',
   'routeApiEnabled',
   'historyTrackLimit',
+  'altitudeFilterEnabled',
+  'altitudeFilterMin',
+  'altitudeFilterMax',
 ] as const satisfies readonly (keyof typeof DEFAULTS)[];
 
 type PersistedToolbarState = Pick<typeof DEFAULTS, (typeof PERSISTED_TOOLBAR_KEYS)[number]>;
@@ -139,6 +150,9 @@ export function migrateToolbarState(persisted: unknown): Record<string, unknown>
       : {};
   delete state.routeApiUrl;
   state.historyTrackLimit = normalizeHistoryTrackLimit(state.historyTrackLimit);
+  if (state.altitudeFilterEnabled === undefined) state.altitudeFilterEnabled = false;
+  if (state.altitudeFilterMin === undefined) state.altitudeFilterMin = 0;
+  if (state.altitudeFilterMax === undefined) state.altitudeFilterMax = 45000;
   return state;
 }
 
@@ -156,13 +170,15 @@ export const useToolbarStore = create<ToolbarState>()(
       setRouteApiEnabled: (enabled) => set({ routeApiEnabled: enabled }),
       setHistoryTrackLimit: (historyTrackLimit) =>
         set({ historyTrackLimit: normalizeHistoryTrackLimit(historyTrackLimit) }),
+      setAltitudeFilterEnabled: (enabled) => set({ altitudeFilterEnabled: enabled }),
+      setAltitudeFilterRange: (min, max) => set({ altitudeFilterMin: min, altitudeFilterMax: max }),
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       toggleStatsDashboard: () => set((s) => ({ statsDashboardOpen: !s.statsDashboardOpen })),
       resetAll: () => set({ ...DEFAULTS }),
     }),
     {
       name: 'toolbar-settings',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown): ToolbarState =>
         migrateToolbarState(persisted) as unknown as ToolbarState,
       merge: (persisted, current) => {

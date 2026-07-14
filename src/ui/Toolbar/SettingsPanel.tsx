@@ -42,6 +42,11 @@ export function SettingsPanel() {
     setHistoryTrackLimit,
     toggleSettings,
     resetAll,
+    altitudeFilterEnabled,
+    setAltitudeFilterEnabled,
+    altitudeFilterMin,
+    altitudeFilterMax,
+    setAltitudeFilterRange,
   } = useToolbarStore();
 
   const unitOptions: { id: Units; label: string }[] = [
@@ -209,6 +214,43 @@ export function SettingsPanel() {
           </ListBox>
         </Select.Popover>
       </Select>
+      <div className="mt-3 space-y-3">
+        <Switch
+          isSelected={altitudeFilterEnabled}
+          onChange={(v) => setAltitudeFilterEnabled(v as boolean)}
+        >
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            {t('settings.historyTracks.altitudeFilter')}
+          </Switch.Content>
+        </Switch>
+        {altitudeFilterEnabled && (
+          <Slider
+            value={[altitudeFilterMin, altitudeFilterMax]}
+            onChange={(v) => {
+              const [min, max] = v as number[];
+              setAltitudeFilterRange(min, max);
+            }}
+            minValue={0}
+            maxValue={45000}
+            step={500}
+          >
+            <Label>
+              {t('settings.historyTracks.altitudeRange', {
+                min: altitudeFilterMin.toLocaleString(),
+                max: altitudeFilterMax.toLocaleString(),
+              })}
+            </Label>
+            <Slider.Track>
+              <Slider.Fill />
+              <Slider.Thumb />
+              <Slider.Thumb />
+            </Slider.Track>
+          </Slider>
+        )}
+      </div>
 
       <hr className="my-3 border-white/[0.08]" />
 

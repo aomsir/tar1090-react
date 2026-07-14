@@ -34,6 +34,8 @@ export interface SettingsResource {
   historyTracks: {
     title: string;
     allWarning: string;
+    altitudeFilter: string;
+    altitudeRange: string;
   };
   scale: {
     title: string;

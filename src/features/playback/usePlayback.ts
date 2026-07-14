@@ -14,14 +14,21 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
   const speed = usePlaybackStore((s) => s.speed);
   const version = useLiveTick((s) => s.version);
   const historyTrackLimit = useToolbarStore((s) => s.historyTrackLimit);
+  const altitudeFilterEnabled = useToolbarStore((s) => s.altitudeFilterEnabled);
+  const altitudeFilterMin = useToolbarStore((s) => s.altitudeFilterMin);
+  const altitudeFilterMax = useToolbarStore((s) => s.altitudeFilterMax);
   const selectedPassId = useSelectionStore((s) => s.selectedPassId);
 
   useEffect(() => {
     if (mode === 'history') {
+      const altitudeFilter = altitudeFilterEnabled
+        ? { min: altitudeFilterMin, max: altitudeFilterMax }
+        : undefined;
       const data = selectHistoryTrackMap(
         historyStore.drawablePassesRecentFirst,
         historyTrackLimit,
         selectedPassId,
+        altitudeFilter,
       );
       // Use 3× median frame interval as gap threshold to avoid false
       // "estimated" dashes when frames were sampled at a coarser step.
@@ -31,7 +38,16 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
     } else {
       controllerRef.current?.clearPTracks();
     }
-  }, [mode, version, historyTrackLimit, selectedPassId, controllerRef]);
+  }, [
+    mode,
+    version,
+    historyTrackLimit,
+    selectedPassId,
+    altitudeFilterEnabled,
+    altitudeFilterMin,
+    altitudeFilterMax,
+    controllerRef,
+  ]);
 
   useEffect(() => {
     if (mode !== 'history' || !isPlaying) return;

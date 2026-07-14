@@ -27,6 +27,8 @@ const zhCN: TranslationResource = {
     historyTracks: {
       title: '历史航迹',
       allWarning: '全部（可能影响性能）',
+      altitudeFilter: '高度过滤',
+      altitudeRange: '{{min}} – {{max}} ft',
     },
     scale: {
       title: '缩放',
