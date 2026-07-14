@@ -3,6 +3,7 @@ import i18n from '@/i18n';
 import { toDetail, toPassDetail } from '@/features/detail/aircraftDetail';
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
 
 function makeAircraft(overrides: Partial<Aircraft> = {}): Aircraft {
   const ac = new Aircraft('780ABC');
@@ -56,6 +57,7 @@ describe('aircraftDetail', () => {
       endTime: 160,
       aircraft: makeAircraft({ altitude: 1200, speed: 180 }),
       trackPoints: [],
+      altitudeSummary: summarizeTrackAltitude([]),
       maxAltitude: 38000,
       maxSpeed: 490,
       maxDistance: 42.34,
@@ -83,6 +85,7 @@ describe('aircraftDetail', () => {
       endTime: 100,
       aircraft: makeAircraft({ altitude: 'ground', speed: 0 }),
       trackPoints: [],
+      altitudeSummary: summarizeTrackAltitude([]),
       maxSpeed: 0,
       hadAltitude: true,
       hadGround: true,

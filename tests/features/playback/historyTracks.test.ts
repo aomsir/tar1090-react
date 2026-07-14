@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
 import {
   HISTORY_TRACK_LIMITS,
   buildDrawablePassIndex,
@@ -14,18 +15,21 @@ function pass(
   points = 2,
   altitudes?: (number | 'ground' | undefined)[],
 ): AircraftPass {
+  const trackPoints = Array.from({ length: points }, (_, i) => ({
+    lon: i,
+    lat: i,
+    ts: i,
+    ...(altitudes ? { alt: altitudes[i] } : {}),
+    ground: altitudes?.[i] === 'ground',
+  }));
   return {
     passId,
     hex: passId,
     startTime: endTime - 1,
     endTime,
     aircraft: {} as AircraftPass['aircraft'],
-    trackPoints: Array.from({ length: points }, (_, i) => ({
-      lon: i,
-      lat: i,
-      ts: i,
-      ...(altitudes ? { alt: altitudes[i] } : {}),
-    })),
+    trackPoints,
+    altitudeSummary: summarizeTrackAltitude(trackPoints),
     hadAltitude: !!altitudes,
     hadGround: false,
     hadEmergency: false,

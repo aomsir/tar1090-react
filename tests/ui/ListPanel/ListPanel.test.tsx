@@ -13,6 +13,7 @@ import { Aircraft } from '@/domain/Aircraft';
 import { historyStore } from '@/store/historyStore';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
 
 class ResizeObserverMock {
   static instances = new Set<ResizeObserverMock>();
@@ -61,16 +62,18 @@ function seedHistoryPasses(count: number): AircraftPass[] {
     const aircraft = new Aircraft(hex);
     aircraft.flight = `HIST${String(index).padStart(3, '0')}`;
     aircraft.altitude = 35_000 - index;
+    const trackPoints = [
+      { lon: index, lat: index, ts: 1_000 + index, ground: false },
+      { lon: index + 1, lat: index + 1, ts: 1_001 + index, ground: false },
+    ];
     return {
       passId: `${hex}:${1_000 + index}`,
       hex,
       startTime: 1_000 + index,
       endTime: 1_001 + index,
       aircraft,
-      trackPoints: [
-        { lon: index, lat: index, ts: 1_000 + index },
-        { lon: index + 1, lat: index + 1, ts: 1_001 + index },
-      ],
+      trackPoints,
+      altitudeSummary: summarizeTrackAltitude(trackPoints),
       maxAltitude: 35_000 - index,
       hadAltitude: true,
       hadGround: false,

@@ -3,6 +3,7 @@ import { Aircraft } from '@/domain/Aircraft';
 import { findCountry, flagPath } from '@/domain/country';
 import { distanceNm } from '@/domain/distance';
 import type { TrackPoint } from '@/features/track/track';
+import { summarizeTrackAltitude, type TrackAltitudeSummary } from './altitudeTracks';
 
 export const AIRCRAFT_PASS_ISOLATION_SECONDS = 12 * 60 * 60;
 
@@ -13,6 +14,7 @@ export interface AircraftPass {
   endTime: number;
   aircraft: Aircraft;
   trackPoints: TrackPoint[];
+  altitudeSummary: TrackAltitudeSummary;
   maxAltitude?: number;
   maxSpeed?: number;
   maxDistance?: number;
@@ -46,6 +48,7 @@ function createPass(hex: string, now: number): AircraftPass {
     endTime: now,
     aircraft,
     trackPoints: [],
+    altitudeSummary: { hasGround: false, hasUnknown: false },
     hadAltitude: false,
     hadGround: false,
     hadEmergency: false,
@@ -133,5 +136,6 @@ export function buildAircraftPasses(
     }
   }
 
+  for (const pass of passes) pass.altitudeSummary = summarizeTrackAltitude(pass.trackPoints);
   return passes.sort((a, b) => a.startTime - b.startTime || a.hex.localeCompare(b.hex));
 }

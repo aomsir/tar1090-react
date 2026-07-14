@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { usePlayback } from '@/features/playback/usePlayback';
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
 import { buildDrawablePassIndex } from '@/features/playback/historyTracks';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
@@ -24,16 +25,18 @@ function Harness({ controller }: { controller: MapController }) {
 
 function indexedPass(passId: string, endTime: number): AircraftPass {
   const hex = passId.split(':')[0]!;
+  const trackPoints = [
+    { lon: 0, lat: 0, ts: endTime - 1, ground: false },
+    { lon: 1, lat: 1, ts: endTime, ground: false },
+  ];
   return {
     passId,
     hex,
     startTime: endTime - 10,
     endTime,
     aircraft: new Aircraft(hex),
-    trackPoints: [
-      { lon: 0, lat: 0, ts: endTime - 1 },
-      { lon: 1, lat: 1, ts: endTime },
-    ],
+    trackPoints,
+    altitudeSummary: summarizeTrackAltitude(trackPoints),
     hadAltitude: false,
     hadGround: false,
     hadEmergency: false,
