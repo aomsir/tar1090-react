@@ -1,14 +1,15 @@
 import { Aircraft } from '@/domain/Aircraft';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
-import { buildAircraftPasses, type AircraftPass } from '@/features/playback/aircraftPasses';
+import type { AircraftPass } from '@/features/playback/aircraftPasses';
 import { buildDrawablePassIndex } from '@/features/playback/historyTracks';
+import { hydrateAircraftPasses, serializeHistoryStatisticsInput } from '@/features/playback/historyPreprocess';
+import { historyPreprocessClient } from '@/features/playback/historyPreprocessClient';
 import { enrichAircraft } from '@/domain/enrich';
 import { routeService } from '@/data/routeService';
 import { normalizeCallsign } from '@/domain/callsign';
 import { ROUTE_API_URL } from '@/config/api';
 import { useLiveTick } from './liveTick';
-import { computeHistoryStats } from '@/features/stats/historyStats';
 import { useHistoryStatsStore } from './historyStatsStore';
 import type { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
 
@@ -23,12 +24,13 @@ export class HistoryStore {
   setFrames(frames: AircraftSnapshot[]): void {
     this.generation += 1;
     this.frames = [...frames].sort((a, b) => a.now - b.now);
+    this.resetPassState();
   }
 
   reset(): void {
     this.generation += 1;
     this.frames = [];
-    this.clearPassData();
+    this.resetPassState();
   }
 
   getPass(passId: string | null): AircraftPass | null {
@@ -42,42 +44,70 @@ export class HistoryStore {
     routeApiEnabled = false,
     recorder?: HistoryPerformanceRecorder,
   ): Promise<void> {
+    const generation = this.generation;
+    const frames = this.frames;
     recorder?.start('passes');
+    let passes: AircraftPass[];
+    let preprocessFallback = false;
     try {
-      this.passes = buildAircraftPasses(this.frames, { siteLat, siteLon });
-      this.drawablePassesRecentFirst = buildDrawablePassIndex(this.passes);
-      this.passTracksData = new Map(this.passes.map((pass) => [pass.passId, pass.trackPoints]));
-    this.passById = new Map(this.passes.map((pass) => [pass.passId.trim().toLowerCase(), pass]));
+      const preprocessed = await historyPreprocessClient.preprocess(generation, frames, { siteLat, siteLon }, () => {
+        preprocessFallback = true;
+        recorder?.start('preprocessFallback');
+      });
+      if (generation !== this.generation) return;
+      passes = hydrateAircraftPasses(preprocessed.passes);
+      this.passes = passes;
+      this.drawablePassesRecentFirst = buildDrawablePassIndex(passes);
+      this.passTracksData = new Map(passes.map((pass) => [pass.passId, pass.trackPoints]));
+      this.passById = new Map(passes.map((pass) => [pass.passId.trim().toLowerCase(), pass]));
+      useLiveTick.getState().bump();
     } finally {
       recorder?.end('passes');
+      if (preprocessFallback) recorder?.end('preprocessFallback');
     }
+    if (generation !== this.generation) return;
     recorder?.start('enrichment');
     try {
-      await Promise.all(this.passes.map((pass) => enrichAircraft(pass.aircraft)));
+      await Promise.all(passes.map((pass) => enrichAircraft(pass.aircraft)));
     } finally {
       recorder?.end('enrichment');
     }
+    if (generation !== this.generation) return;
 
     if (routeApiEnabled) {
       const callsigns = new Set<string>();
-      for (const pass of this.passes) {
+      for (const pass of passes) {
         const callsign = normalizeCallsign(pass.aircraft.flight ?? '');
         if (callsign) callsigns.add(callsign);
       }
       for (const callsign of callsigns) routeService.enqueue(callsign);
       await routeService.flush(ROUTE_API_URL);
     }
+    if (generation !== this.generation) return;
 
     recorder?.start('statistics');
+    let statisticsFallback = false;
     try {
-      useHistoryStatsStore.getState().setStats(computeHistoryStats(this.frames, this.passes));
+      const input = serializeHistoryStatisticsInput(frames, passes);
+      const stats = await historyPreprocessClient.statistics(generation, input, () => {
+        statisticsFallback = true;
+        recorder?.start('statisticsFallback');
+      });
+      if (generation !== this.generation) return;
+      useHistoryStatsStore.getState().setStats(stats);
+      useLiveTick.getState().bump();
     } finally {
       recorder?.end('statistics');
+      if (statisticsFallback) recorder?.end('statisticsFallback');
     }
-    useLiveTick.getState().bump();
   }
 
-  clearPassData(): void {
+  clearPassData(invalidate = true): void {
+    if (invalidate) this.generation += 1;
+    this.resetPassState();
+  }
+
+  private resetPassState(): void {
     this.passes = [];
     this.drawablePassesRecentFirst = [];
     this.passTracksData = null;

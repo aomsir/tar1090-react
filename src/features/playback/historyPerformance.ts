@@ -2,8 +2,10 @@ export type HistoryPhase =
   | 'fetch'
   | 'postDownload'
   | 'passes'
+  | 'preprocessFallback'
   | 'enrichment'
   | 'statistics'
+  | 'statisticsFallback'
   | 'clip'
   | 'mapFeatures';
 

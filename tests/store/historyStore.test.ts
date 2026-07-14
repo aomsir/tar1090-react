@@ -4,6 +4,7 @@ import { useLiveTick } from '@/store/liveTick';
 import { useHistoryStatsStore } from '@/store/historyStatsStore';
 import type { AircraftSnapshot } from '@/data/types';
 import { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
+import { historyPreprocessClient } from '@/features/playback/historyPreprocessClient';
 
 const { enrichAircraft, routeService } = vi.hoisted(() => ({
   enrichAircraft: vi.fn(async () => {}),
@@ -94,7 +95,13 @@ describe('pass data', () => {
 
     await historyStore.buildPassData(undefined, undefined, false, recorder);
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0, statistics: 0 });
+    expect(recorder.snapshot().phases).toEqual({
+      passes: 0,
+      preprocessFallback: 0,
+      enrichment: 0,
+      statistics: 0,
+      statisticsFallback: 0,
+    });
   });
 
   it('closes the passes phase and propagates pass construction failures', async () => {
@@ -111,7 +118,20 @@ describe('pass data', () => {
       'pass build failed',
     );
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0 });
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0 });
+  });
+
+  it('closes the preprocess fallback phase when its fallback throws', async () => {
+    const fallback = vi.spyOn(historyPreprocessClient, 'preprocess').mockImplementationOnce((_, __, ___, onFallback) => {
+      onFallback?.();
+      return Promise.reject(new Error('fallback failed'));
+    });
+    historyStore.setFrames([frame(1000, [{ hex: 'aa' }])]);
+    const recorder = new HistoryPerformanceRecorder(() => 0);
+
+    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow('fallback failed');
+    expect(fallback).toHaveBeenCalledOnce();
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0 });
   });
 
   it('closes the enrichment phase and propagates enrichment failures', async () => {
@@ -123,7 +143,7 @@ describe('pass data', () => {
       'enrichment failed',
     );
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0 });
+    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0, enrichment: 0 });
   });
 
   it('closes the statistics phase and propagates statistics failures', async () => {
@@ -137,7 +157,13 @@ describe('pass data', () => {
       'statistics failed',
     );
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, enrichment: 0, statistics: 0 });
+    expect(recorder.snapshot().phases).toEqual({
+      passes: 0,
+      preprocessFallback: 0,
+      enrichment: 0,
+      statistics: 0,
+      statisticsFallback: 0,
+    });
   });
 
   it('buildPassData stores canonical passes, pass keyed tracks, and supports pass lookup', async () => {
@@ -245,6 +271,53 @@ describe('pass data', () => {
     historyStore.setFrames(frames);
     await historyStore.buildPassData();
     const after = useLiveTick.getState().version;
-    expect(after).toBe(before + 1);
+    expect(after).toBe(before + 2);
+  });
+
+  it('does not publish a stale build after frames change during preprocessing', async () => {
+    historyStore.setFrames([frame(1000, [{ hex: 'old', lat: 30, lon: 110 }])]);
+    const build = historyStore.buildPassData();
+    historyStore.setFrames([frame(2000, [{ hex: 'new', lat: 31, lon: 111 }])]);
+
+    await build;
+
+    expect(historyStore.passes).toEqual([]);
+    expect(enrichAircraft).not.toHaveBeenCalled();
+    expect(routeService.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('clears already published passes when frames change during enrichment', async () => {
+    let resolveEnrichment!: () => void;
+    enrichAircraft.mockImplementationOnce(() => new Promise<void>((resolve) => { resolveEnrichment = resolve; }));
+    historyStore.setFrames([frame(1000, [{ hex: 'old', flight: 'OLD100', lat: 30, lon: 110 }])]);
+    const build = historyStore.buildPassData(undefined, undefined, true);
+    await vi.waitFor(() => expect(historyStore.passes).toHaveLength(1));
+
+    historyStore.setFrames([frame(2000, [{ hex: 'new', lat: 31, lon: 111 }])]);
+
+    expect(historyStore.passes).toEqual([]);
+    expect(historyStore.passTracksData).toBeNull();
+    resolveEnrichment();
+    await build;
+    expect(routeService.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('does not publish statistics after clearPassData during a pending statistics request', async () => {
+    let resolveStatistics!: (value: ReturnType<typeof useHistoryStatsStore.getState>['stats']) => void;
+    const statistics = vi.spyOn(historyPreprocessClient, 'statistics').mockImplementationOnce(() => new Promise((resolve) => {
+      resolveStatistics = resolve;
+    }));
+    historyStore.setFrames([frame(1000, [{ hex: 'old', lat: 30, lon: 110 }])]);
+    const before = useLiveTick.getState().version;
+    const build = historyStore.buildPassData();
+    await vi.waitFor(() => expect(statistics).toHaveBeenCalledOnce());
+
+    historyStore.clearPassData();
+    expect(historyStore.passes).toEqual([]);
+    resolveStatistics(null);
+    await build;
+
+    expect(useHistoryStatsStore.getState().stats).toBeNull();
+    expect(useLiveTick.getState().version).toBe(before + 1);
   });
 });
