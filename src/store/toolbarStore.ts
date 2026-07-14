@@ -4,6 +4,7 @@ import {
   normalizeHistoryTrackLimit,
   type HistoryTrackLimit,
 } from '@/features/playback/historyTracks';
+import { normalizeAltitudeRange } from '@/features/playback/altitudeTracks';
 
 export type Units = 'nautical' | 'metric' | 'imperial';
 
@@ -73,6 +74,8 @@ interface ToolbarState {
   resetAll: () => void;
 }
 
+const DEFAULT_ALTITUDE_RANGE = normalizeAltitudeRange(0, 45_000);
+
 const DEFAULTS = {
   mapDim: true,
   fullscreen: false,
@@ -100,8 +103,8 @@ const DEFAULTS = {
   routeApiEnabled: false,
   historyTrackLimit: 1000 as HistoryTrackLimit,
   altitudeFilterEnabled: false,
-  altitudeFilterMin: 0,
-  altitudeFilterMax: 45000,
+  altitudeFilterMin: DEFAULT_ALTITUDE_RANGE.min,
+  altitudeFilterMax: DEFAULT_ALTITUDE_RANGE.max,
 };
 
 const PERSISTED_TOOLBAR_KEYS = [
@@ -151,8 +154,12 @@ export function migrateToolbarState(persisted: unknown): Record<string, unknown>
   delete state.routeApiUrl;
   state.historyTrackLimit = normalizeHistoryTrackLimit(state.historyTrackLimit);
   if (state.altitudeFilterEnabled === undefined) state.altitudeFilterEnabled = false;
-  if (state.altitudeFilterMin === undefined) state.altitudeFilterMin = 0;
-  if (state.altitudeFilterMax === undefined) state.altitudeFilterMax = 45000;
+  const altitudeRange = normalizeAltitudeRange(
+    state.altitudeFilterMin ?? DEFAULT_ALTITUDE_RANGE.min,
+    state.altitudeFilterMax ?? DEFAULT_ALTITUDE_RANGE.max,
+  );
+  state.altitudeFilterMin = altitudeRange.min;
+  state.altitudeFilterMax = altitudeRange.max;
   return state;
 }
 
@@ -171,7 +178,10 @@ export const useToolbarStore = create<ToolbarState>()(
       setHistoryTrackLimit: (historyTrackLimit) =>
         set({ historyTrackLimit: normalizeHistoryTrackLimit(historyTrackLimit) }),
       setAltitudeFilterEnabled: (enabled) => set({ altitudeFilterEnabled: enabled }),
-      setAltitudeFilterRange: (min, max) => set({ altitudeFilterMin: min, altitudeFilterMax: max }),
+      setAltitudeFilterRange: (min, max) => {
+        const altitudeRange = normalizeAltitudeRange(min, max);
+        set({ altitudeFilterMin: altitudeRange.min, altitudeFilterMax: altitudeRange.max });
+      },
       toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
       toggleStatsDashboard: () => set((s) => ({ statsDashboardOpen: !s.statsDashboardOpen })),
       resetAll: () => set({ ...DEFAULTS }),
@@ -183,10 +193,16 @@ export const useToolbarStore = create<ToolbarState>()(
         migrateToolbarState(persisted) as unknown as ToolbarState,
       merge: (persisted, current) => {
         const persistedState = getPersistedToolbarState(persisted);
+        const altitudeRange = normalizeAltitudeRange(
+          persistedState.altitudeFilterMin ?? current.altitudeFilterMin,
+          persistedState.altitudeFilterMax ?? current.altitudeFilterMax,
+        );
         return {
           ...current,
           ...persistedState,
           historyTrackLimit: normalizeHistoryTrackLimit(persistedState.historyTrackLimit),
+          altitudeFilterMin: altitudeRange.min,
+          altitudeFilterMax: altitudeRange.max,
         };
       },
       partialize: (state) => getPersistedToolbarState(state),

@@ -36,6 +36,9 @@ export interface SettingsResource {
     allWarning: string;
     altitudeFilter: string;
     altitudeRange: string;
+    updateOnRelease: string;
+    minAltitude: string;
+    maxAltitude: string;
   };
   scale: {
     title: string;

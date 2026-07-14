@@ -29,6 +29,9 @@ const zhCN: TranslationResource = {
       allWarning: '全部（可能影响性能）',
       altitudeFilter: '高度过滤',
       altitudeRange: '{{min}} – {{max}} ft',
+      updateOnRelease: '松开滑块后更新地图',
+      minAltitude: '最低高度',
+      maxAltitude: '最高高度',
     },
     scale: {
       title: '缩放',
