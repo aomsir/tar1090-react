@@ -85,7 +85,9 @@ describe('selectHistoryAircraft', () => {
       { lon: 10, lat: 20, alt: 100, ts: 100, ground: false },
     ]);
 
-    expect(selectHistoryAircraft({ selectedHex: 'selected', selectedPass, cursorTime })).toEqual([]);
+    expect(selectHistoryAircraft({ selectedHex: 'selected', selectedPass, cursorTime })).toEqual(
+      [],
+    );
   });
 
   it('returns no marker when selection and pass hex values do not match', () => {
