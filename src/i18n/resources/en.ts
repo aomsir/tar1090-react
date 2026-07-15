@@ -183,6 +183,8 @@ const en: TranslationResource = {
   replay: {
     history: 'History',
     loadingHistory: 'Loading History…',
+    processingHistory: 'Processing history…',
+    updatingTracks: 'Updating tracks…',
     pause: 'Pause',
     play: 'Play',
     statisticsPanel: 'Statistics panel',

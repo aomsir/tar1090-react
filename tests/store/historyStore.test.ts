@@ -96,6 +96,7 @@ describe('pass data', () => {
     await historyStore.buildPassData(undefined, undefined, false, recorder);
 
     expect(recorder.snapshot().phases).toEqual({
+      preprocess: 0,
       passes: 0,
       preprocessFallback: 0,
       enrichment: 0,
@@ -118,20 +119,32 @@ describe('pass data', () => {
       'pass build failed',
     );
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0 });
+    expect(recorder.snapshot().phases).toEqual({
+      preprocess: 0,
+      passes: 0,
+      preprocessFallback: 0,
+    });
   });
 
   it('closes the preprocess fallback phase when its fallback throws', async () => {
-    const fallback = vi.spyOn(historyPreprocessClient, 'preprocess').mockImplementationOnce((_, __, ___, onFallback) => {
-      onFallback?.();
-      return Promise.reject(new Error('fallback failed'));
-    });
+    const fallback = vi
+      .spyOn(historyPreprocessClient, 'preprocess')
+      .mockImplementationOnce((_, __, ___, onFallback) => {
+        onFallback?.();
+        return Promise.reject(new Error('fallback failed'));
+      });
     historyStore.setFrames([frame(1000, [{ hex: 'aa' }])]);
     const recorder = new HistoryPerformanceRecorder(() => 0);
 
-    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow('fallback failed');
+    await expect(historyStore.buildPassData(undefined, undefined, false, recorder)).rejects.toThrow(
+      'fallback failed',
+    );
     expect(fallback).toHaveBeenCalledOnce();
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0 });
+    expect(recorder.snapshot().phases).toEqual({
+      preprocess: 0,
+      passes: 0,
+      preprocessFallback: 0,
+    });
   });
 
   it('closes the enrichment phase and propagates enrichment failures', async () => {
@@ -143,7 +156,12 @@ describe('pass data', () => {
       'enrichment failed',
     );
 
-    expect(recorder.snapshot().phases).toEqual({ passes: 0, preprocessFallback: 0, enrichment: 0 });
+    expect(recorder.snapshot().phases).toEqual({
+      preprocess: 0,
+      passes: 0,
+      preprocessFallback: 0,
+      enrichment: 0,
+    });
   });
 
   it('closes the statistics phase and propagates statistics failures', async () => {
@@ -158,6 +176,7 @@ describe('pass data', () => {
     );
 
     expect(recorder.snapshot().phases).toEqual({
+      preprocess: 0,
       passes: 0,
       preprocessFallback: 0,
       enrichment: 0,
@@ -288,7 +307,12 @@ describe('pass data', () => {
 
   it('clears already published passes when frames change during enrichment', async () => {
     let resolveEnrichment!: () => void;
-    enrichAircraft.mockImplementationOnce(() => new Promise<void>((resolve) => { resolveEnrichment = resolve; }));
+    enrichAircraft.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveEnrichment = resolve;
+        }),
+    );
     historyStore.setFrames([frame(1000, [{ hex: 'old', flight: 'OLD100', lat: 30, lon: 110 }])]);
     const build = historyStore.buildPassData(undefined, undefined, true);
     await vi.waitFor(() => expect(historyStore.passes).toHaveLength(1));
@@ -303,10 +327,15 @@ describe('pass data', () => {
   });
 
   it('does not publish statistics after clearPassData during a pending statistics request', async () => {
-    let resolveStatistics!: (value: ReturnType<typeof useHistoryStatsStore.getState>['stats']) => void;
-    const statistics = vi.spyOn(historyPreprocessClient, 'statistics').mockImplementationOnce(() => new Promise((resolve) => {
-      resolveStatistics = resolve;
-    }));
+    let resolveStatistics!: (
+      value: ReturnType<typeof useHistoryStatsStore.getState>['stats'],
+    ) => void;
+    const statistics = vi.spyOn(historyPreprocessClient, 'statistics').mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStatistics = resolve;
+        }),
+    );
     historyStore.setFrames([frame(1000, [{ hex: 'old', lat: 30, lon: 110 }])]);
     const before = useLiveTick.getState().version;
     const build = historyStore.buildPassData();

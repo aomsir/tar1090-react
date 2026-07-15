@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { HistoryPerformanceRecorder } from '@/features/playback/historyPerformance';
+import { historyStore } from '@/store/historyStore';
+import {
+  HistoryTrackClipCache,
+  selectHistoryTrackPaths,
+} from '@/features/playback/historyTrackSelection';
+import { createPTracksLayer, syncPTracksProgressive } from '@/map/pTracksLayer';
 import { buildHistoryDayFixture } from '../fixtures/historyDay';
 
 describe('HistoryPerformanceRecorder', () => {
@@ -64,6 +70,19 @@ describe('HistoryPerformanceRecorder', () => {
     expect(recorder.elapsedSince('postDownload')).toBe(45);
     expect(recorder.elapsedSince('fetch')).toBeUndefined();
   });
+
+  it('records the fallback execution path when Worker is unavailable', async () => {
+    const recorder = new HistoryPerformanceRecorder();
+    historyStore.reset();
+    historyStore.setFrames(buildHistoryDayFixture().slice(0, 2));
+
+    await historyStore.buildPassData(undefined, undefined, false, recorder);
+
+    expect(recorder.snapshot()).toMatchObject({
+      executionPath: 'fallback',
+      phases: { preprocess: expect.any(Number) },
+    });
+  });
 });
 
 describe('buildHistoryDayFixture', () => {
@@ -92,5 +111,73 @@ describe('buildHistoryDayFixture', () => {
     expect(frames[0].aircraft.some(({ hex }) => hex === '000000')).toBe(true);
     expect(frames[1_920].aircraft.some(({ hex }) => hex === '000000')).toBe(true);
     expect(frames[480].aircraft.some(({ hex }) => hex === '000000')).toBe(false);
+  });
+
+  it('prints optimized timing evidence with portable phase names', async () => {
+    const frames = buildHistoryDayFixture();
+    const recorder = new HistoryPerformanceRecorder();
+    const clipCache = new HistoryTrackClipCache();
+    historyStore.reset();
+    historyStore.setFrames(frames);
+
+    recorder.start('postDownload');
+    await historyStore.buildPassData(undefined, undefined, false, recorder);
+    recorder.start('clip');
+    const tracks = selectHistoryTrackPaths(historyStore.drawablePassesRecentFirst, 'all', null, {
+      generation: historyStore.generation,
+      altitudeRange: { min: 0, max: 60_000 },
+      cache: clipCache,
+    });
+    recorder.end('clip');
+    const handle = createPTracksLayer();
+    let firstObserved = false;
+    let fullObserved = false;
+    const job = syncPTracksProgressive(handle.source, tracks, {
+      batchSize: 1,
+      yieldToMain: async () => {},
+      onFirstBatch: () => {
+        firstObserved = true;
+        recorder.markFirstMapContent(recorder.elapsedSince('postDownload') ?? 0);
+      },
+      onComplete: () => {
+        fullObserved = true;
+        recorder.markFullMapContent(recorder.elapsedSince('postDownload') ?? 0);
+      },
+    });
+    expect(firstObserved).toBe(true);
+    expect(fullObserved).toBe(false);
+    await job.done;
+    recorder.end('postDownload');
+    const snapshot = recorder.snapshot();
+    const result = {
+      schema: 'history-day-optimized-v1',
+      executionPath: snapshot.executionPath,
+      frameCount: frames.length,
+      trackCount: tracks.size,
+      phases: {
+        preprocessMs: snapshot.phases.preprocess ?? null,
+        clipMs: snapshot.phases.clip ?? null,
+        firstMapContentMs: snapshot.firstMapContentMs ?? null,
+        fullMapContentMs: snapshot.fullMapContentMs ?? null,
+      },
+    };
+
+    console.info('[history-performance:optimized]', JSON.stringify(result));
+
+    expect(result).toMatchObject({
+      schema: 'history-day-optimized-v1',
+      executionPath: 'fallback',
+      frameCount: 2_880,
+      trackCount: expect.any(Number),
+      phases: {
+        preprocessMs: expect.any(Number),
+        clipMs: expect.any(Number),
+        firstMapContentMs: expect.any(Number),
+        fullMapContentMs: expect.any(Number),
+      },
+    });
+    expect(fullObserved).toBe(true);
+    expect(result.phases.fullMapContentMs).toBeGreaterThanOrEqual(result.phases.firstMapContentMs!);
+    expect(handle.source.getFeatures().length).toBeGreaterThan(0);
   });
 });

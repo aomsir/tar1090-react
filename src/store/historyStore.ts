@@ -3,7 +3,10 @@ import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
 import { buildDrawablePassIndex } from '@/features/playback/historyTracks';
-import { hydrateAircraftPasses, serializeHistoryStatisticsInput } from '@/features/playback/historyPreprocess';
+import {
+  hydrateAircraftPasses,
+  serializeHistoryStatisticsInput,
+} from '@/features/playback/historyPreprocess';
 import { historyPreprocessClient } from '@/features/playback/historyPreprocessClient';
 import { enrichAircraft } from '@/domain/enrich';
 import { routeService } from '@/data/routeService';
@@ -50,13 +53,21 @@ export class HistoryStore {
     const generation = this.generation;
     const frames = this.frames;
     recorder?.start('passes');
+    recorder?.setExecutionPath('worker');
+    recorder?.start('preprocess');
     let passes: AircraftPass[];
     let preprocessFallback = false;
     try {
-      const preprocessed = await historyPreprocessClient.preprocess(generation, frames, { siteLat, siteLon }, () => {
-        preprocessFallback = true;
-        recorder?.start('preprocessFallback');
-      });
+      const preprocessed = await historyPreprocessClient.preprocess(
+        generation,
+        frames,
+        { siteLat, siteLon },
+        () => {
+          preprocessFallback = true;
+          recorder?.setExecutionPath('fallback');
+          recorder?.start('preprocessFallback');
+        },
+      );
       if (generation !== this.generation) return;
       passes = hydrateAircraftPasses(preprocessed.passes);
       this.passes = passes;
@@ -65,6 +76,7 @@ export class HistoryStore {
       this.passById = new Map(passes.map((pass) => [pass.passId.trim().toLowerCase(), pass]));
       useLiveTick.getState().bump();
     } finally {
+      recorder?.end('preprocess');
       recorder?.end('passes');
       if (preprocessFallback) recorder?.end('preprocessFallback');
     }

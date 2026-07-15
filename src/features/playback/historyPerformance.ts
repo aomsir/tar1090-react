@@ -1,6 +1,7 @@
 export type HistoryPhase =
   | 'fetch'
   | 'postDownload'
+  | 'preprocess'
   | 'passes'
   | 'preprocessFallback'
   | 'enrichment'
@@ -11,6 +12,7 @@ export type HistoryPhase =
 
 export interface HistoryPerformanceSnapshot {
   phases: Partial<Record<HistoryPhase, number>>;
+  executionPath?: 'worker' | 'fallback';
   firstMapContentMs?: number;
   fullMapContentMs?: number;
 }
@@ -20,6 +22,7 @@ export class HistoryPerformanceRecorder {
   private readonly starts = new Map<HistoryPhase, number>();
   private readonly origins = new Map<HistoryPhase, number>();
   private readonly phases: Partial<Record<HistoryPhase, number>> = {};
+  private executionPath?: 'worker' | 'fallback';
   private firstMapContentMs?: number;
   private fullMapContentMs?: number;
 
@@ -56,9 +59,14 @@ export class HistoryPerformanceRecorder {
     this.fullMapContentMs ??= ms;
   }
 
+  setExecutionPath(executionPath: 'worker' | 'fallback'): void {
+    this.executionPath = executionPath;
+  }
+
   snapshot(): HistoryPerformanceSnapshot {
     return {
       phases: { ...this.phases },
+      executionPath: this.executionPath,
       firstMapContentMs: this.firstMapContentMs,
       fullMapContentMs: this.fullMapContentMs,
     };

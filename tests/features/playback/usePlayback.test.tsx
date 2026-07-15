@@ -20,7 +20,13 @@ vi.mock('@/domain/enrich', () => ({
   enrichAircraft: vi.fn(async () => {}),
 }));
 
-function Harness({ controller, readyVersion = 0 }: { controller: MapController | null; readyVersion?: number }) {
+function Harness({
+  controller,
+  readyVersion = 0,
+}: {
+  controller: MapController | null;
+  readyVersion?: number;
+}) {
   const ref = useRef<MapController | null>(null);
   useEffect(() => {
     ref.current = controller;
@@ -86,6 +92,14 @@ function makeController(): MapController {
     clearPTracks: vi.fn(),
     clearTrack: vi.fn(),
   } as unknown as MapController;
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }
 
 describe('usePlayback', () => {
@@ -176,6 +190,69 @@ describe('usePlayback', () => {
     expect(recorder.snapshot().fullMapContentMs).toBe(35);
   });
 
+  it('returns rendering to idle only when the current track job completes', async () => {
+    seedIndexedPasses(1);
+    const first = deferred<void>();
+    const second = deferred<void>();
+    const controller = makeController();
+    vi.mocked(controller.showPTracks)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const loadGeneration = usePlaybackStore.getState().beginHistoryLoad();
+    usePlaybackStore.getState().setHistoryLoadStage('rendering', loadGeneration);
+    historyStore.performanceRecorder = {
+      generation: historyStore.generation,
+      recorder: new HistoryPerformanceRecorder(),
+    };
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('rendering');
+
+    act(() => useToolbarStore.getState().setHistoryTrackLimit('all'));
+    expect(controller.showPTracks).toHaveBeenCalledTimes(2);
+    first.resolve();
+    await act(async () => await Promise.resolve());
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('rendering');
+
+    second.resolve();
+    await act(async () => await Promise.resolve());
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+  });
+
+  it('returns directly to idle when there are no history tracks to render', () => {
+    const controller = makeController();
+    usePlaybackStore.getState().beginHistoryLoad();
+    render(<Harness controller={controller} />);
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+
+    expect(controller.clearPTracks).toHaveBeenCalled();
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+  });
+
+  it('keeps rendering pending until a map controller becomes available', async () => {
+    seedIndexedPasses(1);
+    const loadGeneration = usePlaybackStore.getState().beginHistoryLoad();
+    usePlaybackStore.getState().setHistoryLoadStage('rendering', loadGeneration);
+    const controller = makeController();
+    const pending = deferred<void>();
+    vi.mocked(controller.showPTracks).mockReturnValueOnce(pending.promise);
+    const { rerender } = render(<Harness controller={null} readyVersion={0} />);
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('rendering');
+
+    rerender(<Harness controller={controller} readyVersion={1} />);
+    expect(controller.showPTracks).toHaveBeenCalledOnce();
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('rendering');
+
+    pending.resolve();
+    await act(async () => await Promise.resolve());
+
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+  });
+
   it('synchronizes tracks built from history frames when buildPassData bumps the live tick', async () => {
     historyStore.setFrames([
       { now: 100, messages: 1, aircraft: [{ hex: 'abc123', lat: 1, lon: 2 }] },
@@ -195,8 +272,8 @@ describe('usePlayback', () => {
     expect([...tracks.keys()]).toEqual(['def456:100000', 'abc123:100']);
     expect(tracks.get('def456:100000')).toEqual([
       [
-      expect.objectContaining({ lon: 6, lat: 5, ts: 100_000 }),
-      expect.objectContaining({ lon: 8, lat: 7, ts: 100_001 }),
+        expect.objectContaining({ lon: 6, lat: 5, ts: 100_000 }),
+        expect.objectContaining({ lon: 8, lat: 7, ts: 100_001 }),
       ],
     ]);
   });

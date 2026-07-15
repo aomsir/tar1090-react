@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
@@ -10,7 +10,11 @@ import type { MapController } from '@/map/MapController';
 
 export const historyTrackClipCache = new HistoryTrackClipCache();
 
-export function usePlayback(controllerRef: RefObject<MapController | null>, readyVersion = 0): void {
+export function usePlayback(
+  controllerRef: RefObject<MapController | null>,
+  readyVersion = 0,
+): void {
+  const renderJobRef = useRef(0);
   const mode = usePlaybackStore((s) => s.mode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const speed = usePlaybackStore((s) => s.speed);
@@ -55,13 +59,38 @@ export function usePlayback(controllerRef: RefObject<MapController | null>, read
         else performance.recorder.markFullMapContent(elapsed);
       };
       if (data.size > 0) {
-        controllerRef.current?.showPTracks(data, {
+        const controller = controllerRef.current;
+        const renderJob = ++renderJobRef.current;
+        const loadGeneration = usePlaybackStore.getState().historyLoadGeneration;
+        if (!controller) return;
+        usePlaybackStore.getState().setHistoryLoadStage('rendering', loadGeneration);
+        const done = controller.showPTracks(data, {
           gapThresholdSec: gap,
           onFirstBatch: () => markMapContent('first'),
           onComplete: () => markMapContent('full'),
         });
-      } else controllerRef.current?.clearPTracks();
+        void Promise.resolve(done).then(
+          () => {
+            const store = usePlaybackStore.getState();
+            if (
+              renderJobRef.current === renderJob &&
+              store.mode === 'history' &&
+              store.historyLoadGeneration === loadGeneration &&
+              historyStore.generation === generation &&
+              historyStore.performanceRecorder === performance
+            ) {
+              store.setHistoryLoadStage('idle', loadGeneration);
+            }
+          },
+          () => {},
+        );
+      } else {
+        controllerRef.current?.clearPTracks();
+        const store = usePlaybackStore.getState();
+        store.setHistoryLoadStage('idle', store.historyLoadGeneration);
+      }
     } else {
+      renderJobRef.current += 1;
       historyTrackClipCache.clear();
       controllerRef.current?.clearPTracks();
     }

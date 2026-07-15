@@ -194,6 +194,8 @@ export interface DetailResource {
 export interface ReplayResource {
   history: string;
   loadingHistory: string;
+  processingHistory: string;
+  updatingTracks: string;
   pause: string;
   play: string;
   statisticsPanel: string;

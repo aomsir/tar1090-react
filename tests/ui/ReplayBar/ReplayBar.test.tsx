@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithI18n } from '@/i18n/testUtils';
 import { ReplayBar } from '@/ui/ReplayBar/ReplayBar';
 import { usePlaybackStore } from '@/store/playbackStore';
@@ -135,15 +135,28 @@ describe('ReplayBar', () => {
     expect(historyLoader.ensureLoaded).not.toHaveBeenCalled();
   });
 
-  it('shows a fullscreen loading overlay with progress', async () => {
-    usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
+  it('shows fetching progress without blocking the screen', async () => {
+    usePlaybackStore.setState({
+      loading: true,
+      historyLoadStage: 'fetching',
+      progress: { done: 42, total: 100 },
+    });
     await renderWithI18n(<ReplayBar />);
     const overlay = screen.getByTestId('replay-bar');
-    // Overlay uses fixed positioning (fullscreen)
-    expect(overlay.className).toMatch(/fixed/);
-    expect(overlay.className).toMatch(/inset-0/);
+    expect(overlay.className).not.toMatch(/fixed/);
+    expect(overlay.className).not.toMatch(/inset-0/);
     expect(screen.getByText(/42\/100/)).toBeInTheDocument();
     expect(screen.getByText(/Loading History/)).toBeInTheDocument();
+  });
+
+  it('replaces fetch progress with processing and rendering status', async () => {
+    usePlaybackStore.setState({ historyLoadStage: 'processing', loading: false });
+    await renderWithI18n(<ReplayBar />);
+    expect(screen.getByText('Processing history…')).toBeInTheDocument();
+    expect(screen.queryByText(/\d+\/\d+/)).not.toBeInTheDocument();
+
+    act(() => usePlaybackStore.setState({ historyLoadStage: 'rendering' }));
+    expect(screen.getByText('Updating tracks…')).toBeInTheDocument();
   });
 
   it('renders translated replay UI text in zh-CN', async () => {
@@ -172,7 +185,11 @@ describe('ReplayBar', () => {
   });
 
   it('renders a translated loading overlay in zh-CN', async () => {
-    usePlaybackStore.setState({ loading: true, progress: { done: 42, total: 100 } });
+    usePlaybackStore.setState({
+      loading: true,
+      historyLoadStage: 'fetching',
+      progress: { done: 42, total: 100 },
+    });
     await renderWithI18n(<ReplayBar />, { language: 'zh-CN' });
     expect(screen.getByText(/正在加载历史/)).toBeInTheDocument();
     expect(screen.getByText(/42\/100/)).toBeInTheDocument();

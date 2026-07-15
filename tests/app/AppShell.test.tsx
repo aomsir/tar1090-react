@@ -898,11 +898,15 @@ describe('AppShell mobile layout', () => {
     expect(screen.getByTestId('mobile-detail-sheet')).toBeInTheDocument();
   });
 
-  it('shows the history loading overlay while history loads', () => {
+  it('shows the nonblocking history status while history loads', () => {
     render(<AppShell />);
     expect(screen.queryByTestId('mobile-history-loading')).not.toBeInTheDocument();
     act(() => {
-      usePlaybackStore.setState({ loading: true, progress: { done: 1, total: 10 } });
+      usePlaybackStore.setState({
+        loading: true,
+        historyLoadStage: 'fetching',
+        progress: { done: 1, total: 10 },
+      });
     });
     expect(screen.getByTestId('mobile-history-loading')).toBeInTheDocument();
   });
