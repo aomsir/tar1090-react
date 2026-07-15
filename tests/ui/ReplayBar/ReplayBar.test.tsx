@@ -65,6 +65,17 @@ describe('ReplayBar', () => {
     expect(screen.queryByRole('button', { name: '3 days' })).not.toBeInTheDocument();
   });
 
+  it('reports a rejected history load from range selection', async () => {
+    const error = new Error('range load failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { historyLoader } = await import('@/data/historyLoader');
+    vi.mocked(historyLoader.ensureLoaded).mockRejectedValueOnce(error);
+    await renderWithI18n(<ReplayBar />);
+    fireEvent.click(screen.getByRole('button', { name: /history/i }));
+    fireEvent.click(screen.getByRole('button', { name: '1 day' }));
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith('[history-load]', error));
+  });
+
   it('enters history mode after selecting a range', async () => {
     await renderWithI18n(<ReplayBar />);
     fireEvent.click(screen.getByRole('button', { name: /history/i }));

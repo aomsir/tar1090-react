@@ -179,6 +179,33 @@ describe('HistoryPreprocessClient', () => {
     await expect(second).resolves.toEqual({ passes: [] });
   });
 
+  it('terminates old Worker work and posts a newer generation to a fresh Worker immediately', async () => {
+    const firstWorker = new FakeWorker();
+    const secondWorker = new FakeWorker();
+    const createWorker = vi
+      .fn()
+      .mockReturnValueOnce(firstWorker as unknown as Worker)
+      .mockReturnValueOnce(secondWorker as unknown as Worker);
+    const client = new HistoryPreprocessClient(createWorker);
+    const oldRequest = client.preprocess(1, [], {});
+    const oldRejection = expect(oldRequest).rejects.toBeInstanceOf(HistoryPreprocessCancelledError);
+    const newRequest = client.preprocess(2, [], {});
+
+    expect(firstWorker.terminate).toHaveBeenCalledOnce();
+    await oldRejection;
+    expect(secondWorker.postMessage).toHaveBeenCalledWith({
+      type: 'preprocess',
+      requestId: 2,
+      generation: 2,
+      frames: [],
+      options: {},
+    });
+
+    firstWorker.respond({ type: 'success', requestId: 1, generation: 1, result: { passes: [] } });
+    secondWorker.respond({ type: 'success', requestId: 2, generation: 2, result: { passes: [] } });
+    await expect(newRequest).resolves.toEqual({ passes: [] });
+  });
+
   it('uses the matching main-thread fallback after a Worker error', async () => {
     const worker = new FakeWorker();
     const fallback = vi.fn(() => ({ passes: [] }));

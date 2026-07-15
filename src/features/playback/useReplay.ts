@@ -7,6 +7,12 @@ import { historyLoader } from '@/data/historyLoader';
 import { historyStore } from '@/store/historyStore';
 import type { HistoryRange } from '@/data/historyLoader';
 import { HistoryPerformanceRecorder } from './historyPerformance';
+import { HistoryPreprocessCancelledError } from './historyPreprocessClient';
+
+export function reportHistoryLoadError(error: unknown): void {
+  if (error instanceof HistoryPreprocessCancelledError) return;
+  console.error('[history-load]', error);
+}
 
 export function useReplay(): {
   enterHistory: (range: HistoryRange) => Promise<void>;

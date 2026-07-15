@@ -280,6 +280,38 @@ describe('syncPTracksProgressive', () => {
     expect(handle.source.getFeatureById('added:0:0')).toBeDefined();
   });
 
+  it('hides previous-job features until the replacement job activates them', async () => {
+    const handle = createPTracksLayer();
+    await syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['retained', points(110)],
+        ['stale', points(111)],
+      ]),
+    ).done;
+    let release: (() => void) | undefined;
+
+    const job = syncPTracksProgressive(
+      handle.source,
+      new Map([
+        ['retained', points(120)],
+        ['later', points(121)],
+      ]),
+      { batchSize: 1, yieldToMain: () => new Promise<void>((resolve) => (release = resolve)) },
+    );
+
+    expect(handle.source.getFeatureById('stale:0:0')).toBeDefined();
+    expect(
+      handle.source
+        .getFeatures()
+        .filter(handle.isFeatureVisible)
+        .map((feature) => feature.get('trackKey')),
+    ).toEqual(['retained']);
+
+    release?.();
+    await job.done;
+  });
+
   it('stops adding later batches after cancellation and resolves done normally', async () => {
     const handle = createPTracksLayer();
     let release: (() => void) | undefined;
@@ -449,7 +481,7 @@ describe('syncPTracksProgressive', () => {
     await job.done;
   });
 
-  it('absorbs callback and scheduler errors without rejecting done or adding later batches', async () => {
+  it('rejects callback and scheduler errors and removes incomplete current-job features', async () => {
     const handle = createPTracksLayer();
     const onComplete = vi.fn();
     const job = syncPTracksProgressive(
@@ -467,10 +499,8 @@ describe('syncPTracksProgressive', () => {
       },
     );
 
-    await expect(job.done).resolves.toBeUndefined();
-    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
-      'first',
-    ]);
+    await expect(job.done).rejects.toThrow('first callback failed');
+    expect(handle.source.getFeatures()).toHaveLength(0);
     expect(onComplete).not.toHaveBeenCalled();
 
     const schedulerFailure = syncPTracksProgressive(
@@ -482,13 +512,11 @@ describe('syncPTracksProgressive', () => {
       { batchSize: 1, yieldToMain: async () => Promise.reject(new Error('scheduler failed')) },
     );
 
-    await expect(schedulerFailure.done).resolves.toBeUndefined();
-    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
-      'first',
-    ]);
+    await expect(schedulerFailure.done).rejects.toThrow('scheduler failed');
+    expect(handle.source.getFeatures()).toHaveLength(0);
   });
 
-  it('absorbs completion callback errors without rejecting done', async () => {
+  it('rejects completion callback errors and clears current-job features', async () => {
     const handle = createPTracksLayer();
     const job = syncPTracksProgressive(handle.source, new Map([['only', points(110)]]), {
       onComplete: () => {
@@ -496,7 +524,7 @@ describe('syncPTracksProgressive', () => {
       },
     });
 
-    await expect(job.done).resolves.toBeUndefined();
-    expect(handle.source.getFeatures()).toHaveLength(1);
+    await expect(job.done).rejects.toThrow('completion callback failed');
+    expect(handle.source.getFeatures()).toHaveLength(0);
   });
 });

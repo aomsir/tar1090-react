@@ -2,7 +2,7 @@ import { Home, Shield, LocateFixed, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { usePlaybackStore } from '@/store/playbackStore';
-import { useReplay } from '@/features/playback/useReplay';
+import { reportHistoryLoadError, useReplay } from '@/features/playback/useReplay';
 
 interface MobileToolbarProps {
   onResetView: () => void;
@@ -57,7 +57,7 @@ export function MobileToolbar({ onResetView }: MobileToolbarProps) {
         aria-pressed={historyActive}
         onClick={() => {
           if (historyActive) exitToLive();
-          else void enterHistory('1d');
+          else void enterHistory('1d').catch(reportHistoryLoadError);
         }}
         className={`${BTN} ${historyActive ? 'bg-blue-500/25 text-blue-300' : ''}`}
       >

@@ -7,6 +7,7 @@ import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
 import { HistoryTrackClipCache, selectHistoryTrackPaths } from './historyTrackSelection';
 import type { MapController } from '@/map/MapController';
+import { reportHistoryLoadError } from './useReplay';
 
 export const historyTrackClipCache = new HistoryTrackClipCache();
 
@@ -82,7 +83,17 @@ export function usePlayback(
               store.setHistoryLoadStage('idle', loadGeneration);
             }
           },
-          () => {},
+          (error) => {
+            const store = usePlaybackStore.getState();
+            if (
+              renderJobRef.current === renderJob &&
+              store.mode === 'history' &&
+              store.historyLoadGeneration === loadGeneration
+            ) {
+              store.setHistoryLoadStage('idle', loadGeneration);
+            }
+            reportHistoryLoadError(error);
+          },
         );
       } else {
         controllerRef.current?.clearPTracks();

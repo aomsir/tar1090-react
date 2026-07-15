@@ -8,6 +8,7 @@ const enterHistoryMock = vi.fn();
 
 vi.mock('@/features/playback/useReplay', () => ({
   useReplay: () => ({ enterHistory: enterHistoryMock, exitToLive: vi.fn() }),
+  reportHistoryLoadError: (error: unknown) => console.error('[history-load]', error),
 }));
 
 function Harness() {
@@ -17,7 +18,8 @@ function Harness() {
 
 describe('useUrlSync', () => {
   beforeEach(() => {
-    enterHistoryMock.mockClear();
+    enterHistoryMock.mockReset();
+    enterHistoryMock.mockResolvedValue(undefined);
     useSelectionStore.setState({ selectedHex: null });
     usePlaybackStore.getState().reset();
     window.history.replaceState(null, '', '/');
@@ -46,6 +48,18 @@ describe('useUrlSync', () => {
     render(<Harness />);
     expect(enterHistoryMock).toHaveBeenCalledTimes(1);
     expect(enterHistoryMock).toHaveBeenCalledWith('1d');
+  });
+
+  it('reports a rejected URL-triggered history load without an unhandled rejection', async () => {
+    const error = new Error('URL load failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    enterHistoryMock.mockRejectedValueOnce(error);
+    window.history.replaceState(null, '', '/?mode=history');
+
+    render(<Harness />);
+    await Promise.resolve();
+
+    expect(consoleError).toHaveBeenCalledWith('[history-load]', error);
   });
 
   it('syncs playback mode to the URL', () => {

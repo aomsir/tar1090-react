@@ -220,6 +220,23 @@ describe('usePlayback', () => {
     expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
   });
 
+  it('returns the current rendering job to idle and reports a rejected map sync', async () => {
+    seedIndexedPasses(1);
+    const controller = makeController();
+    const error = new Error('track sync failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(controller.showPTracks).mockRejectedValueOnce(error);
+    const loadGeneration = usePlaybackStore.getState().beginHistoryLoad();
+
+    render(<Harness controller={controller} />);
+    act(() => usePlaybackStore.getState().setMode('history'));
+    await act(async () => await Promise.resolve());
+
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+    expect(consoleError).toHaveBeenCalledWith('[history-load]', error);
+    expect(usePlaybackStore.getState().historyLoadGeneration).toBe(loadGeneration);
+  });
+
   it('returns directly to idle when there are no history tracks to render', () => {
     const controller = makeController();
     usePlaybackStore.getState().beginHistoryLoad();

@@ -11,6 +11,8 @@ import type { HistoryTrackPaths } from '@/features/playback/historyTrackSelectio
 
 type LegacyHistoryTrackPaths = Map<string, TrackPoint[]>;
 
+const SYNC_REVISION = 'pTrackSyncRevision';
+
 function isTrackPoint(value: unknown): value is TrackPoint {
   if (!value || typeof value !== 'object') return false;
   const point = value as Partial<TrackPoint>;
@@ -138,13 +140,21 @@ function* desiredPathSegments(
   }
 }
 
-function updatePTrack(feature: Feature, desired: DesiredPTrack): void {
+function updatePTrack(feature: Feature, desired: DesiredPTrack, revision?: number): void {
   feature.setGeometry(
     new LineString(desired.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]))),
   );
   feature.set('trackKey', desired.trackKey);
   feature.set('colorKey', desired.colorKey);
   feature.set('estimated', desired.estimated);
+  if (revision !== undefined) feature.set(SYNC_REVISION, revision);
+}
+
+function beginSyncRevision(source: VectorSource): number {
+  const revision = ((source.get(SYNC_REVISION) as number | undefined) ?? 0) + 1;
+  source.set(SYNC_REVISION, revision);
+  source.changed();
+  return revision;
 }
 
 export function createPTracksLayer(): PTracksLayerHandle {
@@ -152,7 +162,12 @@ export function createPTracksLayer(): PTracksLayerHandle {
   const source = new VectorSource();
   const isFeatureVisible = (feature: FeatureLike): boolean => {
     const trackKey = feature.get('trackKey');
-    return typeof trackKey === 'string' && (selectedKey === null || trackKey === selectedKey);
+    const activeRevision = source.get(SYNC_REVISION) as number | undefined;
+    return (
+      typeof trackKey === 'string' &&
+      (activeRevision === undefined || feature.get(SYNC_REVISION) === activeRevision) &&
+      (selectedKey === null || trackKey === selectedKey)
+    );
   };
   const layer = new VectorLayer({
     source,
@@ -187,10 +202,11 @@ export function syncPTracks(
   gapThresholdSec?: number,
 ): void {
   source.clear();
+  const revision = beginSyncRevision(source);
   for (const desired of desiredPTracks(tracksMap, gapThresholdSec)) {
     const feature = new Feature();
     feature.setId(desired.id);
-    updatePTrack(feature, desired);
+    updatePTrack(feature, desired, revision);
     source.addFeature(feature);
   }
 }
@@ -205,6 +221,7 @@ export function syncPTracksProgressive(
       ? Math.floor(options.batchSize!)
       : 250;
   const descriptors = desiredPTracks(tracksMap, options.gapThresholdSec);
+  const revision = beginSyncRevision(source);
   const seenIds = new Set<string>();
   let cancelled = false;
   let firstBatchDone = false;
@@ -212,15 +229,6 @@ export function syncPTracksProgressive(
   let hasMorePotential = false;
   const cancel = (): void => {
     cancelled = true;
-  };
-  const notify = (callback: (() => void) | undefined): boolean => {
-    try {
-      callback?.();
-      return true;
-    } catch {
-      cancel();
-      return false;
-    }
   };
   const addBatch = (): void => {
     let count = 0;
@@ -234,41 +242,53 @@ export function syncPTracksProgressive(
       hasMorePotential = item.hasMorePotential;
       seenIds.add(item.id);
       const feature = source.getFeatureById(item.id);
-      if (feature) updatePTrack(feature, item);
+      if (feature) updatePTrack(feature, item, revision);
       else {
         const next = new Feature();
         next.setId(item.id);
-        updatePTrack(next, item);
+        updatePTrack(next, item, revision);
         source.addFeature(next);
       }
       count += 1;
     }
     if (!firstBatchDone) {
       firstBatchDone = true;
-      notify(options.onFirstBatch);
+      options.onFirstBatch?.();
     }
     if (count > 0 && !hasMorePotential) exhausted = true;
   };
 
+  let initialError: unknown;
   try {
     addBatch();
-  } catch {
-    cancel();
+  } catch (error) {
+    initialError = error;
   }
-  const done = (async () => {
-    while (!cancelled && !exhausted) {
-      await (options.yieldToMain ?? defaultYieldToMain)();
+  const done = (async (): Promise<void> => {
+    try {
+      if (initialError) throw initialError;
+      while (!cancelled && !exhausted) {
+        await (options.yieldToMain ?? defaultYieldToMain)();
+        if (cancelled) return;
+        addBatch();
+      }
       if (cancelled) return;
-      addBatch();
+      for (const feature of source.getFeatures()) {
+        if (!seenIds.has(String(feature.getId()))) {
+          source.removeFeature(feature);
+        }
+      }
+      options.onComplete?.();
+    } catch (error) {
+      if (source.get(SYNC_REVISION) === revision) {
+        for (const feature of source.getFeatures()) {
+          if (feature.get(SYNC_REVISION) === revision) source.removeFeature(feature);
+        }
+        source.changed();
+      }
+      throw error;
     }
-    if (cancelled) return;
-    for (const feature of source.getFeatures()) {
-      if (!seenIds.has(String(feature.getId()))) source.removeFeature(feature);
-    }
-    notify(options.onComplete);
-  })().catch(() => {
-    cancel();
-  });
+  })();
 
   return { done, cancel };
 }

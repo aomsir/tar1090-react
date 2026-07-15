@@ -104,11 +104,17 @@ export class HistoryPreprocessClient {
     }
     if (generation > this.authoritativeGeneration) {
       this.authoritativeGeneration = generation;
+      let superseded = false;
       for (const [requestId, pending] of this.pending) {
         if (pending.generation < generation) {
           this.pending.delete(requestId);
           pending.reject(new HistoryPreprocessCancelledError());
+          superseded = true;
         }
+      }
+      if (superseded) {
+        this.worker?.terminate();
+        this.worker = undefined;
       }
     }
 

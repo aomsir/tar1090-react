@@ -3,7 +3,7 @@ import { Spinner } from '@heroui/react';
 import { useTranslation } from 'react-i18next';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
-import { useReplay } from '@/features/playback/useReplay';
+import { reportHistoryLoadError, useReplay } from '@/features/playback/useReplay';
 import { HISTORY_RANGES, type HistoryRange } from '@/data/historyLoader';
 import { formatTimeOfDay } from '@/i18n/format';
 
@@ -95,7 +95,9 @@ export function ReplayBar() {
         <select
           aria-label={t('replay.timeRange')}
           value={range}
-          onChange={(e) => void enterHistory(e.target.value as HistoryRange)}
+          onChange={(e) =>
+            void enterHistory(e.target.value as HistoryRange).catch(reportHistoryLoadError)
+          }
           className="rounded bg-white/10 px-1 text-xs"
         >
           {HISTORY_RANGES.map((r) => (
@@ -132,7 +134,7 @@ export function ReplayBar() {
               aria-label={label}
               onClick={() => {
                 usePlaybackStore.getState().setRangeSelectOpen(false);
-                void enterHistory(r.key);
+                void enterHistory(r.key).catch(reportHistoryLoadError);
               }}
               className={`rounded px-2 py-1 hover:bg-white/10 ${r.key === range ? 'bg-white/20' : ''}`}
             >

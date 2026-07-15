@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelectionStore } from '@/store/selectionStore';
 import { usePlaybackStore } from '@/store/playbackStore';
-import { useReplay } from '@/features/playback/useReplay';
+import { reportHistoryLoadError, useReplay } from '@/features/playback/useReplay';
 import { parseQuery } from './urlState';
 import { isMobileViewport } from './useIsMobile';
 
@@ -16,7 +16,7 @@ export function useUrlSync(): void {
     if (icao) select(icao);
     // Mobile has no replay UI; entering history mode would trap the user (spec §5).
     if (urlMode === 'history' && !isMobileViewport()) {
-      void enterHistory(usePlaybackStore.getState().range);
+      void enterHistory(usePlaybackStore.getState().range).catch(reportHistoryLoadError);
     }
   }, [select, enterHistory]);
 
