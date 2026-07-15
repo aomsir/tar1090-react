@@ -216,7 +216,10 @@ export function AppShell() {
             if (mapSelection.type === 'historyTrack') {
               if (playback.mode !== 'history') return;
               const pass = historyStore.getPass(mapSelection.passId);
-              if (pass) selection.selectPass(pass.passId, pass.hex);
+              if (pass) {
+                selection.selectPass(pass.passId, pass.hex);
+                playback.setCursor(pass.endTime);
+              }
               return;
             }
 

@@ -363,7 +363,7 @@ describe('AppShell', () => {
     });
   });
 
-  it('selects the clicked history track without moving the playback cursor or centering', async () => {
+  it('moves the cursor to a clicked history track end without centering', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -379,11 +379,18 @@ describe('AppShell', () => {
           { hex: '781860', lat: 30, lon: 125, altitude: 2000 },
         ] as unknown as AircraftSnapshot['aircraft'],
       },
+      {
+        now: 44000,
+        messages: 0,
+        aircraft: [
+          { hex: 'other', lat: 40, lon: 130, altitude: 3000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
     ]);
     await historyStore.buildPassData();
     usePlaybackStore.getState().setMode('history');
-    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
-    usePlaybackStore.getState().setCursor(150);
+    usePlaybackStore.getState().setBounds({ min: 100, max: 44000 });
+    usePlaybackStore.getState().setCursor(44000);
 
     render(<AppShell />);
     act(() => {
@@ -391,6 +398,7 @@ describe('AppShell', () => {
     });
     fakeController.centerOn.mockClear();
     fakeController.setSelectedTrackKey.mockClear();
+    fakeController.syncAircraft.mockClear();
 
     act(() => {
       capturedSelectCb!({ type: 'historyTrack', passId: '781860:100' });
@@ -401,13 +409,17 @@ describe('AppShell', () => {
       selectedHex: '781860',
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
-    expect(usePlaybackStore.getState().cursorTime).toBe(150);
+    expect(usePlaybackStore.getState().cursorTime).toBe(200);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', lon: 125, lat: 30 }),
+    ]);
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
   it('ignores an unknown history track pass id', () => {
     useSelectionStore.getState().selectPass('existing:100', 'existing');
     usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setCursor(321);
 
     render(<AppShell />);
     act(() => {
@@ -419,10 +431,13 @@ describe('AppShell', () => {
       selectedPassId: 'existing:100',
       selectedHex: 'existing',
     });
+    expect(usePlaybackStore.getState().cursorTime).toBe(321);
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
   it('ignores history track selection in live mode', () => {
     useSelectionStore.getState().selectPass('existing:100', 'existing');
+    usePlaybackStore.getState().setCursor(654);
 
     render(<AppShell />);
     act(() => {
@@ -434,6 +449,8 @@ describe('AppShell', () => {
       selectedPassId: 'existing:100',
       selectedHex: 'existing',
     });
+    expect(usePlaybackStore.getState().cursorTime).toBe(654);
+    expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
   it('clears all selection when the map background is clicked', () => {
