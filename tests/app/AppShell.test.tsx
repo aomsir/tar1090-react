@@ -907,6 +907,7 @@ describe('AppShell mobile layout', () => {
     capturedOnReady = null;
     capturedSelectCb = null;
     capturedListOnSelect = null;
+    fakeController.syncAircraft.mockClear();
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.centerOn.mockClear();
