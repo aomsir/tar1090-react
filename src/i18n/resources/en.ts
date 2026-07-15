@@ -29,6 +29,9 @@ const en: TranslationResource = {
       allWarning: 'All (may affect performance)',
       altitudeFilter: 'Altitude filter',
       altitudeRange: '{{min}} – {{max}} ft',
+      updateOnRelease: 'Release the slider to update the map',
+      minAltitude: 'Minimum altitude',
+      maxAltitude: 'Maximum altitude',
     },
     scale: {
       title: 'Scale',
@@ -180,6 +183,8 @@ const en: TranslationResource = {
   replay: {
     history: 'History',
     loadingHistory: 'Loading History…',
+    processingHistory: 'Processing history…',
+    updatingTracks: 'Updating tracks…',
     pause: 'Pause',
     play: 'Play',
     statisticsPanel: 'Statistics panel',

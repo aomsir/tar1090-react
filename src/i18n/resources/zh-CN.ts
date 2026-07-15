@@ -29,6 +29,9 @@ const zhCN: TranslationResource = {
       allWarning: '全部（可能影响性能）',
       altitudeFilter: '高度过滤',
       altitudeRange: '{{min}} – {{max}} ft',
+      updateOnRelease: '松开滑块后更新地图',
+      minAltitude: '最低高度',
+      maxAltitude: '最高高度',
     },
     scale: {
       title: '缩放',
@@ -180,6 +183,8 @@ const zhCN: TranslationResource = {
   replay: {
     history: '历史回放',
     loadingHistory: '正在加载历史…',
+    processingHistory: '正在处理历史数据…',
+    updatingTracks: '正在更新航迹…',
     pause: '暂停',
     play: '播放',
     statisticsPanel: '统计面板',

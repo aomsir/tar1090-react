@@ -9,6 +9,7 @@ const enterHistory = vi.fn().mockResolvedValue(undefined);
 const exitToLive = vi.fn();
 vi.mock('@/features/playback/useReplay', () => ({
   useReplay: () => ({ enterHistory, exitToLive }),
+  reportHistoryLoadError: (error: unknown) => console.error('[history-load]', error),
 }));
 
 describe('MobileToolbar', () => {
@@ -62,6 +63,18 @@ describe('MobileToolbar', () => {
     fireEvent.click(btn);
     expect(enterHistory).toHaveBeenCalledWith('1d');
     expect(exitToLive).not.toHaveBeenCalled();
+  });
+
+  it('reports a rejected history load from the history button', async () => {
+    const error = new Error('mobile load failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    enterHistory.mockRejectedValueOnce(error);
+    render(<MobileToolbar onResetView={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'History' }));
+    await Promise.resolve();
+
+    expect(consoleError).toHaveBeenCalledWith('[history-load]', error);
   });
 
   it('exits to live when the history button is pressed in history mode', () => {

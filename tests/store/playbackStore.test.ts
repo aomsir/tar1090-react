@@ -48,6 +48,37 @@ describe('playbackStore', () => {
     expect(usePlaybackStore.getState().range).toBe('1w');
   });
 
+  it('only lets the active history load generation update its stage', () => {
+    const store = usePlaybackStore.getState();
+    const firstGeneration = store.beginHistoryLoad();
+
+    expect(usePlaybackStore.getState()).toMatchObject({
+      historyLoadStage: 'fetching',
+      loading: true,
+    });
+
+    const secondGeneration = usePlaybackStore.getState().beginHistoryLoad();
+    expect(secondGeneration).toBe(firstGeneration + 1);
+
+    usePlaybackStore.getState().setHistoryLoadStage('processing', firstGeneration);
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('fetching');
+
+    usePlaybackStore.getState().setHistoryLoadStage('processing', secondGeneration);
+    expect(usePlaybackStore.getState()).toMatchObject({
+      historyLoadStage: 'processing',
+      loading: false,
+    });
+  });
+
+  it('invalidates a history load and returns its stage to idle', () => {
+    const generation = usePlaybackStore.getState().beginHistoryLoad();
+    usePlaybackStore.getState().invalidateHistoryLoad();
+
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+    usePlaybackStore.getState().setHistoryLoadStage('rendering', generation);
+    expect(usePlaybackStore.getState().historyLoadStage).toBe('idle');
+  });
+
   it('reset preserves range', () => {
     usePlaybackStore.getState().setRange('1m');
     usePlaybackStore.getState().reset();

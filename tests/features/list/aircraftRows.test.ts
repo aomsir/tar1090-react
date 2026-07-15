@@ -10,6 +10,7 @@ import {
 import { routeService } from '@/data/routeService';
 import { LIST_COLUMNS } from '@/features/list/columns';
 import type { AircraftPass } from '@/features/playback/aircraftPasses';
+import { summarizeTrackAltitude } from '@/features/playback/altitudeTracks';
 
 async function seedRoute(callsign: string, route: string) {
   const [origin, destination] = route.split(' - ');
@@ -271,6 +272,7 @@ describe('buildPassRows', () => {
       endTime: 1900,
       aircraft,
       trackPoints: [],
+      altitudeSummary: summarizeTrackAltitude([]),
       hadAltitude: false,
       hadGround: false,
       hadEmergency: false,

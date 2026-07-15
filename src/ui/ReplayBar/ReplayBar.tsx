@@ -3,7 +3,7 @@ import { Spinner } from '@heroui/react';
 import { useTranslation } from 'react-i18next';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { useToolbarStore } from '@/store/toolbarStore';
-import { useReplay } from '@/features/playback/useReplay';
+import { reportHistoryLoadError, useReplay } from '@/features/playback/useReplay';
 import { HISTORY_RANGES, type HistoryRange } from '@/data/historyLoader';
 import { formatTimeOfDay } from '@/i18n/format';
 
@@ -12,8 +12,8 @@ const SPEEDS = [1, 2, 4, 8, 16, 64];
 export function ReplayBar() {
   const { t, i18n } = useTranslation();
   const mode = usePlaybackStore((s) => s.mode);
-  const loading = usePlaybackStore((s) => s.loading);
   const progress = usePlaybackStore((s) => s.progress);
+  const historyLoadStage = usePlaybackStore((s) => s.historyLoadStage);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const speed = usePlaybackStore((s) => s.speed);
   const cursorTime = usePlaybackStore((s) => s.cursorTime);
@@ -22,19 +22,22 @@ export function ReplayBar() {
   const rangeSelectOpen = usePlaybackStore((s) => s.rangeSelectOpen);
   const { enterHistory, exitToLive } = useReplay();
 
-  /* Fullscreen loading overlay */
-  if (loading) {
+  if (historyLoadStage !== 'idle') {
+    const status =
+      historyLoadStage === 'fetching'
+        ? `${t('replay.loadingHistory')} ${progress.done}/${progress.total}`
+        : historyLoadStage === 'processing'
+          ? t('replay.processingHistory')
+          : t('replay.updatingTracks');
     return (
       <div
         data-testid="replay-bar"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        role="status"
+        aria-live="polite"
+        className="glass absolute bottom-3 left-4 flex items-center gap-2 px-3 py-1.5 text-xs text-white"
       >
-        <div className="flex flex-col items-center gap-3 text-white">
-          <Spinner size="lg" color="current" />
-          <span className="text-sm tabular-nums">
-            {t('replay.loadingHistory')} {progress.done}/{progress.total}
-          </span>
-        </div>
+        <Spinner size="sm" color="current" />
+        <span className="tabular-nums">{status}</span>
       </div>
     );
   }
@@ -92,7 +95,9 @@ export function ReplayBar() {
         <select
           aria-label={t('replay.timeRange')}
           value={range}
-          onChange={(e) => void enterHistory(e.target.value as HistoryRange)}
+          onChange={(e) =>
+            void enterHistory(e.target.value as HistoryRange).catch(reportHistoryLoadError)
+          }
           className="rounded bg-white/10 px-1 text-xs"
         >
           {HISTORY_RANGES.map((r) => (
@@ -129,7 +134,7 @@ export function ReplayBar() {
               aria-label={label}
               onClick={() => {
                 usePlaybackStore.getState().setRangeSelectOpen(false);
-                void enterHistory(r.key);
+                void enterHistory(r.key).catch(reportHistoryLoadError);
               }}
               className={`rounded px-2 py-1 hover:bg-white/10 ${r.key === range ? 'bg-white/20' : ''}`}
             >

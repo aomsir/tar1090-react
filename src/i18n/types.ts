@@ -36,6 +36,9 @@ export interface SettingsResource {
     allWarning: string;
     altitudeFilter: string;
     altitudeRange: string;
+    updateOnRelease: string;
+    minAltitude: string;
+    maxAltitude: string;
   };
   scale: {
     title: string;
@@ -191,6 +194,8 @@ export interface DetailResource {
 export interface ReplayResource {
   history: string;
   loadingHistory: string;
+  processingHistory: string;
+  updatingTracks: string;
   pause: string;
   play: string;
   statisticsPanel: string;

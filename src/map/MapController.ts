@@ -14,10 +14,17 @@ import {
   type AircraftLayerHandle,
 } from './aircraftLayer';
 import { createTrackLayer, syncTrack, type TrackLayerHandle } from './trackLayer';
-import { createPTracksLayer, syncPTracks, type PTracksLayerHandle } from './pTracksLayer';
+import {
+  createPTracksLayer,
+  syncPTracksProgressive,
+  type PTracksLayerHandle,
+  type PTracksSyncJob,
+  type PTracksSyncOptions,
+} from './pTracksLayer';
 import type { Aircraft } from '@/domain/Aircraft';
 import type { TrackSegment } from '@/features/track/track';
 import type { TrackPoint } from '@/features/track/track';
+import type { HistoryTrackPaths } from '@/features/playback/historyTrackSelection';
 
 export const GAODE_BASEMAP_URL =
   'https://webrd04.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}';
@@ -94,6 +101,7 @@ export class MapController {
   private readonly handle: AircraftLayerHandle;
   private readonly trackHandle: TrackLayerHandle;
   private readonly pTracksHandle: PTracksLayerHandle;
+  private pTracksJob: PTracksSyncJob | null = null;
   private selectedHex: string | null = null;
   private selectCb: ((selection: MapSelection) => void) | null = null;
   private followEnabled = false;
@@ -192,11 +200,28 @@ export class MapController {
     this.trackHandle.source.clear();
   }
 
-  showPTracks(tracksMap: globalThis.Map<string, TrackPoint[]>, gapThresholdSec?: number): void {
-    syncPTracks(this.pTracksHandle.source, tracksMap, gapThresholdSec);
+  showPTracks(
+    tracksMap: HistoryTrackPaths | globalThis.Map<string, TrackPoint[]>,
+    options?: number | PTracksSyncOptions,
+  ): Promise<void> {
+    this.pTracksJob?.cancel();
+    const syncOptions = typeof options === 'number' ? { gapThresholdSec: options } : options;
+    const job = syncPTracksProgressive(this.pTracksHandle.source, tracksMap, syncOptions);
+    this.pTracksJob = job;
+    void job.done.then(
+      () => {
+        if (this.pTracksJob === job) this.pTracksJob = null;
+      },
+      () => {
+        if (this.pTracksJob === job) this.pTracksJob = null;
+      },
+    );
+    return job.done;
   }
 
   clearPTracks(): void {
+    this.pTracksJob?.cancel();
+    this.pTracksJob = null;
     this.pTracksHandle.source.clear();
   }
 
@@ -285,6 +310,7 @@ export class MapController {
   }
 
   dispose(): void {
+    this.clearPTracks();
     this.map.setTarget();
   }
 }

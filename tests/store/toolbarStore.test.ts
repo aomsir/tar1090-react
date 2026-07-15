@@ -265,6 +265,34 @@ describe('altitude filter', () => {
     expect(useToolbarStore.getState().altitudeFilterMax).toBe(25000);
   });
 
+  it('normalizes committed and migrated altitude ranges', () => {
+    useToolbarStore.getState().setAltitudeFilterRange(28_749, -200);
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 0,
+      altitudeFilterMax: 28_500,
+    });
+
+    const migrated = migrateToolbarState({ altitudeFilterMin: 99_000, altitudeFilterMax: 1_249 });
+    expect(migrated).toMatchObject({ altitudeFilterMin: 1_000, altitudeFilterMax: 45_000 });
+  });
+
+  it('normalizes current-version altitude ranges during hydration', async () => {
+    localStorage.setItem(
+      'toolbar-settings',
+      JSON.stringify({
+        state: { altitudeFilterMin: 28_749, altitudeFilterMax: -200 },
+        version: 5,
+      }),
+    );
+
+    await useToolbarStore.persist.rehydrate();
+
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 0,
+      altitudeFilterMax: 28_500,
+    });
+  });
+
   it('resetAll restores altitude filter defaults', () => {
     useToolbarStore.getState().setAltitudeFilterEnabled(true);
     useToolbarStore.getState().setAltitudeFilterRange(5000, 25000);

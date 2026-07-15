@@ -1,14 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { historyStore } from '@/store/historyStore';
 import { useLiveTick } from '@/store/liveTick';
 import { useSelectionStore } from '@/store/selectionStore';
 import { useToolbarStore } from '@/store/toolbarStore';
-import { selectHistoryTrackMap } from './historyTracks';
+import { HistoryTrackClipCache, selectHistoryTrackPaths } from './historyTrackSelection';
 import type { MapController } from '@/map/MapController';
+import { reportHistoryLoadError } from './useReplay';
 
-export function usePlayback(controllerRef: RefObject<MapController | null>): void {
+export const historyTrackClipCache = new HistoryTrackClipCache();
+
+export function usePlayback(
+  controllerRef: RefObject<MapController | null>,
+  readyVersion = 0,
+): void {
+  const renderJobRef = useRef(0);
   const mode = usePlaybackStore((s) => s.mode);
   const isPlaying = usePlaybackStore((s) => s.isPlaying);
   const speed = usePlaybackStore((s) => s.speed);
@@ -24,18 +31,78 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
       const altitudeFilter = altitudeFilterEnabled
         ? { min: altitudeFilterMin, max: altitudeFilterMax }
         : undefined;
-      const data = selectHistoryTrackMap(
+      const data = selectHistoryTrackPaths(
         historyStore.drawablePassesRecentFirst,
         historyTrackLimit,
         selectedPassId,
-        altitudeFilter,
+        {
+          generation: historyStore.generation,
+          altitudeRange: altitudeFilter,
+          cache: historyTrackClipCache,
+        },
       );
       // Use 3× median frame interval as gap threshold to avoid false
       // "estimated" dashes when frames were sampled at a coarser step.
       const gap = historyStore.frameInterval() * 3;
-      if (data.size > 0) controllerRef.current?.showPTracks(data, gap);
-      else controllerRef.current?.clearPTracks();
+      const performance = historyStore.performanceRecorder;
+      const generation = historyStore.generation;
+      const markMapContent = (kind: 'first' | 'full'): void => {
+        if (
+          performance?.generation !== generation ||
+          historyStore.generation !== generation ||
+          historyStore.performanceRecorder !== performance
+        ) {
+          return;
+        }
+        const elapsed = performance.recorder.elapsedSince('postDownload');
+        if (elapsed === undefined) return;
+        if (kind === 'first') performance.recorder.markFirstMapContent(elapsed);
+        else performance.recorder.markFullMapContent(elapsed);
+      };
+      if (data.size > 0) {
+        const controller = controllerRef.current;
+        const renderJob = ++renderJobRef.current;
+        const loadGeneration = usePlaybackStore.getState().historyLoadGeneration;
+        if (!controller) return;
+        usePlaybackStore.getState().setHistoryLoadStage('rendering', loadGeneration);
+        const done = controller.showPTracks(data, {
+          gapThresholdSec: gap,
+          onFirstBatch: () => markMapContent('first'),
+          onComplete: () => markMapContent('full'),
+        });
+        void Promise.resolve(done).then(
+          () => {
+            const store = usePlaybackStore.getState();
+            if (
+              renderJobRef.current === renderJob &&
+              store.mode === 'history' &&
+              store.historyLoadGeneration === loadGeneration &&
+              historyStore.generation === generation &&
+              historyStore.performanceRecorder === performance
+            ) {
+              store.setHistoryLoadStage('idle', loadGeneration);
+            }
+          },
+          (error) => {
+            const store = usePlaybackStore.getState();
+            if (
+              renderJobRef.current === renderJob &&
+              store.mode === 'history' &&
+              store.historyLoadGeneration === loadGeneration
+            ) {
+              store.setHistoryLoadStage('idle', loadGeneration);
+            }
+            reportHistoryLoadError(error);
+          },
+        );
+      } else {
+        controllerRef.current?.clearPTracks();
+        const store = usePlaybackStore.getState();
+        store.setHistoryLoadStage('idle', store.historyLoadGeneration);
+      }
     } else {
+      renderJobRef.current += 1;
+      historyTrackClipCache.clear();
       controllerRef.current?.clearPTracks();
     }
   }, [
@@ -46,6 +113,7 @@ export function usePlayback(controllerRef: RefObject<MapController | null>): voi
     altitudeFilterEnabled,
     altitudeFilterMin,
     altitudeFilterMax,
+    readyVersion,
     controllerRef,
   ]);
 

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { extractTrackPoints, buildTrackSegments } from '@/features/track/track';
+import {
+  extractTrackPoints,
+  buildTrackSegments,
+  iterateTrackSegments,
+} from '@/features/track/track';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
@@ -45,6 +49,19 @@ const pt = (over: Partial<TrackPoint>): TrackPoint => ({
 });
 
 describe('buildTrackSegments', () => {
+  it('preserves build output through the incremental segment iterator', () => {
+    const pts = [
+      pt({ lon: 0, ts: 0, alt: 1_000 }),
+      pt({ lon: 1, ts: 30, alt: 35_000 }),
+      pt({ lon: 2, ts: 1_000, alt: 35_000 }),
+      pt({ lon: 3, ts: 1_030, alt: 1_000 }),
+    ];
+
+    expect([...iterateTrackSegments(pts, { gapThresholdSec: 90 })]).toEqual(
+      buildTrackSegments(pts, { gapThresholdSec: 90 }),
+    );
+  });
+
   it('returns empty for no points', () => {
     expect(buildTrackSegments([])).toEqual([]);
   });

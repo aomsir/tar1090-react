@@ -148,6 +148,7 @@ describe('buildAircraftPasses', () => {
       hadGround: true,
       hadEmergency: true,
       hadSquawk: true,
+      altitudeSummary: { min: 0, max: 1_000, hasGround: true, hasUnknown: true },
     });
     expect(passes[0].maxDistance).toBeGreaterThan(100);
   });

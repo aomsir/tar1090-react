@@ -37,7 +37,9 @@ export function useLiveData(
     enricherRef.current ??= new AircraftEnricher(
       (ac) => enrichAircraft(ac),
       () => {
-        controllerRef.current?.syncAircraft(aircraftStore.list());
+        if (usePlaybackStore.getState().mode === 'live') {
+          controllerRef.current?.syncAircraft(aircraftStore.list());
+        }
         useLiveTick.getState().bump();
       },
     );
@@ -70,7 +72,9 @@ export function useLiveData(
     const unsub = sourceRef.current!.subscribe((snap) => {
       const stats = aircraftStore.applySnapshot(snap);
       setStats(stats);
-      controllerRef.current?.syncAircraft(aircraftStore.list());
+      if (usePlaybackStore.getState().mode === 'live') {
+        controllerRef.current?.syncAircraft(aircraftStore.list());
+      }
       enricherRef.current?.enrichPending(aircraftStore.list());
 
       // Route API: enqueue aircraft with callsign, then flush

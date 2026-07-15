@@ -10,6 +10,7 @@ import {
 } from '@heroui/react';
 import type { Key } from '@heroui/react';
 import { X } from 'lucide-react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToolbarStore } from '@/store/toolbarStore';
 import type { Units } from '@/store/toolbarStore';
@@ -22,6 +23,17 @@ import {
 
 function SectionLabel({ children }: { children: string }) {
   return <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-400">{children}</div>;
+}
+
+function isAltitudeRange(value: unknown): value is [number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    typeof value[0] === 'number' &&
+    Number.isFinite(value[0]) &&
+    typeof value[1] === 'number' &&
+    Number.isFinite(value[1])
+  );
 }
 
 export function SettingsPanel() {
@@ -48,6 +60,18 @@ export function SettingsPanel() {
     altitudeFilterMax,
     setAltitudeFilterRange,
   } = useToolbarStore();
+  const [altitudePreview, setAltitudePreview] = useState<[number, number]>([
+    altitudeFilterMin,
+    altitudeFilterMax,
+  ]);
+  const isAdjustingAltitude = useRef(false);
+
+  useEffect(() => {
+    if (isAdjustingAltitude.current) return;
+    startTransition(() => {
+      setAltitudePreview([altitudeFilterMin, altitudeFilterMax]);
+    });
+  }, [altitudeFilterMin, altitudeFilterMax]);
 
   const unitOptions: { id: Units; label: string }[] = [
     { id: 'nautical', label: t('settings.units.aviation') },
@@ -215,39 +239,69 @@ export function SettingsPanel() {
         </Select.Popover>
       </Select>
       <div className="mt-3 space-y-3">
-        <Switch
-          isSelected={altitudeFilterEnabled}
-          onChange={(v) => setAltitudeFilterEnabled(v as boolean)}
-        >
-          <Switch.Content>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-            {t('settings.historyTracks.altitudeFilter')}
-          </Switch.Content>
-        </Switch>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="font-medium">{t('settings.historyTracks.altitudeFilter')}</div>
+            <div className="text-xs text-slate-400">
+              {t('settings.historyTracks.altitudeRange', {
+                min: altitudePreview[0].toLocaleString(),
+                max: altitudePreview[1].toLocaleString(),
+              })}
+            </div>
+          </div>
+          <Switch
+            aria-label={t('settings.historyTracks.altitudeFilter')}
+            isSelected={altitudeFilterEnabled}
+            onChange={(v) => setAltitudeFilterEnabled(v as boolean)}
+          >
+            <Switch.Content>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+        </div>
         {altitudeFilterEnabled && (
           <Slider
-            value={[altitudeFilterMin, altitudeFilterMax]}
-            onChange={(v) => {
-              const [min, max] = v as number[];
-              setAltitudeFilterRange(min, max);
+            value={altitudePreview}
+            onChange={(value) => {
+              if (!isAltitudeRange(value)) return;
+              isAdjustingAltitude.current = true;
+              setAltitudePreview(value);
+            }}
+            onChangeEnd={(value) => {
+              isAdjustingAltitude.current = false;
+              if (!isAltitudeRange(value)) return;
+              setAltitudeFilterRange(value[0], value[1]);
             }}
             minValue={0}
-            maxValue={45000}
+            maxValue={45_000}
             step={500}
           >
-            <Label>
-              {t('settings.historyTracks.altitudeRange', {
-                min: altitudeFilterMin.toLocaleString(),
-                max: altitudeFilterMax.toLocaleString(),
-              })}
-            </Label>
-            <Slider.Track>
-              <Slider.Fill />
-              <Slider.Thumb />
-              <Slider.Thumb />
+            <Label className="sr-only">{t('settings.historyTracks.altitudeFilter')}</Label>
+            <Slider.Track className="mx-2">
+              {({ state }) => (
+                <>
+                  <Slider.Fill />
+                  {state.values.map((_, index) => (
+                    <Slider.Thumb
+                      key={index}
+                      index={index}
+                      aria-label={
+                        index === 0
+                          ? t('settings.historyTracks.minAltitude')
+                          : t('settings.historyTracks.maxAltitude')
+                      }
+                    />
+                  ))}
+                </>
+              )}
             </Slider.Track>
+            <div className="mx-2 flex justify-between text-xs text-slate-400">
+              <span>0 ft</span>
+              <span>45,000 ft</span>
+            </div>
+            <p className="text-xs text-slate-400">{t('settings.historyTracks.updateOnRelease')}</p>
           </Slider>
         )}
       </div>

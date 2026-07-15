@@ -4,25 +4,27 @@ import { usePlaybackStore } from '@/store/playbackStore';
 
 export function MobileHistoryLoading() {
   const { t } = useTranslation();
-  const loading = usePlaybackStore((s) => s.loading);
   const done = usePlaybackStore((s) => s.progress.done);
   const total = usePlaybackStore((s) => s.progress.total);
+  const stage = usePlaybackStore((s) => s.historyLoadStage);
 
-  if (!loading) return null;
+  if (stage === 'idle') return null;
+  const status =
+    stage === 'fetching'
+      ? `${t('replay.loadingHistory')} ${done}/${total}`
+      : stage === 'processing'
+        ? t('replay.processingHistory')
+        : t('replay.updatingTracks');
 
   return (
     <div
       data-testid="mobile-history-loading"
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="glass absolute bottom-14 left-3 flex items-center gap-2 px-3 py-1.5 text-xs text-white"
     >
-      <div className="flex flex-col items-center gap-3 text-white">
-        <Spinner size="lg" color="current" />
-        <span className="text-sm tabular-nums">
-          {t('replay.loadingHistory')} {done}/{total}
-        </span>
-      </div>
+      <Spinner size="sm" color="current" />
+      <span className="tabular-nums">{status}</span>
     </div>
   );
 }

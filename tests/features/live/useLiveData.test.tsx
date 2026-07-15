@@ -159,6 +159,48 @@ describe('useLiveData', () => {
     expect(aircraftStore.map.get('a00001')?.registration).toBe('N12345');
   });
 
+  it('does not let delayed enrichment overwrite history markers', async () => {
+    const source = makeSource();
+    const controller = {
+      syncAircraft: vi.fn(),
+      setSelected: vi.fn(),
+      onSelect: vi.fn(),
+      dispose: vi.fn(),
+    } as unknown as MapController;
+    let completeEnrichment: (() => void) | undefined;
+    enrichAircraftMock.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          completeEnrichment = resolve;
+        }),
+    );
+
+    function Harness() {
+      const ref = useRef<MapController | null>(controller);
+      useLiveData(ref, source);
+      return null;
+    }
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Harness />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalled());
+    act(() => source.emit({ now: 1, messages: 10, aircraft: [{ hex: 'a', lat: 1, lon: 2 }] }));
+    await waitFor(() => expect(completeEnrichment).toBeTypeOf('function'));
+    controller.syncAircraft.mockClear();
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+    await act(async () => {
+      completeEnrichment?.();
+      await Promise.resolve();
+    });
+
+    expect(controller.syncAircraft).not.toHaveBeenCalled();
+  });
+
   it('unsubscribes from the source while in history mode and resubscribes on return to live', async () => {
     const unsub = vi.fn();
     const source = {
@@ -184,5 +226,37 @@ describe('useLiveData', () => {
     expect(unsub).toHaveBeenCalledTimes(1);
     act(() => usePlaybackStore.getState().setMode('live'));
     await waitFor(() => expect(source.subscribe).toHaveBeenCalledTimes(2));
+  });
+
+  it('does not let a queued source snapshot overwrite history markers', async () => {
+    const source = makeSource();
+    const controller = {
+      syncAircraft: vi.fn(),
+      setSelected: vi.fn(),
+      onSelect: vi.fn(),
+      dispose: vi.fn(),
+    } as unknown as MapController;
+
+    function Harness() {
+      const ref = useRef<MapController | null>(controller);
+      useLiveData(ref, source);
+      return null;
+    }
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Harness />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(source.subscribe).toHaveBeenCalled());
+
+    act(() => usePlaybackStore.getState().setMode('history'));
+    controller.syncAircraft.mockClear();
+    act(() => {
+      source.emit({ now: 2, messages: 10, aircraft: [{ hex: 'queued', lat: 1, lon: 2 }] });
+    });
+
+    expect(controller.syncAircraft).not.toHaveBeenCalled();
   });
 });
