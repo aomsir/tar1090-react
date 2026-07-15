@@ -27,18 +27,15 @@ export function useHistoryAircraftMarkers(
 
       const selection = useSelectionStore.getState();
       const toolbar = useToolbarStore.getState();
-      const frameIndex = historyStore.frameIndexAt(playback.cursorTime);
       const key = JSON.stringify([
         playback.mode,
-        frameIndex,
+        playback.cursorTime,
         selection.selectedHex,
         selection.selectedPassId,
-        [...selection.selectedHexes].sort(),
         toolbar.altitudeFilterEnabled,
         toolbar.altitudeFilterMin,
         toolbar.altitudeFilterMax,
         toolbar.onlyMilitary,
-        toolbar.isolation,
         toolbar.filterGroundVehicles,
         toolbar.filterBlockedMLAT,
         historyStore.generation,
@@ -47,14 +44,11 @@ export function useHistoryAircraftMarkers(
 
       const selectedPass = historyStore.getPass(selection.selectedPassId);
       controller.syncAircraft(
-        selectHistoryAircraft(frameIndex === null ? null : historyStore.frames[frameIndex], {
+        selectHistoryAircraft({
           selectedHex: selection.selectedHex,
-          selectedHexes: selection.selectedHexes,
           selectedPass,
-          passes: historyStore.passes,
           cursorTime: playback.cursorTime,
           onlyMilitary: toolbar.onlyMilitary,
-          isolation: toolbar.isolation,
           filterGroundVehicles: toolbar.filterGroundVehicles,
           filterBlockedMLAT: toolbar.filterBlockedMLAT,
           altitudeRange: toolbar.altitudeFilterEnabled
