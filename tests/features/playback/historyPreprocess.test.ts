@@ -67,10 +67,19 @@ describe('history preprocessing', () => {
   const frames = [
     frame(200, [
       { hex: ' ABC123 ', flight: 'FIRST100', lat: 30, lon: 110, altitude: 10_000, speed: 200 },
-      { hex: 'def456', lat: 31, lon: 111, altitude: 'ground', emergency: 'general', squawk: '7700' },
+      {
+        hex: 'def456',
+        lat: 31,
+        lon: 111,
+        altitude: 'ground',
+        emergency: 'general',
+        squawk: '7700',
+      },
     ]),
     frame(100, [{ hex: 'abc123', callsign: 'SECOND200', lat: 29, lon: 109, altitude: 9_000 }]),
-    frame(201, [{ hex: 'abc123', r: 'B-TEST', t: 'A320', lat: 30, lon: 110, altitude: 11_000, speed: 220 }]),
+    frame(201, [
+      { hex: 'abc123', r: 'B-TEST', t: 'A320', lat: 30, lon: 110, altitude: 11_000, speed: 220 },
+    ]),
   ];
 
   it('matches canonical pass output after serializing and hydrating', () => {
@@ -95,10 +104,12 @@ describe('history preprocessing', () => {
   });
 
   it('preserves latest fields when later nullable identity values are ignored by Aircraft.update', () => {
-    const hydrated = hydrateAircraftPasses(preprocessHistoryFrames([
-      frame(100, [{ hex: 'abc123', flight: 'TEST100', r: 'B-TEST', t: 'A320' }]),
-      frame(101, [{ hex: 'abc123', flight: null, r: null, t: null, type: null }]),
-    ]).passes);
+    const hydrated = hydrateAircraftPasses(
+      preprocessHistoryFrames([
+        frame(100, [{ hex: 'abc123', flight: 'TEST100', r: 'B-TEST', t: 'A320' }]),
+        frame(101, [{ hex: 'abc123', flight: null, r: null, t: null, type: null }]),
+      ]).passes,
+    );
 
     expect(hydrated[0].aircraft).toMatchObject({
       flight: 'TEST100',
@@ -108,10 +119,19 @@ describe('history preprocessing', () => {
   });
 
   it('treats nullable mlat like Aircraft.update and does not attempt to copy it', () => {
-    const hydrated = hydrateAircraftPasses(preprocessHistoryFrames([
-      frame(100, [{ hex: 'abc123', lat: 1, lon: 2, mlat: ['lat'] }]),
-      frame(101, [{ hex: 'abc123', lat: 2, lon: 3, mlat: null } as unknown as AircraftSnapshot['aircraft'][number]]),
-    ]).passes);
+    const hydrated = hydrateAircraftPasses(
+      preprocessHistoryFrames([
+        frame(100, [{ hex: 'abc123', lat: 1, lon: 2, mlat: ['lat'] }]),
+        frame(101, [
+          {
+            hex: 'abc123',
+            lat: 2,
+            lon: 3,
+            mlat: null,
+          } as unknown as AircraftSnapshot['aircraft'][number],
+        ]),
+      ]).passes,
+    );
 
     expect(hydrated[0].aircraft).toMatchObject({ addrType: 'adsb', isMlat: false });
   });
@@ -162,7 +182,9 @@ describe('HistoryPreprocessClient', () => {
   it('uses the matching main-thread fallback after a Worker error', async () => {
     const worker = new FakeWorker();
     const fallback = vi.fn(() => ({ passes: [] }));
-    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, { preprocess: fallback });
+    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, {
+      preprocess: fallback,
+    });
     const promise = client.preprocess(7, [], {});
 
     worker.fail();
@@ -174,7 +196,9 @@ describe('HistoryPreprocessClient', () => {
   it('uses the matching main-thread fallback after a Worker failure response', async () => {
     const worker = new FakeWorker();
     const fallback = vi.fn(() => ({ passes: [] }));
-    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, { preprocess: fallback });
+    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, {
+      preprocess: fallback,
+    });
     const promise = client.preprocess(7, [], {});
 
     worker.respond({ type: 'failure', requestId: 1, generation: 7, message: 'failed' });
@@ -192,7 +216,9 @@ describe('HistoryPreprocessClient', () => {
 
     expect(worker.terminate).toHaveBeenCalledOnce();
     await expect(promise).rejects.toBeInstanceOf(HistoryPreprocessCancelledError);
-    await expect(client.preprocess(5, [], {})).rejects.toBeInstanceOf(HistoryPreprocessCancelledError);
+    await expect(client.preprocess(5, [], {})).rejects.toBeInstanceOf(
+      HistoryPreprocessCancelledError,
+    );
   });
 
   it('keeps same-generation preprocess and statistics requests separate', async () => {
@@ -201,11 +227,18 @@ describe('HistoryPreprocessClient', () => {
     const preprocess = client.preprocess(3, [], {});
     const statistics = client.statistics(3, { frames: [], passes: [] });
 
-    worker.respond({ type: 'statistics-success', requestId: 2, generation: 3, result: computeHistoryStatisticsDTO({ frames: [], passes: [] }) });
+    worker.respond({
+      type: 'statistics-success',
+      requestId: 2,
+      generation: 3,
+      result: computeHistoryStatisticsDTO({ frames: [], passes: [] }),
+    });
     worker.respond({ type: 'success', requestId: 1, generation: 3, result: { passes: [] } });
 
     await expect(preprocess).resolves.toEqual({ passes: [] });
-    await expect(statistics).resolves.toEqual(computeHistoryStatisticsDTO({ frames: [], passes: [] }));
+    await expect(statistics).resolves.toEqual(
+      computeHistoryStatisticsDTO({ frames: [], passes: [] }),
+    );
   });
 
   it('keeps same-generation requests of the same type separate', async () => {
@@ -226,7 +259,12 @@ describe('HistoryPreprocessClient', () => {
     const client = new HistoryPreprocessClient(() => worker as unknown as Worker);
     const request = client.preprocess(3, [], {});
 
-    worker.respond({ type: 'statistics-success', requestId: 1, generation: 3, result: computeHistoryStatisticsDTO({ frames: [], passes: [] }) });
+    worker.respond({
+      type: 'statistics-success',
+      requestId: 1,
+      generation: 3,
+      result: computeHistoryStatisticsDTO({ frames: [], passes: [] }),
+    });
 
     await expect(request).rejects.toThrow('response type');
   });
@@ -234,19 +272,25 @@ describe('HistoryPreprocessClient', () => {
   it('recreates the Worker after an error and falls back every pending request', async () => {
     const first = new FakeWorker();
     const second = new FakeWorker();
-    const createWorker = vi.fn()
+    const createWorker = vi
+      .fn()
       .mockReturnValueOnce(first as unknown as Worker)
       .mockReturnValueOnce(second as unknown as Worker);
     const preprocessFallback = vi.fn(() => ({ passes: [] }));
     const statisticsFallback = vi.fn(() => computeHistoryStatisticsDTO({ frames: [], passes: [] }));
-    const client = new HistoryPreprocessClient(createWorker, { preprocess: preprocessFallback, statistics: statisticsFallback });
+    const client = new HistoryPreprocessClient(createWorker, {
+      preprocess: preprocessFallback,
+      statistics: statisticsFallback,
+    });
     const preprocess = client.preprocess(3, [], {});
     const statistics = client.statistics(3, { frames: [], passes: [] });
 
     first.fail();
 
     await expect(preprocess).resolves.toEqual({ passes: [] });
-    await expect(statistics).resolves.toEqual(computeHistoryStatisticsDTO({ frames: [], passes: [] }));
+    await expect(statistics).resolves.toEqual(
+      computeHistoryStatisticsDTO({ frames: [], passes: [] }),
+    );
     expect(first.terminate).toHaveBeenCalledOnce();
     const next = client.preprocess(3, [], {});
     expect(createWorker).toHaveBeenCalledTimes(2);
@@ -274,7 +318,9 @@ describe('HistoryPreprocessClient', () => {
   });
 
   it('returns a rejected Promise rather than throwing when no-Worker fallback fails', async () => {
-    const fallback = vi.fn(() => { throw new Error('fallback failed'); });
+    const fallback = vi.fn(() => {
+      throw new Error('fallback failed');
+    });
     const onFallback = vi.fn();
     const client = new HistoryPreprocessClient(() => null, { preprocess: fallback });
 
@@ -285,7 +331,9 @@ describe('HistoryPreprocessClient', () => {
   });
 
   it('uses stable no-Worker fallbacks when Worker creation throws synchronously', async () => {
-    const createWorker = vi.fn(() => { throw new Error('blocked by CSP'); });
+    const createWorker = vi.fn(() => {
+      throw new Error('blocked by CSP');
+    });
     const preprocessFallback = vi.fn(() => ({ passes: [] }));
     const statisticsResult = computeHistoryStatisticsDTO({ frames: [], passes: [] });
     const statisticsFallback = vi.fn(() => statisticsResult);
@@ -296,8 +344,12 @@ describe('HistoryPreprocessClient', () => {
       statistics: statisticsFallback,
     });
 
-    await expect(client.preprocess(1, [], {}, preprocessFallbackPhase)).resolves.toEqual({ passes: [] });
-    await expect(client.statistics(1, { frames: [], passes: [] }, statisticsFallbackPhase)).resolves.toEqual(statisticsResult);
+    await expect(client.preprocess(1, [], {}, preprocessFallbackPhase)).resolves.toEqual({
+      passes: [],
+    });
+    await expect(
+      client.statistics(1, { frames: [], passes: [] }, statisticsFallbackPhase),
+    ).resolves.toEqual(statisticsResult);
 
     expect(createWorker).toHaveBeenCalledOnce();
     expect(preprocessFallback).toHaveBeenCalledOnce();
@@ -308,9 +360,13 @@ describe('HistoryPreprocessClient', () => {
 
   it('falls back after postMessage throws synchronously', async () => {
     const worker = new FakeWorker();
-    worker.postMessage.mockImplementationOnce(() => { throw new Error('post failed'); });
+    worker.postMessage.mockImplementationOnce(() => {
+      throw new Error('post failed');
+    });
     const fallback = vi.fn(() => ({ passes: [] }));
-    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, { preprocess: fallback });
+    const client = new HistoryPreprocessClient(() => worker as unknown as Worker, {
+      preprocess: fallback,
+    });
 
     await expect(client.preprocess(1, [], {})).resolves.toEqual({ passes: [] });
     expect(worker.terminate).toHaveBeenCalledOnce();

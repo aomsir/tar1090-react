@@ -9,7 +9,13 @@ import {
 } from './historyPreprocess';
 
 export type HistoryPreprocessRequest =
-  | { type: 'preprocess'; requestId: number; generation: number; frames: AircraftSnapshot[]; options: BuildAircraftPassesOptions }
+  | {
+      type: 'preprocess';
+      requestId: number;
+      generation: number;
+      frames: AircraftSnapshot[];
+      options: BuildAircraftPassesOptions;
+    }
   | { type: 'statistics'; requestId: number; generation: number; input: HistoryStatisticsInputDTO };
 
 export type HistoryPreprocessResponse =
@@ -47,18 +53,33 @@ export class HistoryPreprocessClient {
   private readonly fallback: Fallbacks;
 
   constructor(
-    createWorker: () => Worker | null = () => typeof Worker === 'undefined' ? null : new Worker(new URL('./historyPreprocess.worker.ts', import.meta.url), { type: 'module' }),
-    fallback: Fallbacks = { preprocess: preprocessHistoryFrames, statistics: computeHistoryStatisticsDTO },
+    createWorker: () => Worker | null = () =>
+      typeof Worker === 'undefined'
+        ? null
+        : new Worker(new URL('./historyPreprocess.worker.ts', import.meta.url), { type: 'module' }),
+    fallback: Fallbacks = {
+      preprocess: preprocessHistoryFrames,
+      statistics: computeHistoryStatisticsDTO,
+    },
   ) {
     this.createWorker = createWorker;
     this.fallback = fallback;
   }
 
-  preprocess(generation: number, frames: AircraftSnapshot[], options: BuildAircraftPassesOptions, onFallback?: () => void): Promise<PreprocessedHistory> {
+  preprocess(
+    generation: number,
+    frames: AircraftSnapshot[],
+    options: BuildAircraftPassesOptions,
+    onFallback?: () => void,
+  ): Promise<PreprocessedHistory> {
     return this.request('preprocess', generation, { frames, options }, onFallback);
   }
 
-  statistics(generation: number, input: HistoryStatisticsInputDTO, onFallback?: () => void): Promise<HistoryStatistics> {
+  statistics(
+    generation: number,
+    input: HistoryStatisticsInputDTO,
+    onFallback?: () => void,
+  ): Promise<HistoryStatistics> {
     return this.request('statistics', generation, { input }, onFallback);
   }
 
@@ -73,7 +94,9 @@ export class HistoryPreprocessClient {
   private request<T>(
     type: HistoryPreprocessRequest['type'],
     generation: number,
-    payload: { frames: AircraftSnapshot[]; options: BuildAircraftPassesOptions } | { input: HistoryStatisticsInputDTO },
+    payload:
+      | { frames: AircraftSnapshot[]; options: BuildAircraftPassesOptions }
+      | { input: HistoryStatisticsInputDTO },
     onFallback?: () => void,
   ): Promise<T> {
     if (this.disposed || generation < this.authoritativeGeneration) {
@@ -90,9 +113,15 @@ export class HistoryPreprocessClient {
     }
 
     const requestId = ++this.requestId;
-    const request = type === 'preprocess'
-      ? { type, requestId, generation, ...(payload as { frames: AircraftSnapshot[]; options: BuildAircraftPassesOptions }) }
-      : { type, requestId, generation, ...(payload as { input: HistoryStatisticsInputDTO }) };
+    const request =
+      type === 'preprocess'
+        ? {
+            type,
+            requestId,
+            generation,
+            ...(payload as { frames: AircraftSnapshot[]; options: BuildAircraftPassesOptions }),
+          }
+        : { type, requestId, generation, ...(payload as { input: HistoryStatisticsInputDTO }) };
     const worker = this.getWorker();
     if (!worker) {
       try {
@@ -130,7 +159,8 @@ export class HistoryPreprocessClient {
       this.worker = null;
     }
     if (!this.worker) return null;
-    this.worker.onmessage = (event: MessageEvent<HistoryPreprocessResponse>) => this.handleMessage(event.data);
+    this.worker.onmessage = (event: MessageEvent<HistoryPreprocessResponse>) =>
+      this.handleMessage(event.data);
     this.worker.onerror = () => this.breakWorker();
     return this.worker;
   }
@@ -145,7 +175,11 @@ export class HistoryPreprocessClient {
     }
     const expected = pending.type === 'preprocess' ? 'success' : 'statistics-success';
     if (message.type !== expected) {
-      pending.reject(new Error(`History preprocessing response type mismatch: expected ${expected}, received ${message.type}`));
+      pending.reject(
+        new Error(
+          `History preprocessing response type mismatch: expected ${expected}, received ${message.type}`,
+        ),
+      );
       return;
     }
     pending.resolve(message.result);

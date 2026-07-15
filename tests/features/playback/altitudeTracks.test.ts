@@ -60,10 +60,10 @@ describe('altitude tracks', () => {
   });
 
   it('clips a segment crossing both range bounds with exact interpolated endpoints', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, -500, 0), point(2, 1_500, 20, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, -500, 0), point(2, 1_500, 20, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result).toEqual([
       [
@@ -75,10 +75,7 @@ describe('altitude tracks', () => {
 
   it('uses exact range endpoint altitudes for decimal boundary crossings', () => {
     const range = { min: 0.04, max: 0.07 };
-    const result = clipTrackToAltitudeRange(
-      [point(0, 0.01, 0), point(1, 0.1, 10)],
-      range,
-    );
+    const result = clipTrackToAltitudeRange([point(0, 0.01, 0), point(1, 0.1, 10)], range);
 
     expect(result[0]?.[0]?.alt).toBe(range.min);
     expect(result[0]?.[1]?.alt).toBe(range.max);
@@ -91,37 +88,37 @@ describe('altitude tracks', () => {
   });
 
   it('omits zero-length contacts when leaving the lower boundary', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, 0, 0), point(1, -500, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, 0, 0), point(1, -500, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result).toEqual([]);
   });
 
   it('omits zero-length contacts when leaving the upper boundary', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, 1_000, 0), point(1, 1_500, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, 1_000, 0), point(1, 1_500, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result).toEqual([]);
   });
 
   it('omits zero-length contacts when arriving at the lower boundary', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, -500, 0), point(1, 0, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, -500, 0), point(1, 0, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result).toEqual([]);
   });
 
   it('omits zero-length contacts when arriving at the upper boundary', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, 1_500, 0), point(1, 1_000, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, 1_500, 0), point(1, 1_000, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result).toEqual([]);
   });
@@ -137,10 +134,7 @@ describe('altitude tracks', () => {
 
   it('keeps a real boundary point when an inside segment follows a tangent contact', () => {
     const input = [point(0, 1_500, 0), point(1, 1_000, 10), point(2, 500, 20)];
-    const result = clipTrackToAltitudeRange(
-      input,
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange(input, { min: 0, max: 1_000 });
 
     expect(result).toHaveLength(1);
     expect(result[0]?.[0]).toBe(input[1]);
@@ -202,31 +196,34 @@ describe('altitude tracks', () => {
   });
 
   it('uses the nearest endpoint ground state for interpolated boundary points', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, 'ground', 0), point(2, 2_000, 20)],
-      { min: 0, max: 500 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, 'ground', 0), point(2, 2_000, 20)], {
+      min: 0,
+      max: 500,
+    });
 
     expect(result[0]?.[1]).toEqual(expect.objectContaining({ alt: 500, ground: true }));
   });
 
   it('omits unknown-only tracks and does not bridge an unknown endpoint', () => {
     expect(
-      clipTrackToAltitudeRange([point(0, undefined, 0), point(1, undefined, 10)], { min: 0, max: 1_000 }),
+      clipTrackToAltitudeRange([point(0, undefined, 0), point(1, undefined, 10)], {
+        min: 0,
+        max: 1_000,
+      }),
     ).toEqual([]);
     expect(
-      clipTrackToAltitudeRange(
-        [point(0, 500, 0), point(1, undefined, 10), point(2, 500, 20)],
-        { min: 0, max: 1_000 },
-      ),
+      clipTrackToAltitudeRange([point(0, 500, 0), point(1, undefined, 10), point(2, 500, 20)], {
+        min: 0,
+        max: 1_000,
+      }),
     ).toEqual([]);
   });
 
   it('interpolates heading along the shortest angular path', () => {
-    const result = clipTrackToAltitudeRange(
-      [point(0, -1_000, 0, 350), point(2, 1_000, 20, 10)],
-      { min: 0, max: 1_000 },
-    );
+    const result = clipTrackToAltitudeRange([point(0, -1_000, 0, 350), point(2, 1_000, 20, 10)], {
+      min: 0,
+      max: 1_000,
+    });
 
     expect(result[0]?.[0]).toEqual(expect.objectContaining({ track: 0 }));
   });

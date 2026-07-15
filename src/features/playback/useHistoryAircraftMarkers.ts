@@ -47,23 +47,20 @@ export function useHistoryAircraftMarkers(
 
       const selectedPass = historyStore.getPass(selection.selectedPassId);
       controller.syncAircraft(
-        selectHistoryAircraft(
-          frameIndex === null ? null : historyStore.frames[frameIndex],
-          {
-            selectedHex: selection.selectedHex,
-            selectedHexes: selection.selectedHexes,
-            selectedPass,
-            passes: historyStore.passes,
-            cursorTime: playback.cursorTime,
-            onlyMilitary: toolbar.onlyMilitary,
-            isolation: toolbar.isolation,
-            filterGroundVehicles: toolbar.filterGroundVehicles,
-            filterBlockedMLAT: toolbar.filterBlockedMLAT,
-            altitudeRange: toolbar.altitudeFilterEnabled
-              ? { min: toolbar.altitudeFilterMin, max: toolbar.altitudeFilterMax }
-              : undefined,
-          },
-        ),
+        selectHistoryAircraft(frameIndex === null ? null : historyStore.frames[frameIndex], {
+          selectedHex: selection.selectedHex,
+          selectedHexes: selection.selectedHexes,
+          selectedPass,
+          passes: historyStore.passes,
+          cursorTime: playback.cursorTime,
+          onlyMilitary: toolbar.onlyMilitary,
+          isolation: toolbar.isolation,
+          filterGroundVehicles: toolbar.filterGroundVehicles,
+          filterBlockedMLAT: toolbar.filterBlockedMLAT,
+          altitudeRange: toolbar.altitudeFilterEnabled
+            ? { min: toolbar.altitudeFilterMin, max: toolbar.altitudeFilterMax }
+            : undefined,
+        }),
       );
       previous = key;
     };

@@ -73,5 +73,4 @@ describe('history tracks', () => {
 
     expect(result.map(({ passId }) => passId)).toEqual(['!', '0', 'A', 'Z', 'a', 'z']);
   });
-
 });

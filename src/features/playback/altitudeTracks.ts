@@ -24,7 +24,10 @@ export function normalizeAltitude(value: RawAltitude | undefined): number | unde
 
 function normalizeRangeEndpoint(value: unknown): number {
   const numeric = typeof value === 'number' && Number.isFinite(value) ? value : MIN_ALTITUDE;
-  return Math.round(Math.min(MAX_ALTITUDE, Math.max(MIN_ALTITUDE, numeric)) / ALTITUDE_STEP) * ALTITUDE_STEP;
+  return (
+    Math.round(Math.min(MAX_ALTITUDE, Math.max(MIN_ALTITUDE, numeric)) / ALTITUDE_STEP) *
+    ALTITUDE_STEP
+  );
 }
 
 export function normalizeAltitudeRange(min: unknown, max: unknown): AltitudeRange {
@@ -56,25 +59,48 @@ export function altitudeSummaryIntersects(
   summary: TrackAltitudeSummary,
   range: AltitudeRange,
 ): boolean {
-  return summary.min !== undefined && summary.max !== undefined && summary.max >= range.min && summary.min <= range.max;
+  return (
+    summary.min !== undefined &&
+    summary.max !== undefined &&
+    summary.max >= range.min &&
+    summary.min <= range.max
+  );
 }
 
-function interpolatedNumber(from: number | undefined, to: number | undefined, ratio: number): number | undefined {
+function interpolatedNumber(
+  from: number | undefined,
+  to: number | undefined,
+  ratio: number,
+): number | undefined {
   const hasFrom = typeof from === 'number' && Number.isFinite(from);
   const hasTo = typeof to === 'number' && Number.isFinite(to);
   if (hasFrom && hasTo) return from + (to - from) * ratio;
   return undefined;
 }
 
-function interpolatedHeading(from: number | undefined, to: number | undefined, ratio: number): number | undefined {
-  if (typeof from !== 'number' || !Number.isFinite(from) || typeof to !== 'number' || !Number.isFinite(to)) {
+function interpolatedHeading(
+  from: number | undefined,
+  to: number | undefined,
+  ratio: number,
+): number | undefined {
+  if (
+    typeof from !== 'number' ||
+    !Number.isFinite(from) ||
+    typeof to !== 'number' ||
+    !Number.isFinite(to)
+  ) {
     return interpolatedNumber(from, to, ratio);
   }
   const delta = ((((to - from) % 360) + 540) % 360) - 180;
   return (from + delta * ratio + 360) % 360;
 }
 
-function interpolatePoint(from: TrackPoint, to: TrackPoint, ratio: number, altitude: number): TrackPoint {
+function interpolatePoint(
+  from: TrackPoint,
+  to: TrackPoint,
+  ratio: number,
+  altitude: number,
+): TrackPoint {
   return {
     lon: from.lon + (to.lon - from.lon) * ratio,
     lat: from.lat + (to.lat - from.lat) * ratio,
@@ -87,7 +113,12 @@ function interpolatePoint(from: TrackPoint, to: TrackPoint, ratio: number, altit
 }
 
 function samePoint(left: TrackPoint, right: TrackPoint): boolean {
-  return left.lon === right.lon && left.lat === right.lat && left.ts === right.ts && left.alt === right.alt;
+  return (
+    left.lon === right.lon &&
+    left.lat === right.lat &&
+    left.ts === right.ts &&
+    left.alt === right.alt
+  );
 }
 
 function appendPoint(path: TrackPoint[], point: TrackPoint): void {
@@ -134,22 +165,21 @@ export function clipTrackToAltitudeRange(
     }
 
     if (start === end) {
-      const contactPoint = start === 0
-        ? from
-        : start === 1
-          ? to
-          : interpolatePoint(from, to, start, entersAtMin ? range.min : range.max);
+      const contactPoint =
+        start === 0
+          ? from
+          : start === 1
+            ? to
+            : interpolatePoint(from, to, start, entersAtMin ? range.min : range.max);
       if (current.length > 0) appendPoint(current, contactPoint);
       finishCurrent();
       continue;
     }
 
-    const startPoint = start === 0
-      ? from
-      : interpolatePoint(from, to, start, entersAtMin ? range.min : range.max);
-    const endPoint = end === 1
-      ? to
-      : interpolatePoint(from, to, end, entersAtMin ? range.max : range.min);
+    const startPoint =
+      start === 0 ? from : interpolatePoint(from, to, start, entersAtMin ? range.min : range.max);
+    const endPoint =
+      end === 1 ? to : interpolatePoint(from, to, end, entersAtMin ? range.max : range.min);
 
     if (current.length === 0 || !samePoint(current[current.length - 1]!, startPoint)) {
       finishCurrent();

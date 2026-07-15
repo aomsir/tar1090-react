@@ -22,10 +22,15 @@ function isTrackPoint(value: unknown): value is TrackPoint {
   );
 }
 
-function* validatedTrackPoints(points: readonly unknown[], trackKey: string): Generator<TrackPoint> {
+function* validatedTrackPoints(
+  points: readonly unknown[],
+  trackKey: string,
+): Generator<TrackPoint> {
   for (const point of points) {
     if (!isTrackPoint(point)) {
-      throw new TypeError(`Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`);
+      throw new TypeError(
+        `Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`,
+      );
     }
     yield point;
   }
@@ -86,12 +91,16 @@ function* desiredPTracks(
       continue;
     }
     if (!Array.isArray(first)) {
-      throw new TypeError(`Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`);
+      throw new TypeError(
+        `Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`,
+      );
     }
     for (let pathIndex = 0; pathIndex < value.length; pathIndex += 1) {
       const points = value[pathIndex];
       if (!Array.isArray(points)) {
-        throw new TypeError(`Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`);
+        throw new TypeError(
+          `Invalid history track paths for ${trackKey}: expected TrackPoint[] or TrackPoint[][]`,
+        );
       }
       yield* desiredPathSegments(
         trackKey,
@@ -112,7 +121,9 @@ function* desiredPathSegments(
   hasLaterPath: boolean,
 ): Generator<DesiredPTrack> {
   let segmentIndex = 0;
-  for (const segment of iterateTrackSegments(validatedTrackPoints(points, trackKey), { gapThresholdSec })) {
+  for (const segment of iterateTrackSegments(validatedTrackPoints(points, trackKey), {
+    gapThresholdSec,
+  })) {
     if (segment.coords.length >= 2) {
       yield {
         id: `${trackKey}:${pathIndex}:${segmentIndex}`,
@@ -128,7 +139,9 @@ function* desiredPathSegments(
 }
 
 function updatePTrack(feature: Feature, desired: DesiredPTrack): void {
-  feature.setGeometry(new LineString(desired.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]))));
+  feature.setGeometry(
+    new LineString(desired.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]))),
+  );
   feature.set('trackKey', desired.trackKey);
   feature.set('colorKey', desired.colorKey);
   feature.set('estimated', desired.estimated);

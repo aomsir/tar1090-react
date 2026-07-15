@@ -107,10 +107,10 @@ describe('computeHistoryStats', () => {
   });
 
   it('ignores non-finite frame times consistently with pass preprocessing', () => {
-    const stats = computeHistoryStats([
-      frame(1000, [{ hex: 'valid' }]),
-      frame(Number.NaN, [{ hex: 'invalid' }]),
-    ], []);
+    const stats = computeHistoryStats(
+      [frame(1000, [{ hex: 'valid' }]), frame(Number.NaN, [{ hex: 'invalid' }])],
+      [],
+    );
 
     expect(stats.trafficTimeline).toEqual([{ time: 1000, count: 1 }]);
   });

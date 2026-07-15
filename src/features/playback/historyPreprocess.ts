@@ -8,7 +8,17 @@ import type { TrackPoint } from '@/features/track/track';
 import type { HistoryStatistics } from '@/features/stats/historyStats';
 
 const AIRCRAFT_PASS_ISOLATION_SECONDS = 12 * 60 * 60;
-const ALTITUDE_BIN_ORDER = ['0-5k', '5-10k', '10-15k', '15-20k', '20-25k', '25-30k', '30-35k', '35-40k', '40k+'];
+const ALTITUDE_BIN_ORDER = [
+  '0-5k',
+  '5-10k',
+  '10-15k',
+  '15-20k',
+  '20-25k',
+  '25-30k',
+  '30-35k',
+  '35-40k',
+  '40k+',
+];
 const SPEED_BINS = [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 const DISTANCE_BINS = [0, 25, 50, 75, 100, 125, 150, 175, 200];
 const MAX_TRAFFIC_TIMELINE_POINTS = 200;
@@ -83,7 +93,10 @@ export function preprocessHistoryFrames(
     : AIRCRAFT_PASS_ISOLATION_SECONDS;
   const active = new Map<string, { pass: AircraftPassDTO; lastSeen: number; addrType?: string }>();
   const passes: AircraftPassDTO[] = [];
-  const sortedFrames = frames.filter((frame) => Number.isFinite(frame.now)).slice().sort((a, b) => a.now - b.now);
+  const sortedFrames = frames
+    .filter((frame) => Number.isFinite(frame.now))
+    .slice()
+    .sort((a, b) => a.now - b.now);
 
   for (const frame of sortedFrames) {
     for (const dto of frame.aircraft ?? []) {
@@ -115,9 +128,10 @@ export function preprocessHistoryFrames(
       entry.lastSeen = frame.now;
       pass.latestAircraft = mergeLatestAircraft(pass.latestAircraft, dto, hex);
       const rawType = dto.type ?? dto.addrtype;
-      const sourceType = Array.isArray(dto.mlat) && dto.mlat.includes('lat')
-        ? 'mlat'
-        : (rawType ?? (dto.lat != null && dto.lon != null ? 'adsb' : undefined));
+      const sourceType =
+        Array.isArray(dto.mlat) && dto.mlat.includes('lat')
+          ? 'mlat'
+          : (rawType ?? (dto.lat != null && dto.lon != null ? 'adsb' : undefined));
       if (sourceType !== undefined) entry.addrType = sourceType;
       delete (pass.latestAircraft as unknown as Record<string, unknown>).type;
       if (entry.addrType !== undefined) pass.latestAircraft.addrtype = entry.addrType;
@@ -130,20 +144,38 @@ export function preprocessHistoryFrames(
         pass.hadGround = true;
       } else {
         pass.maxAltitude = updatePeak(pass.maxAltitude, dto.altitude);
-        if (typeof dto.altitude === 'number' && Number.isFinite(dto.altitude)) pass.hadAltitude = true;
+        if (typeof dto.altitude === 'number' && Number.isFinite(dto.altitude))
+          pass.hadAltitude = true;
       }
       pass.maxSpeed = updatePeak(pass.maxSpeed, dto.speed);
 
-      if (typeof dto.lat === 'number' && Number.isFinite(dto.lat) && typeof dto.lon === 'number' && Number.isFinite(dto.lon)) {
+      if (
+        typeof dto.lat === 'number' &&
+        Number.isFinite(dto.lat) &&
+        typeof dto.lon === 'number' &&
+        Number.isFinite(dto.lon)
+      ) {
         const last = pass.trackPoints[pass.trackPoints.length - 1];
         if (!last || last.lat !== dto.lat || last.lon !== dto.lon) {
-          pass.trackPoints.push({ lon: dto.lon, lat: dto.lat, alt: dto.altitude, ts: frame.now, track: dto.track, speed: dto.speed, ground: dto.altitude === 'ground' });
+          pass.trackPoints.push({
+            lon: dto.lon,
+            lat: dto.lat,
+            alt: dto.altitude,
+            ts: frame.now,
+            track: dto.track,
+            speed: dto.speed,
+            ground: dto.altitude === 'ground',
+          });
         }
-        pass.maxDistance = updatePeak(pass.maxDistance, distanceNm(options.siteLat, options.siteLon, dto.lat, dto.lon));
+        pass.maxDistance = updatePeak(
+          pass.maxDistance,
+          distanceNm(options.siteLat, options.siteLon, dto.lat, dto.lon),
+        );
       }
 
       const emergency = typeof dto.emergency === 'string' ? dto.emergency.trim().toLowerCase() : '';
-      if (emergency && emergency !== 'none' && emergency !== 'no emergency') pass.hadEmergency = true;
+      if (emergency && emergency !== 'none' && emergency !== 'no emergency')
+        pass.hadEmergency = true;
       if (typeof dto.squawk === 'string' && dto.squawk.trim()) pass.hadSquawk = true;
     }
   }
@@ -183,7 +215,9 @@ export function serializeHistoryStatisticsInput(
   passes: readonly AircraftPass[],
 ): HistoryStatisticsInputDTO {
   return {
-    frames: frames.filter((frame) => Number.isFinite(frame.now)).map((frame) => ({ now: frame.now, aircraftCount: (frame.aircraft ?? []).length })),
+    frames: frames
+      .filter((frame) => Number.isFinite(frame.now))
+      .map((frame) => ({ now: frame.now, aircraftCount: (frame.aircraft ?? []).length })),
     passes: passes.map((pass) => ({
       hex: pass.hex,
       flight: pass.aircraft.flight,
@@ -205,19 +239,36 @@ export function serializeHistoryStatisticsInput(
 }
 
 function rankAll(map: Map<string, number>): { name: string; count: number }[] {
-  return Array.from(map.entries()).filter(([name]) => name !== '').sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+  return Array.from(map.entries())
+    .filter(([name]) => name !== '')
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
 }
 
-function buildHistogram(values: number[], edges: number[], suffix: string): { range: string; count: number }[] {
+function buildHistogram(
+  values: number[],
+  edges: number[],
+  suffix: string,
+): { range: string; count: number }[] {
   const counts = new Array(edges.length).fill(0);
   for (const value of values) {
     let placed = false;
     for (let index = edges.length - 1; index >= 1; index--) {
-      if (value >= edges[index]) { counts[index]++; placed = true; break; }
+      if (value >= edges[index]) {
+        counts[index]++;
+        placed = true;
+        break;
+      }
     }
     if (!placed) counts[0]++;
   }
-  return edges.map((edge, index) => ({ range: index === edges.length - 1 ? `${edge}${suffix}+` : `${edge}-${edges[index + 1]}${suffix}`, count: counts[index] })).filter((bin) => bin.count > 0);
+  return edges
+    .map((edge, index) => ({
+      range:
+        index === edges.length - 1 ? `${edge}${suffix}+` : `${edge}-${edges[index + 1]}${suffix}`,
+      count: counts[index],
+    }))
+    .filter((bin) => bin.count > 0);
 }
 
 function classifySource(addrType: string | undefined): string {
@@ -225,7 +276,8 @@ function classifySource(addrType: string | undefined): string {
   if (addrType === 'mlat') return 'MLAT';
   if (['adsb', 'adsb_icao', 'adsb_other', 'adsb_icao_nt'].includes(addrType ?? '')) return 'ADS-B';
   if (['adsr', 'adsr_icao', 'adsr_other'].includes(addrType ?? '')) return 'ADS-R';
-  if (['tisb_icao', 'tisb_trackfile', 'tisb_other', 'tisb'].includes(addrType ?? '')) return 'TIS-B';
+  if (['tisb_icao', 'tisb_trackfile', 'tisb_other', 'tisb'].includes(addrType ?? ''))
+    return 'TIS-B';
   if (addrType === 'modeS' || addrType === 'mode_s') return 'Mode S';
   return 'Other';
 }
@@ -237,13 +289,18 @@ function altitudeBinLabel(altitude: number | undefined): string | null {
   return `${lower}-${lower + 5}k`;
 }
 
-function downsampleTimeline(points: { time: number; count: number }[]): { time: number; count: number }[] {
+function downsampleTimeline(
+  points: { time: number; count: number }[],
+): { time: number; count: number }[] {
   if (points.length <= MAX_TRAFFIC_TIMELINE_POINTS) return points;
   const bucketSize = Math.ceil(points.length / MAX_TRAFFIC_TIMELINE_POINTS);
   return points.reduce<{ time: number; count: number }[]>((sampled, _, start) => {
     if (start % bucketSize) return sampled;
     const bucket = points.slice(start, start + bucketSize);
-    sampled.push({ time: start + bucketSize >= points.length ? points.at(-1)!.time : bucket[0].time, count: Math.max(...bucket.map((point) => point.count)) });
+    sampled.push({
+      time: start + bucketSize >= points.length ? points.at(-1)!.time : bucket[0].time,
+      count: Math.max(...bucket.map((point) => point.count)),
+    });
     return sampled;
   }, []);
 }
@@ -273,8 +330,14 @@ export function computeHistoryStatisticsDTO(input: HistoryStatisticsInputDTO): H
   for (const pass of input.passes) {
     aircraft.add(pass.hex);
     const callsign = pass.flight?.trim();
-    if (callsign) { callsigns.add(callsign); identifiedCallsign++; }
-    if (pass.typeCode) { typeMap.set(pass.typeCode, (typeMap.get(pass.typeCode) ?? 0) + 1); identifiedType++; }
+    if (callsign) {
+      callsigns.add(callsign);
+      identifiedCallsign++;
+    }
+    if (pass.typeCode) {
+      typeMap.set(pass.typeCode, (typeMap.get(pass.typeCode) ?? 0) + 1);
+      identifiedType++;
+    }
     if (pass.registration) identifiedRegistration++;
     if (callsign || pass.typeCode || pass.registration) identifiedAny++;
     if (pass.isMilitary) militaryPasses++;
@@ -286,7 +349,10 @@ export function computeHistoryStatisticsDTO(input: HistoryStatisticsInputDTO): H
     const altitude = altitudeBinLabel(pass.maxAltitude);
     if (altitude) altitudeMap.set(altitude, (altitudeMap.get(altitude) ?? 0) + 1);
     if (pass.pointCount > 0) positionedPosition++;
-    if (pass.maxSpeed !== undefined) { positionedSpeed++; speeds.push(pass.maxSpeed); }
+    if (pass.maxSpeed !== undefined) {
+      positionedSpeed++;
+      speeds.push(pass.maxSpeed);
+    }
     if (pass.maxDistance !== undefined) distances.push(pass.maxDistance);
     if (pass.hadAltitude) positionedAltitude++;
     if (pass.hadGround) statusGround++;
@@ -297,7 +363,10 @@ export function computeHistoryStatisticsDTO(input: HistoryStatisticsInputDTO): H
   let peakOnline = 0;
   let peakTime = 0;
   const timeline = input.frames.map((frame) => {
-    if (frame.aircraftCount > peakOnline) { peakOnline = frame.aircraftCount; peakTime = frame.now; }
+    if (frame.aircraftCount > peakOnline) {
+      peakOnline = frame.aircraftCount;
+      peakTime = frame.now;
+    }
     return { time: frame.now, count: frame.aircraftCount };
   });
   return {
@@ -311,13 +380,25 @@ export function computeHistoryStatisticsDTO(input: HistoryStatisticsInputDTO): H
     airlineDistribution: rankAll(airlineMap),
     countryDistribution: rankAll(countryMap),
     sourceDistribution: rankAll(sourceMap).slice(0, 20),
-    altitudeBins: ALTITUDE_BIN_ORDER.filter((range) => altitudeMap.has(range)).map((range) => ({ range, count: altitudeMap.get(range)! })),
+    altitudeBins: ALTITUDE_BIN_ORDER.filter((range) => altitudeMap.has(range)).map((range) => ({
+      range,
+      count: altitudeMap.get(range)!,
+    })),
     speedBins: buildHistogram(speeds, SPEED_BINS, ''),
     distanceBins: buildHistogram(distances, DISTANCE_BINS, ''),
     trafficTimeline: downsampleTimeline(timeline),
     otherStats: {
-      identified: { any: identifiedAny, callsign: identifiedCallsign, type: identifiedType, registration: identifiedRegistration },
-      positioned: { position: positionedPosition, speed: positionedSpeed, altitude: positionedAltitude },
+      identified: {
+        any: identifiedAny,
+        callsign: identifiedCallsign,
+        type: identifiedType,
+        registration: identifiedRegistration,
+      },
+      positioned: {
+        position: positionedPosition,
+        speed: positionedSpeed,
+        altitude: positionedAltitude,
+      },
       status: { ground: statusGround, emergency: statusEmergency, squawk: statusSquawk },
     },
   };

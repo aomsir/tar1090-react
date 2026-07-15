@@ -36,7 +36,12 @@ function hasFinitePosition(value: { lat?: unknown; lon?: unknown }): boolean {
 
 function altitudeInRange(altitude: unknown, range: AltitudeRange): boolean {
   if (altitude === 'ground') return range.min <= 0 && 0 <= range.max;
-  return typeof altitude === 'number' && Number.isFinite(altitude) && altitude >= range.min && altitude <= range.max;
+  return (
+    typeof altitude === 'number' &&
+    Number.isFinite(altitude) &&
+    altitude >= range.min &&
+    altitude <= range.max
+  );
 }
 
 function matchingPass(
@@ -48,7 +53,9 @@ function matchingPass(
   const normalizedHex = normalizeHex(hex);
   return passes.find(
     (pass) =>
-      normalizeHex(pass.hex) === normalizedHex && pass.startTime <= cursorTime && cursorTime <= pass.endTime,
+      normalizeHex(pass.hex) === normalizedHex &&
+      pass.startTime <= cursorTime &&
+      cursorTime <= pass.endTime,
   );
 }
 
@@ -68,7 +75,10 @@ function fromFrameAircraft(
   return aircraft;
 }
 
-function passesNonAltitudeFilters(aircraft: Aircraft, options: HistoryAircraftFilterOptions): boolean {
+function passesNonAltitudeFilters(
+  aircraft: Aircraft,
+  options: HistoryAircraftFilterOptions,
+): boolean {
   if (options.onlyMilitary && !aircraft.isMilitary) return false;
   if (options.isolation) {
     const selectedHexes = normalizedHexes(options.selectedHexes);
@@ -116,7 +126,8 @@ function selectedFallback(options: HistoryAircraftFilterOptions): Aircraft | und
     !selectedPass ||
     normalizeHex(selectedPass.hex) !== normalizeHex(selectedHex) ||
     cursorTime === undefined
-  ) return undefined;
+  )
+    return undefined;
   if (cursorTime < selectedPass.startTime || cursorTime > selectedPass.endTime) return undefined;
   const point = latestPositionAtOrBefore(selectedPass.trackPoints, cursorTime);
   if (!point) return undefined;
@@ -143,15 +154,15 @@ export function selectHistoryAircraft(
 ): Aircraft[] {
   if (!frame) return [];
   const selectedHex = options.selectedHex && normalizeHex(options.selectedHex);
-  const aircraft = (frame.aircraft ?? [])
-    .filter(hasFinitePosition)
-    .map((dto) => {
-      const hex = normalizeHex(dto.hex);
-      return fromFrameAircraft({ ...dto, hex }, frame.now, matchingPass(hex, options.cursorTime, options.passes));
-    });
-  const selectedPresent = selectedHex
-    ? aircraft.some((item) => item.hex === selectedHex)
-    : false;
+  const aircraft = (frame.aircraft ?? []).filter(hasFinitePosition).map((dto) => {
+    const hex = normalizeHex(dto.hex);
+    return fromFrameAircraft(
+      { ...dto, hex },
+      frame.now,
+      matchingPass(hex, options.cursorTime, options.passes),
+    );
+  });
+  const selectedPresent = selectedHex ? aircraft.some((item) => item.hex === selectedHex) : false;
 
   if (!selectedPresent) {
     const fallback = selectedFallback(options);
@@ -160,6 +171,10 @@ export function selectHistoryAircraft(
 
   return aircraft.filter((item) => {
     if (!passesNonAltitudeFilters(item, options)) return false;
-    return item.hex === selectedHex || !options.altitudeRange || altitudeInRange(item.altitude, options.altitudeRange);
+    return (
+      item.hex === selectedHex ||
+      !options.altitudeRange ||
+      altitudeInRange(item.altitude, options.altitudeRange)
+    );
   });
 }

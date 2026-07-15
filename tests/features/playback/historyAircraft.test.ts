@@ -265,10 +265,12 @@ describe('selectHistoryAircraft', () => {
       { lon: 10, lat: 20, alt: 100, ts: 100, ground: false },
     ]);
 
-    selectHistoryAircraft(
-      frame(150, [{ hex: 'selected', lat: 30, lon: 40, altitude: 500 }]),
-      { selectedHex: 'selected', selectedPass, passes: [selectedPass], cursorTime: 150 },
-    );
+    selectHistoryAircraft(frame(150, [{ hex: 'selected', lat: 30, lon: 40, altitude: 500 }]), {
+      selectedHex: 'selected',
+      selectedPass,
+      passes: [selectedPass],
+      cursorTime: 150,
+    });
     selectHistoryAircraft(frame(150, []), {
       selectedHex: 'selected',
       selectedPass,

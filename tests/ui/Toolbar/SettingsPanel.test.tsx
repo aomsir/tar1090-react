@@ -47,10 +47,20 @@ vi.mock('@heroui/react', async (importOriginal) => {
     );
   }
 
-  function SliderTrack({ children, className }: { children: ReactNode | ((props: { state: { values: number[] } }) => ReactNode); className?: string }) {
+  function SliderTrack({
+    children,
+    className,
+  }: {
+    children: ReactNode | ((props: { state: { values: number[] } }) => ReactNode);
+    className?: string;
+  }) {
     const slider = useContext(SliderContext);
     const values = Array.isArray(slider?.value) ? slider.value : [slider?.value ?? 0];
-    return <div data-testid="slider-track" className={className}>{typeof children === 'function' ? children({ state: { values } }) : children}</div>;
+    return (
+      <div data-testid="slider-track" className={className}>
+        {typeof children === 'function' ? children({ state: { values } }) : children}
+      </div>
+    );
   }
   Slider.Track = SliderTrack;
   Slider.Fill = () => <div data-testid="slider-fill" />;
@@ -168,7 +178,9 @@ describe('SettingsPanel', () => {
     const setAltitudeFilterRange = vi.spyOn(useToolbarStore.getState(), 'setAltitudeFilterRange');
     await renderWithI18n(<SettingsPanel />, { language: 'en' });
 
-    expect(screen.getAllByRole('button', { name: /minimum altitude|maximum altitude/i })).toHaveLength(2);
+    expect(
+      screen.getAllByRole('button', { name: /minimum altitude|maximum altitude/i }),
+    ).toHaveLength(2);
     expect(screen.getAllByTestId('slider-track').at(-1)).toHaveClass('mx-2');
     expect(screen.getAllByRole('button', { name: /minimum altitude|maximum altitude/i })).toEqual(
       expect.arrayContaining([
@@ -179,12 +191,18 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'preview altitude' }));
     expect(screen.getByText('500 – 28,500 ft')).toBeInTheDocument();
-    expect(useToolbarStore.getState()).toMatchObject({ altitudeFilterMin: 0, altitudeFilterMax: 45_000 });
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 0,
+      altitudeFilterMax: 45_000,
+    });
     expect(setAltitudeFilterRange).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'commit altitude' }));
     expect(setAltitudeFilterRange).toHaveBeenCalledTimes(1);
-    expect(useToolbarStore.getState()).toMatchObject({ altitudeFilterMin: 500, altitudeFilterMax: 28_500 });
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 500,
+      altitudeFilterMax: 28_500,
+    });
   });
 
   it.each([0, 1, 2, 3])('ignores invalid slider payload %#', async (index) => {
@@ -198,7 +216,10 @@ describe('SettingsPanel', () => {
 
     await user.click(screen.getByRole('button', { name: `invalid commit ${index}` }));
     expect(setAltitudeFilterRange).not.toHaveBeenCalled();
-    expect(useToolbarStore.getState()).toMatchObject({ altitudeFilterMin: 0, altitudeFilterMax: 45_000 });
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 0,
+      altitudeFilterMax: 45_000,
+    });
   });
 
   it('syncs the preview when the committed range changes outside the slider', async () => {
@@ -222,7 +243,10 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('500 – 28,500 ft')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'commit altitude' }));
-    expect(useToolbarStore.getState()).toMatchObject({ altitudeFilterMin: 500, altitudeFilterMax: 28_500 });
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 500,
+      altitudeFilterMax: 28_500,
+    });
 
     useToolbarStore.getState().setAltitudeFilterRange(1_500, 35_000);
     expect(await screen.findByText('1,500 – 35,000 ft')).toBeInTheDocument();
@@ -237,7 +261,10 @@ describe('SettingsPanel', () => {
     await user.click(screen.getByRole('button', { name: 'preview altitude' }));
     await user.click(screen.getByRole('button', { name: 'invalid commit 0' }));
     expect(setAltitudeFilterRange).not.toHaveBeenCalled();
-    expect(useToolbarStore.getState()).toMatchObject({ altitudeFilterMin: 0, altitudeFilterMax: 45_000 });
+    expect(useToolbarStore.getState()).toMatchObject({
+      altitudeFilterMin: 0,
+      altitudeFilterMax: 45_000,
+    });
 
     await act(async () => {
       useToolbarStore.getState().setAltitudeFilterRange(1_000, 30_000);

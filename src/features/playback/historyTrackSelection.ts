@@ -73,7 +73,8 @@ export function selectHistoryTrackPaths(
     if (limit !== 'all' && tracks.size + Number(selectedCountsTowardLimit) >= limit) break;
 
     if (pass.passId === selectedPassId) {
-      selectedCountsTowardLimit = !altitudeRange || altitudeSummaryIntersects(pass.altitudeSummary, altitudeRange);
+      selectedCountsTowardLimit =
+        !altitudeRange || altitudeSummaryIntersects(pass.altitudeSummary, altitudeRange);
       continue;
     }
 

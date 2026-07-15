@@ -168,15 +168,21 @@ describe('syncPTracks', () => {
     );
 
     expect(handle.source.getFeatures()).toHaveLength(2);
-    expect(handle.source.getFeatures().every((feature) => feature.get('trackKey') === 'crossing')).toBe(
-      true,
-    );
+    expect(
+      handle.source.getFeatures().every((feature) => feature.get('trackKey') === 'crossing'),
+    ).toBe(true);
   });
 
   it('ignores empty legacy and nested tracks', () => {
     const handle = createPTracksLayer();
 
-    syncPTracks(handle.source, new Map([['empty-legacy', []], ['empty-nested', []]]));
+    syncPTracks(
+      handle.source,
+      new Map([
+        ['empty-legacy', []],
+        ['empty-nested', []],
+      ]),
+    );
 
     expect(handle.source.getFeatures()).toHaveLength(0);
   });
@@ -387,7 +393,9 @@ describe('syncPTracksProgressive', () => {
       },
     );
 
-    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+    ]);
     expect(laterPointReads).toBe(0);
 
     release?.();
@@ -460,7 +468,9 @@ describe('syncPTracksProgressive', () => {
     );
 
     await expect(job.done).resolves.toBeUndefined();
-    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+    ]);
     expect(onComplete).not.toHaveBeenCalled();
 
     const schedulerFailure = syncPTracksProgressive(
@@ -473,7 +483,9 @@ describe('syncPTracksProgressive', () => {
     );
 
     await expect(schedulerFailure.done).resolves.toBeUndefined();
-    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual(['first']);
+    expect(handle.source.getFeatures().map((feature) => feature.get('trackKey'))).toEqual([
+      'first',
+    ]);
   });
 
   it('absorbs completion callback errors without rejecting done', async () => {

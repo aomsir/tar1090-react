@@ -30,7 +30,11 @@ describe('useHistoryAircraftMarkers', () => {
   beforeEach(() => {
     historyStore.reset();
     usePlaybackStore.getState().reset();
-    useSelectionStore.setState({ selectedHex: null, selectedPassId: null, selectedHexes: new Set() });
+    useSelectionStore.setState({
+      selectedHex: null,
+      selectedPassId: null,
+      selectedHexes: new Set(),
+    });
     useToolbarStore.setState({
       onlyMilitary: false,
       isolation: false,
@@ -109,10 +113,16 @@ describe('useHistoryAircraftMarkers', () => {
     function LateHarness() {
       const [readyVersion, setReadyVersion] = useState(0);
       useHistoryAircraftMarkers(lateRef, readyVersion);
-      return <button onClick={() => {
-        lateRef.current = controller;
-        setReadyVersion((version) => version + 1);
-      }}>ready</button>;
+      return (
+        <button
+          onClick={() => {
+            lateRef.current = controller;
+            setReadyVersion((version) => version + 1);
+          }}
+        >
+          ready
+        </button>
+      );
     }
 
     const { getByRole } = render(<LateHarness />);

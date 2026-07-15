@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { extractTrackPoints, buildTrackSegments, iterateTrackSegments } from '@/features/track/track';
+import {
+  extractTrackPoints,
+  buildTrackSegments,
+  iterateTrackSegments,
+} from '@/features/track/track';
 import { altitudeColor, hslString } from '@/domain/altitude';
 import type { AircraftSnapshot } from '@/data/types';
 import type { TrackPoint } from '@/features/track/track';
