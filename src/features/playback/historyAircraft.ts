@@ -83,6 +83,8 @@ function selectedAircraft(options: HistoryAircraftFilterOptions): Aircraft | und
     },
     point.ts,
   );
+  aircraft.isMlat = selectedPass.aircraft.isMlat;
+  aircraft.addrType = selectedPass.aircraft.addrType;
   return aircraft;
 }
 

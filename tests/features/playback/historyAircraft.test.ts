@@ -63,6 +63,23 @@ describe('selectHistoryAircraft', () => {
     });
   });
 
+  it('preserves MLAT metadata while projecting the selected pass position', () => {
+    const selectedPass = pass('selected', 100, 200, [
+      { lon: 10, lat: 20, alt: 100, ts: 100, ground: false },
+    ]);
+    selectedPass.aircraft.isMlat = true;
+    selectedPass.aircraft.addrType = 'mlat';
+
+    const [aircraft] = selectHistoryAircraft({
+      selectedHex: 'selected',
+      selectedPass,
+      cursorTime: 150,
+    });
+
+    expect(aircraft).toMatchObject({ isMlat: true, addrType: 'mlat', lon: 10, lat: 20 });
+    expect(selectedPass.aircraft).toMatchObject({ isMlat: true, addrType: 'mlat' });
+  });
+
   it.each([99, 201])('returns no marker outside the selected pass at cursor %s', (cursorTime) => {
     const selectedPass = pass('selected', 100, 200, [
       { lon: 10, lat: 20, alt: 100, ts: 100, ground: false },
