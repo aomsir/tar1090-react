@@ -187,6 +187,7 @@ export function AppShell() {
       const pass = historyStore.getPass(rowId);
       if (!pass) return;
       useSelectionStore.getState().selectPass(pass.passId, pass.hex);
+      state.setCursor(pass.endTime);
       const point = pass.trackPoints.at(-1);
       if (point) {
         controllerRef.current?.centerOn(point.lon, point.lat);

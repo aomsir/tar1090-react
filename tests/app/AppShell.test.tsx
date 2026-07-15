@@ -322,7 +322,10 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(100, 10);
-    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([]);
+    expect(usePlaybackStore.getState().cursorTime).toBe(100);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', flight: 'FIRST', lon: 100, lat: 10 }),
+    ]);
 
     act(() => {
       capturedListOnSelect!('781860:44000');
@@ -334,6 +337,7 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:44000');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(150, 50);
+    expect(usePlaybackStore.getState().cursorTime).toBe(44000);
     expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
       expect.objectContaining({ hex: '781860', flight: 'SECOND', lon: 150, lat: 50 }),
     ]);
@@ -470,6 +474,7 @@ describe('AppShell', () => {
   it('does not change selection when a history list pass id is missing', () => {
     useSelectionStore.getState().selectPass('existing:100', 'existing');
     usePlaybackStore.getState().setMode('history');
+    usePlaybackStore.getState().setCursor(987);
 
     render(<AppShell />);
     act(() => {
@@ -485,6 +490,7 @@ describe('AppShell', () => {
       selectedHex: 'existing',
     });
     expect(fakeController.centerOn).not.toHaveBeenCalled();
+    expect(usePlaybackStore.getState().cursorTime).toBe(987);
   });
 
   it('centers on the selected pass final position in history mode', async () => {
@@ -703,11 +709,13 @@ describe('AppShell', () => {
     });
 
     expect(capturedListOnSelect).toBeTypeOf('function');
+    usePlaybackStore.getState().setCursor(246);
     act(() => {
       capturedListOnSelect!('a00001');
     });
 
     expect(fakeController.centerOn).toHaveBeenCalledWith(-100, 35);
+    expect(usePlaybackStore.getState().cursorTime).toBe(246);
   });
 
   it('shows a loading overlay when live history seed is loading', async () => {
