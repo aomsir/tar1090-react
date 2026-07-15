@@ -119,6 +119,7 @@ describe('AppShell', () => {
     capturedOnReady = null;
     capturedSelectCb = null;
     capturedListOnSelect = null;
+    fakeController.syncAircraft.mockClear();
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.setSelectedTrackKey.mockClear();
@@ -321,7 +322,7 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:100');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(100, 10);
-    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([]);
 
     act(() => {
       capturedListOnSelect!('781860:44000');
@@ -333,7 +334,9 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:44000');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(150, 50);
-    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', flight: 'SECOND', lon: 150, lat: 50 }),
+    ]);
   });
 
   it('keeps the current pass selection when its history marker is clicked', async () => {
@@ -549,7 +552,7 @@ describe('AppShell', () => {
     expect(fakeController.centerOn).not.toHaveBeenCalled();
   });
 
-  it('syncs every positioned aircraft marker in the effective history frame', async () => {
+  it('clears aircraft markers in history mode until a pass is selected', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -561,19 +564,55 @@ describe('AppShell', () => {
       },
     ]);
     await historyStore.buildPassData();
-    usePlaybackStore.getState().setMode('history');
     usePlaybackStore.getState().setBounds({ min: 100, max: 100 });
+    usePlaybackStore.getState().setCursor(100);
+    usePlaybackStore.getState().setMode('history');
 
     render(<AppShell />);
     act(() => {
       capturedOnReady!(fakeController);
     });
 
-    const lastList = fakeController.syncAircraft.mock.calls.at(-1)![0] as { hex: string }[];
-    expect(lastList.map((aircraft) => aircraft.hex)).toEqual(['781860', 'aaaaaa']);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([]);
   });
 
-  it('does not re-sync history markers while cursor updates remain in the same frame', async () => {
+  it('shows only the selected history pass aircraft', async () => {
+    historyStore.setFrames([
+      {
+        now: 100,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 25, lon: 120, altitude: 1000 },
+          { hex: 'aaaaaa', lat: 30, lon: 110, altitude: 2000 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+      {
+        now: 150,
+        messages: 0,
+        aircraft: [
+          { hex: '781860', lat: 26, lon: 121, altitude: 1500 },
+          { hex: 'aaaaaa', lat: 31, lon: 111, altitude: 2500 },
+        ] as unknown as AircraftSnapshot['aircraft'],
+      },
+    ]);
+    await historyStore.buildPassData();
+    const selectedPass = historyStore.passes.find((pass) => pass.hex === '781860')!;
+    useSelectionStore.getState().selectPass(selectedPass.passId, selectedPass.hex);
+    usePlaybackStore.getState().setBounds({ min: 100, max: 150 });
+    usePlaybackStore.getState().setCursor(150);
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', lon: 121, lat: 26 }),
+    ]);
+  });
+
+  it('updates the selected history marker when the cursor advances', async () => {
     historyStore.setFrames([
       {
         now: 100,
@@ -581,14 +620,17 @@ describe('AppShell', () => {
         aircraft: [{ hex: '781860', lat: 25, lon: 120, altitude: 1000 }],
       },
       {
-        now: 200,
+        now: 150,
         messages: 0,
-        aircraft: [{ hex: 'aaaaaa', lat: 30, lon: 110, altitude: 2000 }],
+        aircraft: [{ hex: '781860', lat: 26, lon: 121, altitude: 1500 }],
       },
     ]);
-    usePlaybackStore.getState().setMode('history');
-    usePlaybackStore.getState().setBounds({ min: 100, max: 200 });
+    await historyStore.buildPassData();
+    const selectedPass = historyStore.passes.find((pass) => pass.hex === '781860')!;
+    useSelectionStore.getState().selectPass(selectedPass.passId, selectedPass.hex);
+    usePlaybackStore.getState().setBounds({ min: 100, max: 150 });
     usePlaybackStore.getState().setCursor(100);
+    usePlaybackStore.getState().setMode('history');
 
     render(<AppShell />);
     act(() => {
@@ -597,11 +639,37 @@ describe('AppShell', () => {
     fakeController.syncAircraft.mockClear();
 
     act(() => {
-      usePlaybackStore.getState().setCursor(120);
-      usePlaybackStore.getState().setCursor(199);
+      usePlaybackStore.getState().setCursor(150);
     });
 
-    expect(fakeController.syncAircraft).not.toHaveBeenCalled();
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', lon: 121, lat: 26 }),
+    ]);
+  });
+
+  it('restores live aircraft markers after leaving history mode', () => {
+    const liveAircraft = new Aircraft('a00001');
+    liveAircraft.update(
+      { hex: 'a00001', lat: 35, lon: -100 } as AircraftSnapshot['aircraft'][number],
+      100,
+    );
+    aircraftStore.map.set(liveAircraft.hex, liveAircraft);
+    usePlaybackStore.getState().setMode('history');
+
+    render(<AppShell />);
+    act(() => {
+      capturedOnReady!(fakeController);
+    });
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([]);
+    fakeController.syncAircraft.mockClear();
+
+    act(() => {
+      usePlaybackStore.getState().setMode('live');
+    });
+
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: 'a00001', lon: -100, lat: 35 }),
+    ]);
   });
 
   it('centers map on live aircraft when selected from list in live mode', () => {
@@ -839,6 +907,7 @@ describe('AppShell mobile layout', () => {
     capturedOnReady = null;
     capturedSelectCb = null;
     capturedListOnSelect = null;
+    fakeController.syncAircraft.mockClear();
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.centerOn.mockClear();
