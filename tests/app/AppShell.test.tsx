@@ -119,6 +119,7 @@ describe('AppShell', () => {
     capturedOnReady = null;
     capturedSelectCb = null;
     capturedListOnSelect = null;
+    fakeController.syncAircraft.mockClear();
     fakeController.onSelect.mockClear();
     fakeController.setSelected.mockClear();
     fakeController.setSelectedTrackKey.mockClear();
@@ -333,7 +334,9 @@ describe('AppShell', () => {
     });
     expect(fakeController.setSelectedTrackKey).toHaveBeenLastCalledWith('781860:44000');
     expect(fakeController.centerOn).toHaveBeenLastCalledWith(150, 50);
-    expect(fakeController.syncAircraft.mock.calls.at(-1)![0]).toMatchObject([{ flight: 'SECOND' }]);
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', flight: 'SECOND', lon: 150, lat: 50 }),
+    ]);
   });
 
   it('keeps the current pass selection when its history marker is clicked', async () => {
@@ -604,9 +607,9 @@ describe('AppShell', () => {
       capturedOnReady!(fakeController);
     });
 
-    const lastList = fakeController.syncAircraft.mock.calls.at(-1)![0] as { hex: string }[];
-    expect(lastList.map((aircraft) => aircraft.hex)).toEqual(['781860']);
-    expect(lastList[0]).toMatchObject({ lon: 121, lat: 26 });
+    expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([
+      expect.objectContaining({ hex: '781860', lon: 121, lat: 26 }),
+    ]);
   });
 
   it('updates the selected history marker when the cursor advances', async () => {
@@ -658,6 +661,7 @@ describe('AppShell', () => {
       capturedOnReady!(fakeController);
     });
     expect(fakeController.syncAircraft).toHaveBeenLastCalledWith([]);
+    fakeController.syncAircraft.mockClear();
 
     act(() => {
       usePlaybackStore.getState().setMode('live');
